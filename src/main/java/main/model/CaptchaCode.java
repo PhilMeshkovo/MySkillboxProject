@@ -18,10 +18,14 @@ public class CaptchaCode {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id", nullable = false, updatable = false)
   private int id;
 
+
+  @Column(nullable = false)
   private Date time;
 
+  @Column(nullable = false)
   private int code;
 
   @Column(name = "secret_code")

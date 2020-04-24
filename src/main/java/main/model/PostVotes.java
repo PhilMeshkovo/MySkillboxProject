@@ -13,28 +13,26 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "post_comments")
+@Table(name = "post_votes")
 @Data
 @NoArgsConstructor
-public class PostComment {
+public class PostVotes {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id", nullable = false, updatable = false)
   private int id;
 
-  @Column(name = "parent_id")
-  private int parentId;
+  @ManyToOne(cascade = CascadeType.ALL)
+  private User user;
 
   @ManyToOne(cascade = CascadeType.ALL)
   private Post post;
-
-  @ManyToOne(cascade = CascadeType.ALL)
-  private User user;
 
   @Column(nullable = false)
   private Date time;
 
   @Column(nullable = false)
-  private String text;
+  private int value;
+
 }
