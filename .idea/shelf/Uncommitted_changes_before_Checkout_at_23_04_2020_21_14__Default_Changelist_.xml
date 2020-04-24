@@ -1,0 +1,39 @@
+<changelist name="Uncommitted_changes_before_Checkout_at_23_04_2020_21_14_[Default_Changelist]" date="1587665727731" recycled="true" deleted="true">
+  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_23_04_2020_21_14_[Default_Changelist]/shelved.patch" />
+  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 23.04.2020 21:14 [Default Changelist]" />
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/main/model/CaptchaCodes.class" />
+    <option name="AFTER_PATH" value="target/classes/main/model/CaptchaCodes.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_23_04_2020_21_14_[Default_Changelist]/CaptchaCodes.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/main/model/Tag2Post.class" />
+    <option name="AFTER_PATH" value="target/classes/main/model/Tag2Post.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_23_04_2020_21_14_[Default_Changelist]/Tag2Post.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/main/model/Posts.class" />
+    <option name="AFTER_PATH" value="target/classes/main/model/Posts.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_23_04_2020_21_14_[Default_Changelist]/Posts.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/main/model/Tags.class" />
+    <option name="AFTER_PATH" value="target/classes/main/model/Tags.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_23_04_2020_21_14_[Default_Changelist]/Tags.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/main/model/GlobalSettings.class" />
+    <option name="AFTER_PATH" value="target/classes/main/model/GlobalSettings.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_23_04_2020_21_14_[Default_Changelist]/GlobalSettings.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/main/model/Users.class" />
+    <option name="AFTER_PATH" value="target/classes/main/model/Users.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_23_04_2020_21_14_[Default_Changelist]/Users.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/main/model/PostComments.class" />
+    <option name="AFTER_PATH" value="target/classes/main/model/PostComments.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_23_04_2020_21_14_[Default_Changelist]/PostComments.class" />
+  </binary>
+</changelist>

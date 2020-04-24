@@ -1,5 +1,7 @@
 package main.model;
 
+import java.util.Date;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -9,18 +11,25 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "GlobalSettings")
+@Table(name = "PostComments")
 @Data
 @NoArgsConstructor
-public class GlobalSettings {
+public class PostComment {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private int id;
 
-  private String code;
+  @Column(name = "parent_id")
+  private int parentId;
 
-  private String name;
+  @Column(name = "post_id")
+  private int postId;
 
-  private String value;
+  @Column(name = "user_id")
+  private int userId;
+
+  private Date time;
+
+  private String text;
 }

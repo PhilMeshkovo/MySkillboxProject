@@ -1,5 +1,7 @@
 package main.model;
 
+import java.util.Date;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -7,20 +9,32 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 
 @Entity
-@Table(name = "GlobalSettings")
+@Table(name = "Users")
 @Data
 @NoArgsConstructor
-public class GlobalSettings {
+public class User {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private int id;
 
-  private String code;
+  @Column(name = "is_moderator")
+  private int isModerator;
+
+  @Column(name = "reg_time")
+  private Date regTime;
 
   private String name;
 
-  private String value;
+  private String email;
+
+  private String password;
+
+  private String code;
+
+  private String photo;
+
 }

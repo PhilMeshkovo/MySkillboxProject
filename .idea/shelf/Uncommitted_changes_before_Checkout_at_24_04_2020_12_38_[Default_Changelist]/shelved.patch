@@ -1,0 +1,209 @@
+Index: src/main/resources/application.yml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>spring.datasource.url: jdbc:mysql://localhost:3306/MyProject?serverTimezone=UTC\r\nspring.datasource.username: root\r\nspring.datasource.password: testtest\r\nspring.jpa.hibernate.ddl-auto: true
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/resources/application.yml	(revision c15c0350ebdeb72f1efee48623f71980926b50c5)
++++ src/main/resources/application.yml	(date 1587721005891)
+@@ -1,4 +1,4 @@
+ spring.datasource.url: jdbc:mysql://localhost:3306/MyProject?serverTimezone=UTC
+ spring.datasource.username: root
+ spring.datasource.password: testtest
+-spring.jpa.hibernate.ddl-auto: true
+\ No newline at end of file
++spring.jpa.hibernate.ddl-auto: update
+\ No newline at end of file
+Index: .idea/compiler.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"CompilerConfiguration\">\r\n    <annotationProcessing>\r\n      <profile name=\"Maven default annotation processors profile\" enabled=\"true\">\r\n        <sourceOutputDir name=\"target/generated-sources/annotations\" />\r\n        <sourceTestOutputDir name=\"target/generated-test-sources/test-annotations\" />\r\n        <outputRelativeToContentRoot value=\"true\" />\r\n        <module name=\"MySkillboxProject\" />\r\n      </profile>\r\n    </annotationProcessing>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/compiler.xml	(revision c15c0350ebdeb72f1efee48623f71980926b50c5)
++++ .idea/compiler.xml	(date 1587721005918)
+@@ -10,4 +10,9 @@
+       </profile>
+     </annotationProcessing>
+   </component>
++  <component name="JavacSettings">
++    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
++      <module name="MySkillboxProject" options="" />
++    </option>
++  </component>
+ </project>
+\ No newline at end of file
+Index: pom.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project xmlns=\"http://maven.apache.org/POM/4.0.0\"\r\n  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n  xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\r\n  <modelVersion>4.0.0</modelVersion>\r\n\r\n  <groupId>org.example</groupId>\r\n  <artifactId>MySkillboxProject</artifactId>\r\n  <version>1.0-SNAPSHOT</version>\r\n\r\n  <build>\r\n    <plugins>\r\n      <plugin>\r\n        <groupId>org.apache.maven.plugins</groupId>\r\n        <artifactId>maven-compiler-plugin</artifactId>\r\n        <version>3.8.1</version>\r\n        <configuration>\r\n          <source>11</source>\r\n          <target>11</target>\r\n        </configuration>\r\n      </plugin>\r\n    </plugins>\r\n  </build>\r\n\r\n  <dependencies>\r\n    <dependency>\r\n      <groupId>org.springframework.boot</groupId>\r\n      <artifactId>spring-boot-starter-web</artifactId>\r\n      <version>2.2.4.RELEASE</version>\r\n    </dependency>\r\n    <dependency>\r\n      <groupId>mysql</groupId>\r\n      <artifactId>mysql-connector-java</artifactId>\r\n      <version>8.0.17</version>\r\n    </dependency>\r\n    <dependency>\r\n      <groupId>org.junit.jupiter</groupId>\r\n      <artifactId>junit-jupiter-engine</artifactId>\r\n      <version>5.4.0</version>\r\n      <scope>test</scope>\r\n    </dependency>\r\n\r\n  </dependencies>\r\n\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- pom.xml	(revision c15c0350ebdeb72f1efee48623f71980926b50c5)
++++ pom.xml	(date 1587721077022)
+@@ -26,7 +26,7 @@
+     <dependency>
+       <groupId>org.springframework.boot</groupId>
+       <artifactId>spring-boot-starter-web</artifactId>
+-      <version>2.2.4.RELEASE</version>
++      <version>2.2.2.RELEASE</version>
+     </dependency>
+     <dependency>
+       <groupId>mysql</groupId>
+@@ -39,7 +39,27 @@
+       <version>5.4.0</version>
+       <scope>test</scope>
+     </dependency>
+-
++    <dependency>
++      <groupId>org.springframework.boot</groupId>
++      <artifactId>spring-boot-starter-data-jpa</artifactId>
++      <version>2.2.2.RELEASE</version>
++    </dependency>
++    <dependency>
++      <groupId>org.hibernate</groupId>
++      <artifactId>hibernate-core</artifactId>
++      <version>5.4.9.Final</version>
++    </dependency>
++    <dependency>
++      <groupId>org.projectlombok</groupId>
++      <artifactId>lombok</artifactId>
++      <version>1.18.10</version>
++      <scope>provided</scope>
++    </dependency>
++    <dependency>
++      <groupId>org.hibernate</groupId>
++      <artifactId>hibernate-entitymanager</artifactId>
++      <version>5.2.3.Final</version>
++    </dependency>
+   </dependencies>
+ 
+ </project>
+\ No newline at end of file
+Index: src/main/java/main/model/Users.java
+===================================================================
+--- src/main/java/main/model/Users.java	(revision c15c0350ebdeb72f1efee48623f71980926b50c5)
++++ src/main/java/main/model/Users.java	(revision c15c0350ebdeb72f1efee48623f71980926b50c5)
+@@ -1,23 +0,0 @@
+-package main.model;
+-
+-import java.util.Date;
+-
+-public class Users {
+-
+-  private int id;
+-
+-  private int isModerator;
+-
+-  private Date regTime;
+-
+-  private String name;
+-
+-  private String email;
+-
+-  private String password;
+-
+-  private String code;
+-
+-  private String photo;
+-
+-}
+Index: src/main/java/main/DefaultController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package main;\r\n\r\nimport java.io.FileInputStream;\r\nimport java.io.IOException;\r\nimport org.springframework.web.bind.annotation.RequestMapping;\r\nimport org.springframework.web.bind.annotation.RestController;\r\n\r\n@RestController\r\npublic class DefaultController {\r\n\r\n  @RequestMapping(\"/\")\r\n  public String index() throws IOException {\r\n    FileInputStream inFile = new FileInputStream(\r\n        \"src/main/resources/templates/index.html\");\r\n    byte[] str = new byte[inFile.available()];\r\n    inFile.read(str);\r\n    String text = new String(str);\r\n    return text;\r\n  }\r\n}\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/main/DefaultController.java	(revision c15c0350ebdeb72f1efee48623f71980926b50c5)
++++ src/main/java/main/DefaultController.java	(date 1587721005880)
+@@ -2,14 +2,23 @@
+ 
+ import java.io.FileInputStream;
+ import java.io.IOException;
++import main.model.User;
++import main.repository.UserRepository;
++import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.web.bind.annotation.RequestMapping;
+ import org.springframework.web.bind.annotation.RestController;
+ 
+ @RestController
+ public class DefaultController {
+ 
++  @Autowired
++  UserRepository repository;
++
+   @RequestMapping("/")
+   public String index() throws IOException {
++    User user = new User();
++    user.setName("Petr");
++    repository.save(user);
+     FileInputStream inFile = new FileInputStream(
+         "src/main/resources/templates/index.html");
+     byte[] str = new byte[inFile.available()];
+Index: src/main/java/main/model/User.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/main/model/User.java	(date 1587721005900)
++++ src/main/java/main/model/User.java	(date 1587721005900)
+@@ -0,0 +1,40 @@
++package main.model;
++
++import java.util.Date;
++import javax.persistence.Column;
++import javax.persistence.Entity;
++import javax.persistence.GeneratedValue;
++import javax.persistence.GenerationType;
++import javax.persistence.Id;
++import javax.persistence.Table;
++import lombok.Data;
++import lombok.NoArgsConstructor;
++import org.springframework.stereotype.Component;
++
++@Entity
++@Table(name = "Users")
++@Data
++@NoArgsConstructor
++public class User {
++
++  @Id
++  @GeneratedValue(strategy = GenerationType.IDENTITY)
++  private int id;
++
++  @Column(name = "is_moderator")
++  private int isModerator;
++
++  @Column(name = "reg_time")
++  private Date regTime;
++
++  private String name;
++
++  private String email;
++
++  private String password;
++
++  private String code;
++
++  private String photo;
++
++}
+Index: .idea/encodings.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/encodings.xml	(date 1587721077058)
++++ .idea/encodings.xml	(date 1587721077058)
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="Encoding">
++    <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
++  </component>
++</project>
+\ No newline at end of file

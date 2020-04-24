@@ -9,18 +9,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "GlobalSettings")
+@Table(name = "Tags")
 @Data
 @NoArgsConstructor
-public class GlobalSettings {
+public class Tag {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private int id;
 
-  private String code;
-
   private String name;
-
-  private String value;
 }
