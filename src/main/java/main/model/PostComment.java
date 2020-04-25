@@ -23,8 +23,8 @@ public class PostComment {
   @Column(name = "id", nullable = false, updatable = false)
   private int id;
 
-  @Column(name = "parent_id")
-  private int parentId;
+  @ManyToOne(cascade = CascadeType.ALL)
+  private PostComment parent;
 
   @ManyToOne(cascade = CascadeType.ALL)
   private Post post;

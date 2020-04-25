@@ -33,8 +33,8 @@ public class Post {
   @Column(columnDefinition = "enum('NEW','ACCEPTED','DECLINED')")
   private ModerationStatus moderationStatus;
 
-  @Column(name = "moderator_id")
-  private int moderatorId;
+  @ManyToOne(cascade = CascadeType.ALL)
+  private User moderator;
 
   @ManyToOne(cascade = CascadeType.ALL)
   private User user;
@@ -49,5 +49,5 @@ public class Post {
   private String text;
 
   @Column(nullable = false)
-  private int value;
+  private int view_count;
 }

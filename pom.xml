@@ -19,6 +19,26 @@
           <target>11</target>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.liquibase</groupId>
+        <artifactId>liquibase-maven-plugin</artifactId>
+        <version>3.5.5</version>
+        <configuration>
+          <changeLogFile>src/main/resources/database_changelog.xml</changeLogFile>
+          <driver>com.mysql.cj.jdbc.Driver</driver>
+          <url>jdbc:mysql://localhost:3306/myproject?serverTimezone=UTC&amp;allowMultiQueries=true
+          </url>
+          <username>root</username>
+          <password>testtest</password>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>update</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -59,6 +79,16 @@
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-entitymanager</artifactId>
       <version>5.2.3.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <version>3.8.5</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+      <version>1.3.1.Final</version>
     </dependency>
   </dependencies>
 
