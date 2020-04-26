@@ -19,7 +19,8 @@ public class ApiPostController {
   @GetMapping
   public PostListApi getAllPosts(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
-      @RequestParam(value = "itemPerPage", defaultValue = "10", required = false) Integer itemPerPage) {
-    return postService.getAllPosts(PageRequest.of(offset, itemPerPage));
+      @RequestParam(value = "itemPerPage", defaultValue = "10", required = false) Integer itemPerPage,
+      @RequestParam(value = "mode", defaultValue = "recent", required = false) String mode) {
+    return postService.getAllPosts(PageRequest.of(offset, itemPerPage), mode);
   }
 }

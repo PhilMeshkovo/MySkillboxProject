@@ -6,12 +6,10 @@ import java.util.List;
 import main.api.response.ResponsePostApi;
 import main.model.Post;
 import org.mapstruct.Mapper;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper
 public class PostMapper {
 
-  @Autowired
   UserMapper userMapper = new UserMapper();
 
   public ResponsePostApi postToResponsePostApi(Post post) {
