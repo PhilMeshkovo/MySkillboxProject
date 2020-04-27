@@ -29,43 +29,18 @@ public class PostService {
   PostMapper postMapper = new PostMapper();
 
   public PostListApi getAllPosts(Pageable pageable, String mode) {
+    Page<ResponsePostApi> pageApi;
     if (mode.toUpperCase().equals("RECENT")) {
-      Page<ResponsePostApi> pageApi = postRepository.findAllPostsOrderedByTime(pageable)
+      pageApi = postRepository.findAllPostsOrderedByTime(pageable)
           .map(p -> postMapper.postToResponsePostApi(p));
-      for (ResponsePostApi responsePostApi : pageApi) {
-        int countComments = postCommentRepository.findAll().stream()
-            .filter(p -> p.getPost().getId() == responsePostApi.getId()).
-                collect(Collectors.toList()).size();
-        responsePostApi.setCommentCount(countComments);
-        int countLikes = postVotesRepository.findAll().stream()
-            .filter(p -> p.getValue() == 1 && p.getPost().getId() == responsePostApi.getId()).
-                collect(Collectors.toList()).size();
-        responsePostApi.setLikeCount(countLikes);
-        int countDislikes = postVotesRepository.findAll().stream()
-            .filter(p -> p.getValue() == -1 && p.getPost().getId() == responsePostApi.getId()).
-                collect(Collectors.toList()).size();
-        responsePostApi.setDislikeCount(countDislikes);
-      }
-      return new PostListApi(pageApi.toList(), pageApi.getTotalElements());
+      Page<ResponsePostApi> pageApiNew = addCommentsCountAndLikes(pageApi);
+      return new PostListApi(pageApiNew.toList(), pageApiNew.getTotalElements());
     }
     if (mode.toUpperCase().equals("POPULAR")) {
-      Page<ResponsePostApi> pageApi = postRepository.findAll(pageable)
+      pageApi = postRepository.findAll(pageable)
           .map(p -> postMapper.postToResponsePostApi(p));
-      for (ResponsePostApi responsePostApi : pageApi) {
-        int countComments = postCommentRepository.findAll().stream()
-            .filter(p -> p.getPost().getId() == responsePostApi.getId()).
-                collect(Collectors.toList()).size();
-        responsePostApi.setCommentCount(countComments);
-        int countLikes = postVotesRepository.findAll().stream()
-            .filter(p -> p.getValue() == 1 && p.getPost().getId() == responsePostApi.getId()).
-                collect(Collectors.toList()).size();
-        responsePostApi.setLikeCount(countLikes);
-        int countDislikes = postVotesRepository.findAll().stream()
-            .filter(p -> p.getValue() == -1 && p.getPost().getId() == responsePostApi.getId()).
-                collect(Collectors.toList()).size();
-        responsePostApi.setDislikeCount(countDislikes);
-      }
-      List<ResponsePostApi> sortedPageApi = pageApi.stream()
+      Page<ResponsePostApi> pageApiNew = addCommentsCountAndLikes(pageApi);
+      List<ResponsePostApi> sortedPageApi = pageApiNew.stream()
           .sorted(new Comparator<ResponsePostApi>() {
             @Override
             public int compare(ResponsePostApi o1, ResponsePostApi o2) {
@@ -78,26 +53,13 @@ public class PostService {
               }
             }
           }).collect(Collectors.toList());
-      return new PostListApi(sortedPageApi, pageApi.getTotalElements());
+      return new PostListApi(sortedPageApi, pageApiNew.getTotalElements());
     }
     if (mode.toUpperCase().equals("BEST")) {
-      Page<ResponsePostApi> pageApi = postRepository.findAll(pageable)
+      pageApi = postRepository.findAll(pageable)
           .map(p -> postMapper.postToResponsePostApi(p));
-      for (ResponsePostApi responsePostApi : pageApi) {
-        int countComments = postCommentRepository.findAll().stream()
-            .filter(p -> p.getPost().getId() == responsePostApi.getId()).
-                collect(Collectors.toList()).size();
-        responsePostApi.setCommentCount(countComments);
-        int countLikes = postVotesRepository.findAll().stream()
-            .filter(p -> p.getValue() == 1 && p.getPost().getId() == responsePostApi.getId()).
-                collect(Collectors.toList()).size();
-        responsePostApi.setLikeCount(countLikes);
-        int countDislikes = postVotesRepository.findAll().stream()
-            .filter(p -> p.getValue() == -1 && p.getPost().getId() == responsePostApi.getId()).
-                collect(Collectors.toList()).size();
-        responsePostApi.setDislikeCount(countDislikes);
-      }
-      List<ResponsePostApi> sortedPageApi = pageApi.stream()
+      Page<ResponsePostApi> pageApiNew = addCommentsCountAndLikes(pageApi);
+      List<ResponsePostApi> sortedPageApi = pageApiNew.stream()
           .sorted(new Comparator<ResponsePostApi>() {
             @Override
             public int compare(ResponsePostApi o1, ResponsePostApi o2) {
@@ -110,8 +72,26 @@ public class PostService {
               }
             }
           }).collect(Collectors.toList());
-      return new PostListApi(sortedPageApi, pageApi.getTotalElements());
+      return new PostListApi(sortedPageApi, pageApiNew.getTotalElements());
     }
     return null;
+  }
+
+  public Page<ResponsePostApi> addCommentsCountAndLikes(Page<ResponsePostApi> pageApi) {
+    for (ResponsePostApi responsePostApi : pageApi) {
+      int countComments = postCommentRepository.findAll().stream()
+          .filter(p -> p.getPost().getId() == responsePostApi.getId()).
+              collect(Collectors.toList()).size();
+      responsePostApi.setCommentCount(countComments);
+      int countLikes = postVotesRepository.findAll().stream()
+          .filter(p -> p.getValue() == 1 && p.getPost().getId() == responsePostApi.getId()).
+              collect(Collectors.toList()).size();
+      responsePostApi.setLikeCount(countLikes);
+      int countDislikes = postVotesRepository.findAll().stream()
+          .filter(p -> p.getValue() == -1 && p.getPost().getId() == responsePostApi.getId()).
+              collect(Collectors.toList()).size();
+      responsePostApi.setDislikeCount(countDislikes);
+    }
+    return pageApi;
   }
 }
