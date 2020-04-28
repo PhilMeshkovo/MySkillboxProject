@@ -88,11 +88,11 @@ INSERT INTO global_settings(id, code, name, value) VALUES
 INSERT INTO tag2post(id, post_id, tag_id) VALUES
 (1, 5, 5),
 (2, 7, 7),
-(3, 9, 9),
+(3, 9, 10),
 (4, 9, 9),
 (5, 3, 3),
-(6, 3, 3),
-(7, 1, 1),
+(6, 3, 1),
+(7, 1, 2),
 (8, 1, 1),
 (9, 8, 8),
 (10, 10, 10);

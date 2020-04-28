@@ -26,6 +26,6 @@ public class Tag2Post {
   @ManyToOne(cascade = CascadeType.ALL)
   private Post post;
 
-  @OneToOne(cascade = CascadeType.ALL)
+  @ManyToOne(cascade = CascadeType.ALL)
   private Tag tag;
 }
