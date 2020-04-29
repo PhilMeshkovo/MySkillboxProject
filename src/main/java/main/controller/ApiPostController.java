@@ -23,4 +23,12 @@ public class ApiPostController {
       @RequestParam(value = "mode", defaultValue = "recent", required = false) String mode) {
     return postService.getAllPosts(PageRequest.of(offset, itemPerPage), mode);
   }
+
+  @GetMapping("/search")
+  public PostListApi getAllPostsByTagAndTitle(
+      @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
+      @RequestParam(value = "itemPerPage", defaultValue = "10", required = false) Integer itemPerPage,
+      @RequestParam(value = "query", defaultValue = "tagName", required = false) String query) {
+    return postService.getAllPostsByTagAndTitle(offset, itemPerPage, query);
+  }
 }
