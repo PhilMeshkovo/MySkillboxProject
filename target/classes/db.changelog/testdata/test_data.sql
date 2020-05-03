@@ -23,7 +23,8 @@ INSERT INTO posts(id, moderation_status,moderator_id, view_count, time, user_id,
 (7, 'NEW',6,9,'1971-01-01 00:00:02', 7, 'Veniam voluptas est.', 'On the contrary, the accurate predictions of the sources and influences of the overall scores may share attitudes on the benefits of data integrity. Thus a complete understanding is missing.', 1),
 (8, 'ACCEPTED',1,3,'1990-09-01 13:25:49', 7, 'Rerum eos quam.', 'As for some of the feedback system, it is clear that the initial progress in the base configuration gives rise to the entire picture.', 1),
 (9, 'DECLINED',7,8,'2003-04-05 03:35:01', 1, 'Sed quidem cupiditate.', 'The the layout of the commitment to quality assurance gives less satisfactory results.', 1),
-(10, 'ACCEPTED',8,4,'1977-02-20 02:00:16', 8, 'Nihil quos aspernatur.', 'Nevertheless, one should accept that the big impact provides a glimpse at the strategic planning. Thus a complete understanding is missing.  ', -1);
+(10, 'ACCEPTED',8,4,'1977-02-20 02:00:16', 8, 'Nihil quos aspernatur.', 'Nevertheless, one should accept that the big impact provides a glimpse at the strategic planning. Thus a complete understanding is missing.  ', -1),
+(11, 'ACCEPTED',8,4,'2021-02-20 02:00:16', 8, 'tagName', 'Nevertheless, one should accept that the big impact provides a glimpse at the strategic planning. Thus a complete understanding is missing.  ', 1);
 
 INSERT INTO post_comments(id, time, post_id, parent_id, user_id, text) VALUES
 (1, '1971-01-01 00:00:07', 9, null, 10, 'By the way, with help of the skills leads us to a clear understanding of the conceptual design.  '),

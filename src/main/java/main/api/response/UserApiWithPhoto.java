@@ -5,10 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class UserApi {
+public class UserApiWithPhoto extends UserApi {
 
-  private int id;
-
-  private String name;
-
+  private String photo;
 }
