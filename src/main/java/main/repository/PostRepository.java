@@ -1,6 +1,7 @@
 package main.repository;
 
 import java.util.HashSet;
+import java.util.List;
 import main.model.Post;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,4 +20,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
   @Query(nativeQuery = true,
       value = "SELECT * FROM posts WHERE title = :query ")
   HashSet<Post> findPostByQuery(@Param("query") String query);
+
+  @Query(nativeQuery = true,
+      value = "SELECT * FROM posts WHERE user_id = :id ")
+  List<Post> findAllByAuthorId(@Param("id") Integer id);
 }

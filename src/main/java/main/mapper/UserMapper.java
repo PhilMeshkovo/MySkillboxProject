@@ -3,9 +3,9 @@ package main.mapper;
 import main.api.response.UserApi;
 import main.api.response.UserApiWithPhoto;
 import main.model.User;
-import org.mapstruct.Mapper;
+import org.springframework.stereotype.Component;
 
-@Mapper
+@Component
 public class UserMapper {
 
   public UserApi userToUserApi(User user) {
@@ -23,4 +23,12 @@ public class UserMapper {
 
     return userApi;
   }
+
+  public User userApiToUser(UserApi userApi) {
+    User user = new User();
+    user.setId(userApi.getId());
+    user.setName(userApi.getName());
+    return user;
+  }
+
 }

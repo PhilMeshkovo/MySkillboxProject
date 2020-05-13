@@ -6,12 +6,14 @@ import java.util.List;
 import main.api.response.PostByIdApi;
 import main.api.response.ResponsePostApi;
 import main.model.Post;
-import org.mapstruct.Mapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-@Mapper
+@Component
 public class PostMapper {
 
-  UserMapper userMapper = new UserMapper();
+  @Autowired
+  UserMapper userMapper;
 
   public ResponsePostApi postToResponsePostApi(Post post) {
     ResponsePostApi responsePostApi = new ResponsePostApi();

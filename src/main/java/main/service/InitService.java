@@ -12,7 +12,7 @@ public class InitService {
     responseApiInit.setSubtitle("Рассказы разработчиков");
     responseApiInit.setPhone("+7 903 444 55 55");
     responseApiInit.setEmail("mail@mail.ru");
-    responseApiInit.setCopyright("Дмитрий Сергеев");
+    responseApiInit.setCopyright("Блинов Филипп");
     responseApiInit.setCopyrightFrom("2020");
     return responseApiInit;
   }
