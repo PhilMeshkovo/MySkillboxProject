@@ -10,7 +10,7 @@ INSERT INTO users(id, is_moderator, reg_time, name, email, password, code, photo
 (6, 1, '2015-07-21','Alpha Figueroa',   'SheriseLogue@example.com', '330900623', '1234', '1234'),
 (7, -1, '1988-03-03','Elisha Schmitz',   'Melda.Mercier27@nowhere.com', '9433394', '1234', '1234'),
 (8, 1,'1991-06-22','Clifford Tomlin',   'FossD3@nowhere.com', '8272165', '1234', '1234'),
-(9, -1,'2009-03-09','Kenneth Rayburn',   'Copeland@example.com', '283044892', '1234', '1234'),
+(9, -1,'2009-03-09','Kenneth Rayburn',   'Copeland@example.com', '$2a$10$cAB8OjwxRpXpFX1hPGu3ZeM/clcv48hihWGOnclIbG0YU.vCHKrNq', '1234', '1234'),
 (10, 1, '1987-07-09','Dominique Schneider',  'Meacham33@nowhere.com', '8223815', '1234', '1234');
 
 INSERT INTO posts(id, moderation_status,moderator_id, view_count, time, user_id, title, text, is_active) VALUES

@@ -1,6 +1,7 @@
 package main.config;
 
 import lombok.extern.slf4j.Slf4j;
+import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -16,13 +17,13 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Autowired
-  private UserDetailServiceImpl userDetailService;
+  private UserService userService;
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     http
         .authorizeRequests()
-        .antMatchers("/api/post/**")
+        .antMatchers("/api/post/**", "/api/auth/register")
         .permitAll()
         .anyRequest().authenticated()
         .and()
@@ -39,7 +40,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Override
   protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-    auth.userDetailsService(userDetailService)
+    auth.userDetailsService(userService)
         .passwordEncoder(bcryptPasswordEncoder());
   }
 }

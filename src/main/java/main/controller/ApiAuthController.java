@@ -1,7 +1,8 @@
 package main.controller;
 
-import main.model.User;
+import main.model.RegisterForm;
 import main.repository.UserRepository;
+import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,8 +16,11 @@ public class ApiAuthController {
   @Autowired
   UserRepository userRepository;
 
-  @PostMapping("/login")
-  public Object getUser(@RequestBody User user) {
-    return user.getPassword();
+  @Autowired
+  UserService userService;
+
+  @PostMapping("/register")
+  public boolean addUser(@RequestBody RegisterForm registerForm) {
+    return userService.saveUser(registerForm);
   }
 }
