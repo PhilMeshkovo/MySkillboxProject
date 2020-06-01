@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import main.api.response.PostByIdApi;
 import main.api.response.PostListApi;
 import main.api.response.ResponsePostApi;
+import main.api.response.ResponsePostApiToModeration;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.Post;
@@ -154,5 +155,12 @@ public class PostService {
       }
     }
     return null;
+  }
+
+  public PostListApi getAllPostsToModeration(Pageable pageable, String status) {
+    Page<ResponsePostApiToModeration> pageApiNew = postRepository
+        .findAllPostsToModeration(pageable, status)
+        .map(p -> postMapper.postToResponsePostApiToModeration(p));
+    return new PostListApi(pageApiNew.toList(), pageApiNew.getTotalElements());
   }
 }

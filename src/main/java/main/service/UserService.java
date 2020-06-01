@@ -1,6 +1,7 @@
 package main.service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Optional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -50,8 +51,8 @@ public class UserService implements UserDetailsService {
     user.setEmail(registerFormUser.getEmail());
     user.setName(registerFormUser.getName());
     user.setRole(new Role(1, "ROLE_USER"));
-    user.setPassword(passwordEncoder().encode(user.getPassword()));
-    System.out.println(user.toString());
+    user.setRegTime(new Date());
+    user.setPassword(passwordEncoder().encode(registerFormUser.getPassword()));
     userRepository.save(user);
     log.info("saved user");
     return true;

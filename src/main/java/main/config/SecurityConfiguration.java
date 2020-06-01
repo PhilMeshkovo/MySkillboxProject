@@ -21,11 +21,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
-    http
-        .authorizeRequests()
-        .antMatchers("/api/post/**", "/api/auth/register")
-        .permitAll()
-        .anyRequest().authenticated()
+    http.cors().disable().csrf().disable()
+        .authorizeRequests().antMatchers("/api/post/**", "/api/auth/register").permitAll();
+    http.authorizeRequests().anyRequest().authenticated()
         .and()
         .formLogin().and()
         .logout().logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
