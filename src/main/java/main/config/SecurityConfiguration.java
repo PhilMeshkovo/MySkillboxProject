@@ -19,10 +19,25 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Autowired
   private UserService userService;
 
+  private static final String[] AUTH_WHITELIST = {
+      "/api/post",
+      "/api/post/{id}",
+      "/api/post/byDate",
+      "/api/post/byTag",
+      "/api/post/search",
+      "/api/auth/register"
+  };
+  private static final String[] AUTH_BLACKLIST = {
+      "/api/post/moderation",
+      "/api/post/my"
+  };
+
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     http.cors().disable().csrf().disable()
-        .authorizeRequests().antMatchers("/api/post/**", "/api/auth/register").permitAll();
+        .authorizeRequests().antMatchers(AUTH_BLACKLIST).authenticated()
+        .and()
+        .authorizeRequests().antMatchers(AUTH_WHITELIST).permitAll();
     http.authorizeRequests().anyRequest().authenticated()
         .and()
         .formLogin().and()

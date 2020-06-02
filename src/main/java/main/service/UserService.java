@@ -11,6 +11,9 @@ import main.model.User;
 import main.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.acls.model.NotFoundException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -56,5 +59,25 @@ public class UserService implements UserDetailsService {
     userRepository.save(user);
     log.info("saved user");
     return true;
+  }
+
+  public User getCurrentUser() throws Exception {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+    if (null == auth) {
+      throw new NotFoundException("");
+    }
+
+    Object obj = auth.getPrincipal();
+    String username = "";
+
+    if (obj instanceof UserDetails) {
+      username = ((UserDetails) obj).getUsername();
+    } else {
+      username = obj.toString();
+    }
+
+    User us = userRepository.findByEmail(username).get();
+    return us;
   }
 }

@@ -15,6 +15,13 @@ public class UserMapper {
     return userApi;
   }
 
+  public UserApi userToUserApiWithEmailName(User user) {
+    UserApi userApi = new UserApi();
+    userApi.setId(user.getId());
+    userApi.setName(user.getEmail());
+    return userApi;
+  }
+
   public UserApiWithPhoto userToUserWithPhoto(User user) {
     UserApiWithPhoto userApi = new UserApiWithPhoto();
     userApi.setId(user.getId());

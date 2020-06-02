@@ -58,6 +58,15 @@ public class ApiPostController {
     return postService.getAllPostsByTag(offset, limit, tag);
   }
 
+  @GetMapping("/my")
+  public PostListApi getAllMyPosts(
+      @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
+      @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
+      @RequestParam(value = "status", defaultValue = "inactive", required = false) String status)
+      throws Exception {
+    return postService.getAllMyPosts(PageRequest.of(offset, limit), status);
+  }
+
   @GetMapping("/moderation")
   public PostListApi getAllPostsToModeration(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,

@@ -27,6 +27,17 @@ public class PostMapper {
     return responsePostApi;
   }
 
+  public ResponsePostApi postToResponsePostApiWithEmailName(Post post) {
+    ResponsePostApi responsePostApi = new ResponsePostApi();
+    responsePostApi.setId(post.getId());
+    responsePostApi.setTime(post.getTime());
+    responsePostApi.setUser(userMapper.userToUserApiWithEmailName(post.getUser()));
+    responsePostApi.setTitle(post.getTitle());
+    responsePostApi.setAnnounce(post.getText());
+    responsePostApi.setViewCount(post.getView_count());
+    return responsePostApi;
+  }
+
   public List<ResponsePostApi> postToResponsePostApi(List<Post> posts) {
     List<ResponsePostApi> postApiList = new ArrayList<>();
     for (Post post : posts) {

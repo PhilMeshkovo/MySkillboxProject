@@ -17,6 +17,7 @@ import main.mapper.PostMapper;
 import main.model.Post;
 import main.model.PostComment;
 import main.model.Tag;
+import main.model.User;
 import main.model.enums.ModerationStatus;
 import main.repository.PostCommentRepository;
 import main.repository.PostRepository;
@@ -47,6 +48,9 @@ public class PostService {
 
   @Autowired
   CommentMapper commentMapper;
+
+  @Autowired
+  UserService userService;
 
   public PostListApi getAllPosts(Pageable pageable, String mode) {
     Page<ResponsePostApi> pageApi;
@@ -157,10 +161,51 @@ public class PostService {
     return null;
   }
 
+  public PostListApi getAllMyPosts(Pageable pageable, String status) throws Exception {
+    User currentUser = userService.getCurrentUser();
+    String email = currentUser.getEmail();
+    Page<Post> allMyPosts = postRepository.findAllMyPosts(pageable, currentUser.getId());
+    List<ResponsePostApi> listResponse;
+    List<ResponsePostApi> listResponseApi;
+    if (status.toUpperCase().equals("INACTIVE")) {
+      listResponse = allMyPosts.stream().filter(p -> p.getIsActive() == 0)
+          .map(p -> postMapper.postToResponsePostApiWithEmailName(p))
+          .collect(Collectors.toList());
+      listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
+      return new PostListApi(listResponseApi, listResponseApi.size());
+    }
+    if (status.toUpperCase().equals("PENDING")) {
+      listResponse = allMyPosts.stream().filter(p -> p.getIsActive() == 1
+          && p.getModerationStatus().equals(ModerationStatus.NEW))
+          .map(p -> postMapper.postToResponsePostApiWithEmailName(p))
+          .collect(Collectors.toList());
+      listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
+      return new PostListApi(listResponseApi, listResponseApi.size());
+    }
+    if (status.toUpperCase().equals("DECLINED")) {
+      listResponse = allMyPosts.stream().filter(p -> p.getIsActive() == 1
+          && p.getModerationStatus().equals(ModerationStatus.DECLINED))
+          .map(p -> postMapper.postToResponsePostApiWithEmailName(p))
+          .collect(Collectors.toList());
+      listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
+      return new PostListApi(listResponseApi, listResponseApi.size());
+    }
+    if (status.toUpperCase().equals("PUBLISHED")) {
+      listResponse = allMyPosts.stream().filter(p -> p.getIsActive() == 1
+          && p.getModerationStatus().equals(ModerationStatus.ACCEPTED))
+          .map(p -> postMapper.postToResponsePostApiWithEmailName(p))
+          .collect(Collectors.toList());
+      listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
+      return new PostListApi(listResponseApi, listResponseApi.size());
+    }
+    return null;
+  }
+
   public PostListApi getAllPostsToModeration(Pageable pageable, String status) {
     Page<ResponsePostApiToModeration> pageApiNew = postRepository
         .findAllPostsToModeration(pageable, status)
         .map(p -> postMapper.postToResponsePostApiToModeration(p));
     return new PostListApi(pageApiNew.toList(), pageApiNew.getTotalElements());
   }
+
 }
