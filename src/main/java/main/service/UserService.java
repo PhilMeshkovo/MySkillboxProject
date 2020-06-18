@@ -1,7 +1,7 @@
 package main.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Optional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +54,7 @@ public class UserService implements UserDetailsService {
     user.setEmail(registerFormUser.getEmail());
     user.setName(registerFormUser.getName());
     user.setRole(new Role(1, "ROLE_USER"));
-    user.setRegTime(new Date());
+    user.setRegTime(LocalDateTime.now());
     user.setPassword(passwordEncoder().encode(registerFormUser.getPassword()));
     userRepository.save(user);
     log.info("saved user");

@@ -1,6 +1,6 @@
 package main.model;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,7 +30,7 @@ public class PostVotes {
   private Post post;
 
   @Column(nullable = false)
-  private Date time;
+  private LocalDateTime time;
 
   @Column(nullable = false)
   private int value;

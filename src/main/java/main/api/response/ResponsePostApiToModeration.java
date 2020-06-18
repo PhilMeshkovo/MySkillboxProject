@@ -1,6 +1,6 @@
 package main.api.response;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 public class ResponsePostApiToModeration {
 
   private int id;
-  private Date time;
+  private LocalDateTime time;
   private UserApi user;
   private String title;
   private String announce;

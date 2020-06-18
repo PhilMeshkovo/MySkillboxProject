@@ -1,7 +1,7 @@
 package main.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.CascadeType;
@@ -17,6 +17,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -71,7 +72,7 @@ public class Post {
   @Column(nullable = false)
   @Getter
   @Setter
-  private Date time;
+  private LocalDateTime time;
 
   @Column(nullable = false)
   @Getter

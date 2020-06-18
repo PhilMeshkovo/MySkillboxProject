@@ -1,6 +1,6 @@
 package main.model;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -23,7 +23,7 @@ public class CaptchaCode {
 
 
   @Column(nullable = false)
-  private Date time;
+  private LocalDateTime time;
 
   @Column(nullable = false)
   private int code;

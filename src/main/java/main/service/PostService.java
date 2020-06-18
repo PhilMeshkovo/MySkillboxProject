@@ -1,13 +1,20 @@
 package main.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.persistence.EntityNotFoundException;
 import main.api.response.PostByIdApi;
 import main.api.response.PostListApi;
 import main.api.response.ResponsePostApi;
@@ -101,53 +108,72 @@ public class PostService {
     return null;
   }
 
-  public PostListApi getAllPostsByTagAndTitle(Integer offset, Integer limit, String query) {
-    Tag tag = tagRepository.findTagByQuery(query);
-    Set<Post> posts = tagRepository.findById(tag.getId()).get().getPosts();
-    HashSet<Post> postByQuery = postRepository.findPostByQuery(query);
-    Set<Post> union = Stream.concat(posts.stream(), postByQuery.stream()).
-        filter(p -> p.getTime().before(new Date())).
-        collect(Collectors.toSet());
-    List<ResponsePostApi> pageApi;
-    pageApi = union.stream().map(p -> postMapper.postToResponsePostApi(p)).
-        collect(Collectors.toList());
-    List<ResponsePostApi> responsePostApis = commentMapper
-        .addCommentsCountAndLikesForPosts(pageApi);
-    return new PostListApi(responsePostApis, responsePostApis.size());
+  public PostListApi getAllPostsByTagAndTitle(Integer offset, Integer limit, String query)
+      throws EntityNotFoundException {
+    Optional<Tag> tag = tagRepository.findTagByQuery(query);
+    if (!tag.isEmpty()) {
+      Set<Post> posts = tagRepository.findById(tag.get().getId()).get().getPosts();
+      HashSet<Post> postByQuery = postRepository.findPostByQuery(query);
+      Set<Post> union = Stream.concat(posts.stream(), postByQuery.stream()).
+          filter(p -> p.getTime().isBefore(LocalDateTime.now())).
+          collect(Collectors.toSet());
+      List<ResponsePostApi> pageApi;
+      pageApi = union.stream().map(p -> postMapper.postToResponsePostApi(p)).
+          collect(Collectors.toList());
+      List<ResponsePostApi> responsePostApis = commentMapper
+          .addCommentsCountAndLikesForPosts(pageApi);
+      return new PostListApi(responsePostApis, responsePostApis.size());
+    } else {
+      throw new EntityNotFoundException("Nothing found");
+    }
   }
 
   public PostListApi getAllPostsByTag(Integer offset, Integer limit, String tag) {
-    Tag tag1 = tagRepository.findTagByQuery(tag);
-    Set<Post> posts = tagRepository.findById(tag1.getId()).get().getPosts();
-    List<ResponsePostApi> pageApi = posts.stream()
-        .filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
-            .equals(ModerationStatus.ACCEPTED) && p.getTime().before(new Date())).
-            map(p -> postMapper.postToResponsePostApi(p)).
-            collect(Collectors.toList());
-    List<ResponsePostApi> responsePostApis = commentMapper
-        .addCommentsCountAndLikesForPosts(pageApi);
-    return new PostListApi(responsePostApis, responsePostApis.size());
+    Optional<Tag> tag1 = tagRepository.findTagByQuery(tag);
+    if (!tag1.isEmpty()) {
+      Set<Post> posts = tagRepository.findById(tag1.get().getId()).get().getPosts();
+      List<ResponsePostApi> pageApi = posts.stream()
+          .filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
+              .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now())).
+              map(p -> postMapper.postToResponsePostApi(p)).
+              collect(Collectors.toList());
+      if (pageApi.size() > 0) {
+        List<ResponsePostApi> responsePostApis = commentMapper
+            .addCommentsCountAndLikesForPosts(pageApi);
+        return new PostListApi(responsePostApis, responsePostApis.size());
+      } else {
+        throw new EntityNotFoundException("No active posts or moderated");
+      }
+    } else {
+      throw new EntityNotFoundException("Nothing found");
+    }
   }
 
   public PostListApi getAllPostsByDate(Integer offset, Integer limit, String date) {
     List<Post> allPosts = postRepository.findAll();
     List<Post> datePosts = allPosts.stream().filter(p -> p.getTime().toString().
         startsWith(date)).collect(Collectors.toList());
-    List<ResponsePostApi> pageApi = datePosts.stream().map(p -> postMapper.postToResponsePostApi(p))
-        .collect(Collectors.toList());
-    List<ResponsePostApi> responsePostApis = commentMapper
-        .addCommentsCountAndLikesForPosts(pageApi);
-    return new PostListApi(responsePostApis, responsePostApis.size());
+    if (datePosts.size() > 0) {
+      List<ResponsePostApi> pageApi = datePosts.stream()
+          .map(p -> postMapper.postToResponsePostApi(p))
+          .collect(Collectors.toList());
+      List<ResponsePostApi> responsePostApis = commentMapper
+          .addCommentsCountAndLikesForPosts(pageApi);
+      return new PostListApi(responsePostApis, responsePostApis.size());
+    } else {
+      throw new EntityNotFoundException("Nothing found");
+    }
   }
 
   public PostByIdApi findPostById(int postId) {
     Optional<Post> optional = postRepository.findById(postId);
     if (!optional.isEmpty()) {
+      PostByIdApi postByIdApi = new PostByIdApi();
       Post post = optional.get();
       if (post.getIsActive() == 1 && post.getModerationStatus().equals(ModerationStatus.ACCEPTED) &&
-          post.getTime().before(new Date())) {
+          post.getTime().isBefore(LocalDateTime.now())) {
         PostByIdApi postByIdApi1 = postMapper.postToPostById(post);
-        PostByIdApi postByIdApi = commentMapper.addCountCommentsAndLikesToPostById(postByIdApi1);
+        postByIdApi = commentMapper.addCountCommentsAndLikesToPostById(postByIdApi1);
         List<PostComment> commentsByPostId = postCommentRepository
             .findCommentsByPostId(post.getId());
         postByIdApi.setComments(commentMapper.postCommentListToCommentApi(commentsByPostId));
@@ -155,10 +181,12 @@ public class PostService {
         List<String> strings = tags.stream().map(t -> t.getName())
             .collect(Collectors.toList());
         postByIdApi.setTags(strings);
-        return postByIdApi;
+
       }
+      return postByIdApi;
+    } else {
+      throw new EntityNotFoundException("Nothing found");
     }
-    return null;
   }
 
   public PostListApi getAllMyPosts(Pageable pageable, String status) throws Exception {
@@ -208,4 +236,51 @@ public class PostService {
     return new PostListApi(pageApiNew.toList(), pageApiNew.getTotalElements());
   }
 
+  public JsonNode addPost(String time, Integer active, String title, String text, String tags)
+      throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    if (title.length() >= 10 && text.length() >= 500) {
+      User currentUser = userService.getCurrentUser();
+      Post post = new Post();
+      post.setUser(currentUser);
+      post.setModerationStatus(ModerationStatus.NEW);
+      post.setTitle(title);
+      post.setIsActive(active);
+      String[] arrayTags = tags.split(",");
+      Set<Tag> setTags = Arrays.stream(arrayTags).map(t -> tagRepository.findTagByQuery(t).get())
+          .collect(Collectors.toSet());
+      post.setTags(setTags);
+      post.setModerator(currentUser);
+      post.setText(text);
+      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-d HH:mm:ss");
+      LocalDateTime localDateTime = LocalDateTime.parse(time, formatter);
+      if (localDateTime.isBefore(LocalDateTime.now())) {
+        post.setTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+      } else {
+        post.setTime(localDateTime);
+      }
+      post.setView_count(0);
+      postRepository.save(post);
+
+      object.put("result", true);
+    }
+    if (title.length() < 10) {
+      object.put("result", false);
+      ObjectNode objectError = mapper.createObjectNode();
+      objectError.put("title", "Заголовок не установлен или короче 10 символов");
+      object.put("error", objectError);
+      if (text.length() < 500) {
+        objectError.put("text", "Текст публикации слишком кроткий");
+        object.put("error", objectError);
+      }
+    }
+    if (text.length() < 500 && title.length() >= 10) {
+      object.put("result", false);
+      ObjectNode objectError = mapper.createObjectNode();
+      objectError.put("text", "Текст публикации слишком кроткий");
+      object.put("error", objectError);
+    }
+    return object;
+  }
 }

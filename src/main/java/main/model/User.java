@@ -1,8 +1,8 @@
 package main.model;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -34,7 +34,7 @@ public class User implements UserDetails {
   private int isModerator;
 
   @Column(name = "reg_time")
-  private Date regTime;
+  private LocalDateTime regTime;
 
   @Column(nullable = false)
   private String name;

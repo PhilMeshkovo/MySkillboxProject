@@ -1,7 +1,7 @@
 package main.api.response;
 
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +15,7 @@ public class CommentsApi {
 
   private int id;
 
-  private Date time;
+  private LocalDateTime time;
 
   private String text;
 

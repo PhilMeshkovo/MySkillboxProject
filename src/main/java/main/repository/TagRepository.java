@@ -1,5 +1,6 @@
 package main.repository;
 
+import java.util.Optional;
 import main.model.Tag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +12,6 @@ public interface TagRepository extends JpaRepository<Tag, Integer> {
 
   @Query(nativeQuery = true,
       value = "SELECT * FROM tags WHERE name = :query ")
-  Tag findTagByQuery(@Param("query") String query);
+  Optional<Tag> findTagByQuery(@Param("query") String query);
 
 }

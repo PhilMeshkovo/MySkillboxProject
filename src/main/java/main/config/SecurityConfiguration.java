@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -37,12 +38,19 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     http.cors().disable().csrf().disable()
         .authorizeRequests().antMatchers(AUTH_BLACKLIST).authenticated()
         .and()
+        .authorizeRequests().antMatchers(HttpMethod.POST, "/api/post").authenticated()
+        .and()
         .authorizeRequests().antMatchers(AUTH_WHITELIST).permitAll();
     http.authorizeRequests().anyRequest().authenticated()
         .and()
         .formLogin().and()
         .logout().logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
         .permitAll();
+//    http.csrf().disable()
+//        .authorizeRequests()
+//        .antMatchers("/**", "/api/post/**","/api/auth/login").permitAll()   // маска /** открывает доступ ко всему
+//        .anyRequest()
+//        .authenticated();
 
   }
 
