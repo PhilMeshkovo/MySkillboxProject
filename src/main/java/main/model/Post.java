@@ -18,6 +18,8 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,6 +28,8 @@ import main.model.enums.ModerationStatus;
 
 @Entity
 @Table(name = "posts")
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(exclude = "posts")
 public class Post {

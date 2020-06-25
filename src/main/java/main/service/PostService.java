@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PostService {
@@ -61,13 +62,13 @@ public class PostService {
 
   public PostListApi getAllPosts(Pageable pageable, String mode) {
     Page<ResponsePostApi> pageApi;
-    if (mode.toUpperCase().equals("RECENT")) {
+    if (mode.equalsIgnoreCase("RECENT")) {
       pageApi = postRepository.findAllPostsOrderedByTime(pageable)
           .map(p -> postMapper.postToResponsePostApi(p));
       Page<ResponsePostApi> pageApiNew = commentMapper.addCommentsCountAndLikes(pageApi);
       return new PostListApi(pageApiNew.toList(), pageApiNew.getTotalElements());
     }
-    if (mode.toUpperCase().equals("POPULAR")) {
+    if (mode.equalsIgnoreCase("POPULAR")) {
       pageApi = postRepository.findAll(pageable)
           .map(p -> postMapper.postToResponsePostApi(p));
       Page<ResponsePostApi> pageApiNew = commentMapper.addCommentsCountAndLikes(pageApi);
@@ -86,7 +87,7 @@ public class PostService {
           }).collect(Collectors.toList());
       return new PostListApi(sortedPageApi, pageApiNew.getTotalElements());
     }
-    if (mode.toUpperCase().equals("BEST")) {
+    if (mode.equalsIgnoreCase("BEST")) {
       pageApi = postRepository.findAll(pageable)
           .map(p -> postMapper.postToResponsePostApi(p));
       Page<ResponsePostApi> pageApiNew = commentMapper.addCommentsCountAndLikes(pageApi);
@@ -129,9 +130,9 @@ public class PostService {
   }
 
   public PostListApi getAllPostsByTag(Integer offset, Integer limit, String tag) {
-    Optional<Tag> tag1 = tagRepository.findTagByQuery(tag);
-    if (!tag1.isEmpty()) {
-      Set<Post> posts = tagRepository.findById(tag1.get().getId()).get().getPosts();
+    Optional<Tag> tagById = tagRepository.findTagByQuery(tag);
+    if (!tagById.isEmpty()) {
+      Set<Post> posts = tagById.get().getPosts();
       List<ResponsePostApi> pageApi = posts.stream()
           .filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
               .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now())).
@@ -242,28 +243,78 @@ public class PostService {
     ObjectNode object = mapper.createObjectNode();
     if (title.length() >= 10 && text.length() >= 500) {
       User currentUser = userService.getCurrentUser();
-      Post post = new Post();
-      post.setUser(currentUser);
-      post.setModerationStatus(ModerationStatus.NEW);
-      post.setTitle(title);
-      post.setIsActive(active);
+
       String[] arrayTags = tags.split(",");
       Set<Tag> setTags = Arrays.stream(arrayTags).map(t -> tagRepository.findTagByQuery(t).get())
           .collect(Collectors.toSet());
-      post.setTags(setTags);
-      post.setModerator(currentUser);
-      post.setText(text);
+
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-d HH:mm:ss");
       LocalDateTime localDateTime = LocalDateTime.parse(time, formatter);
       if (localDateTime.isBefore(LocalDateTime.now())) {
-        post.setTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
-      } else {
-        post.setTime(localDateTime);
+        localDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
       }
-      post.setView_count(0);
+      Post post = Post.builder()
+          .user(currentUser)
+          .moderationStatus(ModerationStatus.NEW)
+          .title(title)
+          .isActive(active)
+          .tags(setTags)
+          .moderator(currentUser)
+          .text(text)
+          .time(localDateTime)
+          .view_count(0)
+          .build();
       postRepository.save(post);
 
       object.put("result", true);
+    }
+    if (title.length() < 10) {
+      object.put("result", false);
+      ObjectNode objectError = mapper.createObjectNode();
+      objectError.put("title", "Заголовок не установлен или короче 10 символов");
+      object.put("error", objectError);
+      if (text.length() < 500) {
+        objectError.put("text", "Текст публикации слишком кроткий");
+        object.put("error", objectError);
+      }
+    }
+    if (text.length() < 500 && title.length() >= 10) {
+      object.put("result", false);
+      ObjectNode objectError = mapper.createObjectNode();
+      objectError.put("text", "Текст публикации слишком кроткий");
+      object.put("error", objectError);
+    }
+    return object;
+  }
+  @Transactional
+  public JsonNode updatePost(int id, String time, Integer active, String title, String text,
+      String tags) throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    User currentUser = userService.getCurrentUser();
+    if (title.length() >= 10 && text.length() >= 500) {
+      Optional<Post> postById = postRepository.findById(id);
+      if (!postById.isEmpty() && postById.get().getUser().equals(currentUser)) {
+        String[] arrayTags = tags.split(",");
+        Set<Tag> setTags = Arrays.stream(arrayTags).map(t -> tagRepository.findTagByQuery(t).get())
+            .collect(Collectors.toSet());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-d HH:mm:ss");
+        LocalDateTime localDateTime = LocalDateTime.parse(time, formatter);
+        if (localDateTime.isBefore(LocalDateTime.now())) {
+          localDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+        }
+
+        Post postToUpdate = postRepository.getOne(id);
+        postToUpdate.setTime(localDateTime);
+        postToUpdate.setIsActive(active);
+        postToUpdate.setTitle(title);
+        postToUpdate.setText(text);
+        postToUpdate.setTags(setTags);
+
+        object.put("result", true);
+      } else {
+        throw new EntityNotFoundException("post does not exist or it is not yours");
+      }
     }
     if (title.length() < 10) {
       object.put("result", false);
