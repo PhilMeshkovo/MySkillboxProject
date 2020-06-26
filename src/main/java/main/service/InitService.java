@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Random;
 import javax.imageio.ImageIO;
-import liquibase.pro.packaged.S;
 import main.api.response.ResponseApiInit;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,14 +30,14 @@ public class InitService {
     byte[] byteArr = image.getBytes();
     InputStream inputStream = new ByteArrayInputStream(byteArr);
     BufferedImage bufferedImage = ImageIO.read(inputStream);
-    List<String> listDirs = List.of(randomLetter(),randomLetter(),randomLetter());
+    List<String> listDirs = List.of(randomLetter(), randomLetter(), randomLetter());
     File dir = new File("src/main/resources/static/upload");
-    if(!dir.exists()){
+    if (!dir.exists()) {
       dir.mkdir();
     }
     for (String listDir : listDirs) {
       File theDir = new File(dir + "/" + listDir);
-      if (!theDir.exists()){
+      if (!theDir.exists()) {
         theDir.mkdir();
       }
       dir = theDir;
@@ -46,12 +45,12 @@ public class InitService {
     Random random = new Random();
     File filePath = new File(dir + "/" + random.nextInt(100000) + ".jpg");
     ImageIO.write(bufferedImage, "jpg", filePath);
-      return filePath.toString();
+    return filePath.toString();
   }
 
-  private String randomLetter(){
+  private String randomLetter() {
     Random random = new Random();
-    char c = (char)(random.nextInt(26) + 'a');
+    char c = (char) (random.nextInt(26) + 'a');
     return String.valueOf(c);
   }
 }

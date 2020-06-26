@@ -19,6 +19,7 @@ import main.api.response.PostByIdApi;
 import main.api.response.PostListApi;
 import main.api.response.ResponsePostApi;
 import main.api.response.ResponsePostApiToModeration;
+import main.dto.PostCommentDto;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.Post;
@@ -286,6 +287,7 @@ public class PostService {
     }
     return object;
   }
+
   @Transactional
   public JsonNode updatePost(int id, String time, Integer active, String title, String text,
       String tags) throws Exception {
@@ -332,6 +334,65 @@ public class PostService {
       objectError.put("text", "Текст публикации слишком кроткий");
       object.put("error", objectError);
     }
+    return object;
+  }
+
+  public JsonNode addCommentToPost(PostCommentDto postCommentDto) throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    Integer postId = postCommentDto.getPostId();
+    String text = postCommentDto.getText();
+    Optional<Post> postById = postRepository.findById(postId);
+    User currentUser = userService.getCurrentUser();
+    if (!postById.isEmpty() && text.length() > 10 && postCommentDto.getParentId() != null
+        && !postCommentRepository.findById(postCommentDto.getParentId()).isEmpty()
+        && postCommentRepository.findById(postCommentDto.getParentId()).get().getPost()
+        .equals(postById.get())) {
+      PostComment parent = postCommentRepository.findById(postCommentDto.getParentId()).get();
+      PostComment postComment = PostComment.builder()
+          .post(postById.get())
+          .parent(parent)
+          .user(currentUser)
+          .time(LocalDateTime.now())
+          .text(text)
+          .build();
+      PostComment savedPostComment = postCommentRepository.save(postComment);
+      object.put("id", savedPostComment.getId());
+    }
+    if (!postById.isEmpty() && text.length() > 9 && postCommentDto.getParentId() == null) {
+      PostComment postComment = PostComment.builder()
+          .post(postById.get())
+          .user(currentUser)
+          .time(LocalDateTime.now())
+          .text(text)
+          .build();
+      PostComment savedPostComment = postCommentRepository.save(postComment);
+      object.put("id", savedPostComment.getId());
+    }
+    if (postCommentDto.getParentId() != null && !postById.isEmpty() && !postCommentRepository
+        .findById(postCommentDto.getParentId()).get().getPost().equals(postById.get())) {
+      object.put("result", false);
+      ObjectNode objectError = mapper.createObjectNode();
+      objectError.put("parent", "No parent comment on this post");
+      object.put("error", objectError);
+    }
+    if (postById.isEmpty()) {
+      object.put("result", false);
+      ObjectNode objectError = mapper.createObjectNode();
+      objectError.put("post", "Post not exist");
+      object.put("error", objectError);
+      if (text.length() < 10) {
+        objectError.put("text", "Comment text too short");
+        object.put("error", objectError);
+      }
+    }
+    if (!postById.isEmpty() && text.length() < 10) {
+      object.put("result", false);
+      ObjectNode objectError = mapper.createObjectNode();
+      objectError.put("text", "Comment text too short");
+      object.put("error", objectError);
+    }
+
     return object;
   }
 }

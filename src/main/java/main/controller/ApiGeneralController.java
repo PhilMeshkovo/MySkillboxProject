@@ -5,8 +5,6 @@ import main.api.response.ResponseApiInit;
 import main.service.InitService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,9 +31,8 @@ public class ApiGeneralController {
     try {
       String answer = initService.uploadImage(image);
       return answer;
-    } catch (IOException e){
+    } catch (IOException e) {
       return e.getMessage();
     }
-
   }
 }
