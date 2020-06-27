@@ -27,7 +27,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       "/api/post/byTag",
       "/api/post/search",
       "/api/auth/register",
-      "/api/image"
+      "/api/image",
+      "api/auth/login"
   };
   private static final String[] AUTH_BLACKLIST = {
       "/api/post/moderation",
@@ -40,6 +41,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .authorizeRequests().antMatchers(AUTH_BLACKLIST).authenticated()
         .and()
         .authorizeRequests().antMatchers(HttpMethod.POST, "/api/post").authenticated()
+        .and()
+        .authorizeRequests().antMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
         .and()
         .authorizeRequests().antMatchers(AUTH_WHITELIST).permitAll();
     http.authorizeRequests().anyRequest().authenticated()

@@ -1,5 +1,8 @@
 package main.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -79,5 +82,28 @@ public class UserService implements UserDetailsService {
 
     User us = userRepository.findByEmail(username).get();
     return us;
+  }
+
+  public JsonNode login(String email, String password) {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    ObjectNode objectUser = mapper.createObjectNode();
+    Optional<User> userByEmail = userRepository.findByEmail(email);
+    if (!userByEmail.isEmpty() && passwordEncoder()
+        .matches(password, userByEmail.get().getPassword())) {
+      objectUser.put("id", userByEmail.get().getId());
+      objectUser.put("name", userByEmail.get().getName());
+      objectUser.put("email", userByEmail.get().getEmail());
+      objectUser.put("moderation", true);
+      objectUser.put("moderationCount", 21);
+      objectUser.put("settings", true);
+      object.put("result", true);
+      object.put("user", objectUser);
+    } else {
+      object.put("result", false);
+    }
+    System.out.println(passwordEncoder()
+        .matches(password, userByEmail.get().getPassword()));
+    return object;
   }
 }

@@ -1,7 +1,7 @@
 package main.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import main.model.RegisterForm;
-import main.repository.UserRepository;
 import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,9 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class ApiAuthController {
 
   @Autowired
-  UserRepository userRepository;
-
-  @Autowired
   UserService userService;
 
   @PostMapping("/register")
@@ -29,8 +26,9 @@ public class ApiAuthController {
 
   @PostMapping("/login")
   public ResponseEntity<?> login(
-      @RequestParam(value = "email")String email,
-      @RequestParam(value = "password")String password){
-    return new ResponseEntity<>("done", HttpStatus.OK);
+      @RequestParam(value = "email") String email,
+      @RequestParam(value = "password") String password) {
+    JsonNode object = userService.login(email, password);
+    return new ResponseEntity<>(object, HttpStatus.OK);
   }
 }
