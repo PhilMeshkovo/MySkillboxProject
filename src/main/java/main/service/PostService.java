@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -19,7 +20,9 @@ import main.api.response.PostByIdApi;
 import main.api.response.PostListApi;
 import main.api.response.ResponsePostApi;
 import main.api.response.ResponsePostApiToModeration;
+import main.dto.ListTagsDto;
 import main.dto.PostCommentDto;
+import main.dto.TagDto;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.Post;
@@ -394,5 +397,62 @@ public class PostService {
     }
 
     return object;
+  }
+
+  public ListTagsDto getTag(String query) {
+    ListTagsDto listTagsDto = new ListTagsDto();
+    long totalPosts = postRepository.count();
+    List<TagDto> tagDtoList = new ArrayList<>();
+    if (query.equals("")) {
+      List<Tag> allTags = tagRepository.findAll();
+      for (Tag tag : allTags) {
+        TagDto tagDto = TagDto.builder()
+            .name(tag.getName())
+            .weight(getWeightOfTag(tag))
+            .build();
+        tagDtoList.add(tagDto);
+      }
+      listTagsDto.setTags(tagDtoList);
+      return listTagsDto;
+    } else {
+      String[] arrayTags = query.split(",");
+      for (String arrayTag : arrayTags) {
+        Optional<Tag> tagByQuery = tagRepository.findTagByQuery(arrayTag);
+        if (!tagByQuery.isEmpty()) {
+          getWeightOfTag(tagByQuery.get());
+          int amountTagInPosts = tagByQuery.get().getPosts().size();
+          TagDto tagDto = TagDto.builder()
+              .name(tagByQuery.get().getName())
+              .weight(getWeightOfTag(tagByQuery.get()))
+              .build();
+          tagDtoList.add(tagDto);
+        } else {
+          throw new EntityNotFoundException( "tag '" + arrayTag + "' - does not exist");
+        }
+      }
+      listTagsDto.setTags(tagDtoList);
+      return listTagsDto;
+    }
+  }
+
+  private Double getWeightOfTag(Tag tag){
+    double countActivePosts = postRepository.findAll().stream().filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
+        .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now())).count();
+    double countPostsWithThisTag = tag.getPosts().stream().filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
+        .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now())).count();
+    List<Tag> allTags = tagRepository.findAll();
+    double maxPostsTag = 0.0;
+    for (Tag tags : allTags) {
+      double activePosts = tags.getPosts().stream()
+          .filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
+              .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now()))
+          .count();
+      if (activePosts > maxPostsTag){
+        maxPostsTag = activePosts;
+      }
+    }
+    double coefficient = countActivePosts/maxPostsTag;
+    double weight = (countPostsWithThisTag/countActivePosts) * coefficient;
+    return weight;
   }
 }

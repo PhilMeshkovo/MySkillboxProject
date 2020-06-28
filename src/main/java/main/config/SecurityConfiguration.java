@@ -28,7 +28,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       "/api/post/search",
       "/api/auth/register",
       "/api/image",
-      "api/auth/login"
+      "/api/auth/login",
+      "/api/tag"
   };
   private static final String[] AUTH_BLACKLIST = {
       "/api/post/moderation",

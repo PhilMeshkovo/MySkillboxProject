@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import main.model.RegisterForm;
@@ -31,6 +34,8 @@ public class UserService implements UserDetailsService {
   @Autowired
   UserRepository userRepository;
 
+  @Autowired
+  HttpServletRequest request;
 
   @Override
   public UserDetails loadUserByUsername(@NonNull String username)
@@ -85,12 +90,17 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode login(String email, String password) {
+    Map<String, Integer> authorizedUsers = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     ObjectNode objectUser = mapper.createObjectNode();
     Optional<User> userByEmail = userRepository.findByEmail(email);
     if (!userByEmail.isEmpty() && passwordEncoder()
         .matches(password, userByEmail.get().getPassword())) {
+      String sessionId = request.getSession().getId();
+      User currentUser = userByEmail.get();
+      authorizedUsers.put(sessionId, currentUser.getId());
+
       objectUser.put("id", userByEmail.get().getId());
       objectUser.put("name", userByEmail.get().getName());
       objectUser.put("email", userByEmail.get().getEmail());
@@ -102,8 +112,6 @@ public class UserService implements UserDetailsService {
     } else {
       object.put("result", false);
     }
-    System.out.println(passwordEncoder()
-        .matches(password, userByEmail.get().getPassword()));
     return object;
   }
 }

@@ -5,6 +5,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import main.api.response.PostByIdApi;
 import main.api.response.PostListApi;
+import main.dto.ListTagsDto;
 import main.dto.PostCommentDto;
 import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -145,5 +146,17 @@ public class ApiPostController {
       return new ResponseEntity<>(jsonNode, HttpStatus.BAD_REQUEST);
     }
     return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+  }
+
+  @GetMapping("/tag")
+  public ResponseEntity<?> getTags(@RequestParam(value = "query", defaultValue = "")String query){
+
+    try {
+      ListTagsDto listTagsDto  = postService.getTag(query);
+      return new ResponseEntity<>(listTagsDto, HttpStatus.OK);
+    } catch (EntityNotFoundException e){
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
   }
 }
