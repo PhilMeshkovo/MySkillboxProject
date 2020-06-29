@@ -157,6 +157,17 @@ public class ApiPostController {
     } catch (EntityNotFoundException e){
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
+  }
 
+  @PostMapping("/moderation")
+  public ResponseEntity<?> moderationPost(
+      @RequestParam(value = "post_id")Integer postId,
+      @RequestParam(value = "decision")String decision) throws Exception {
+    try {
+      boolean answer = postService.moderationPost(postId, decision);
+      return new ResponseEntity<>(answer, HttpStatus.OK);
+    } catch (Exception e){
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
   }
 }

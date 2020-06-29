@@ -455,4 +455,24 @@ public class PostService {
     double weight = (countPostsWithThisTag/countActivePosts) * coefficient;
     return weight;
   }
+
+  @Transactional
+  public boolean moderationPost(Integer postId, String decision) throws Exception {
+    Optional<Post> postById = postRepository.findById(postId);
+    if(!postById.isEmpty() && decision.equalsIgnoreCase("accept")
+        || !postById.isEmpty() && decision.equalsIgnoreCase("decline")){
+      Post postToModeration = postRepository.getOne(postId);
+      if (decision.equalsIgnoreCase("accept")){
+        postToModeration.setModerationStatus(ModerationStatus.ACCEPTED);
+      }
+      if (decision.equalsIgnoreCase("decline")){
+        postToModeration.setModerationStatus(ModerationStatus.DECLINED);
+      }
+      User currentUser = userService.getCurrentUser();
+      postToModeration.setModerator(currentUser);
+      return true;
+    } else {
+      throw new Exception("post does not exist or decision is impossible");
+    }
+  }
 }
