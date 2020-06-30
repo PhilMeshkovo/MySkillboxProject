@@ -32,12 +32,12 @@ public class ApiPostController {
   @Autowired
   private HttpServletRequest request;
 
-  @GetMapping
+  @GetMapping("/post")
   public PostListApi getAllPosts(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
-      @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
+      @RequestParam(value = "limit", defaultValue = "20", required = false) Integer limit,
       @RequestParam(value = "mode", defaultValue = "recent", required = false) String mode) {
-    return postService.getAllPosts(PageRequest.of(offset, limit), mode);
+    return postService.getAllPosts(offset, limit, mode);
   }
 
   @GetMapping("/post/search")
@@ -110,7 +110,7 @@ public class ApiPostController {
     return postService.getAllPostsToModeration(PageRequest.of(offset, limit), status);
   }
 
-  @PostMapping
+  @PostMapping("/post")
   public JsonNode addPost(
       @RequestParam(value = "time", required = false) String time,
       @RequestParam(value = "active", required = false) Integer active,
@@ -169,5 +169,11 @@ public class ApiPostController {
     } catch (Exception e){
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
+  }
+  @GetMapping("/calendar")
+  public ResponseEntity<?> getAllPostsInYear(
+      @RequestParam(value = "year", defaultValue = "")String year){
+    JsonNode object = postService.getAllPostsInYear(year);
+    return new ResponseEntity<>(object, HttpStatus.OK);
   }
 }

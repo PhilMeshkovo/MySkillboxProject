@@ -2,15 +2,18 @@ package main.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,12 +39,15 @@ import main.repository.PostVotesRepository;
 import main.repository.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PostService {
+
+  private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   @Autowired
   PostRepository postRepository;
@@ -64,18 +70,30 @@ public class PostService {
   @Autowired
   UserService userService;
 
-  public PostListApi getAllPosts(Pageable pageable, String mode) {
-    Page<ResponsePostApi> pageApi;
+  public PostListApi getAllPosts(Integer offset, Integer limit, String mode) {
+    List<ResponsePostApi> responsePostApiList;
     if (mode.equalsIgnoreCase("RECENT")) {
-      pageApi = postRepository.findAllPostsOrderedByTime(pageable)
-          .map(p -> postMapper.postToResponsePostApi(p));
-      Page<ResponsePostApi> pageApiNew = commentMapper.addCommentsCountAndLikes(pageApi);
-      return new PostListApi(pageApiNew.toList(), pageApiNew.getTotalElements());
+      responsePostApiList = postRepository
+          .findAllPostsOrderedByTimeDesc(offset, limit).stream()
+          .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
+      List<ResponsePostApi> pageApiNew = commentMapper
+          .addCommentsCountAndLikesForPosts(responsePostApiList);
+      return new PostListApi(pageApiNew, pageApiNew.size());
+    }
+    if (mode.equalsIgnoreCase("EARLY")) {
+      responsePostApiList = postRepository
+          .findAllPostsOrderedByTime(offset, limit).stream()
+          .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
+      List<ResponsePostApi> pageApiNew = commentMapper
+          .addCommentsCountAndLikesForPosts(responsePostApiList);
+      return new PostListApi(pageApiNew, pageApiNew.size());
     }
     if (mode.equalsIgnoreCase("POPULAR")) {
-      pageApi = postRepository.findAll(pageable)
-          .map(p -> postMapper.postToResponsePostApi(p));
-      Page<ResponsePostApi> pageApiNew = commentMapper.addCommentsCountAndLikes(pageApi);
+      responsePostApiList = postRepository
+          .findAllPostsPageable(offset, limit).stream()
+          .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
+      List<ResponsePostApi> pageApiNew = commentMapper
+          .addCommentsCountAndLikesForPosts(responsePostApiList);
       List<ResponsePostApi> sortedPageApi = pageApiNew.stream()
           .sorted(new Comparator<ResponsePostApi>() {
             @Override
@@ -89,12 +107,14 @@ public class PostService {
               }
             }
           }).collect(Collectors.toList());
-      return new PostListApi(sortedPageApi, pageApiNew.getTotalElements());
+      return new PostListApi(sortedPageApi, pageApiNew.size());
     }
     if (mode.equalsIgnoreCase("BEST")) {
-      pageApi = postRepository.findAll(pageable)
-          .map(p -> postMapper.postToResponsePostApi(p));
-      Page<ResponsePostApi> pageApiNew = commentMapper.addCommentsCountAndLikes(pageApi);
+      responsePostApiList = postRepository
+          .findAllPostsPageable(offset, limit).stream()
+          .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
+      List<ResponsePostApi> pageApiNew = commentMapper
+          .addCommentsCountAndLikesForPosts(responsePostApiList);
       List<ResponsePostApi> sortedPageApi = pageApiNew.stream()
           .sorted(new Comparator<ResponsePostApi>() {
             @Override
@@ -108,7 +128,7 @@ public class PostService {
               }
             }
           }).collect(Collectors.toList());
-      return new PostListApi(sortedPageApi, pageApiNew.getTotalElements());
+      return new PostListApi(sortedPageApi, pageApiNew.size());
     }
     return null;
   }
@@ -155,7 +175,7 @@ public class PostService {
   }
 
   public PostListApi getAllPostsByDate(Integer offset, Integer limit, String date) {
-    List<Post> allPosts = postRepository.findAll();
+    Page<Post> allPosts = postRepository.findAll(PageRequest.of(offset, limit));
     List<Post> datePosts = allPosts.stream().filter(p -> p.getTime().toString().
         startsWith(date)).collect(Collectors.toList());
     if (datePosts.size() > 0) {
@@ -251,11 +271,11 @@ public class PostService {
       String[] arrayTags = tags.split(",");
       Set<Tag> setTags = Arrays.stream(arrayTags).map(t -> tagRepository.findTagByQuery(t).get())
           .collect(Collectors.toSet());
-
-      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-d HH:mm:ss");
-      LocalDateTime localDateTime = LocalDateTime.parse(time, formatter);
-      if (localDateTime.isBefore(LocalDateTime.now())) {
-        localDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+      DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+      LocalDate localDate = LocalDate.parse(time, dateFormatter);
+      LocalDateTime localDateTime = localDate.atStartOfDay().plusHours(3L);
+      if (localDateTime.isAfter(LocalDateTime.now().plusHours(3L))) {
+        localDateTime = LocalDateTime.now().plusHours(3L);
       }
       Post post = Post.builder()
           .user(currentUser)
@@ -303,12 +323,12 @@ public class PostService {
         String[] arrayTags = tags.split(",");
         Set<Tag> setTags = Arrays.stream(arrayTags).map(t -> tagRepository.findTagByQuery(t).get())
             .collect(Collectors.toSet());
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-d HH:mm:ss");
-        LocalDateTime localDateTime = LocalDateTime.parse(time, formatter);
-        if (localDateTime.isBefore(LocalDateTime.now())) {
-          localDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate localDate = LocalDate.parse(time, dateFormatter);
+        LocalDateTime localDateTime = localDate.atStartOfDay().plusHours(3L);
+        if (localDateTime.isAfter(LocalDateTime.now().plusHours(3L))) {
+          localDateTime = LocalDateTime.now().plusHours(3L);
         }
-
         Post postToUpdate = postRepository.getOne(id);
         postToUpdate.setTime(localDateTime);
         postToUpdate.setIsActive(active);
@@ -427,7 +447,7 @@ public class PostService {
               .build();
           tagDtoList.add(tagDto);
         } else {
-          throw new EntityNotFoundException( "tag '" + arrayTag + "' - does not exist");
+          throw new EntityNotFoundException("tag '" + arrayTag + "' - does not exist");
         }
       }
       listTagsDto.setTags(tagDtoList);
@@ -435,11 +455,15 @@ public class PostService {
     }
   }
 
-  private Double getWeightOfTag(Tag tag){
-    double countActivePosts = postRepository.findAll().stream().filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
-        .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now())).count();
-    double countPostsWithThisTag = tag.getPosts().stream().filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
-        .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now())).count();
+  private Double getWeightOfTag(Tag tag) {
+    double countActivePosts = postRepository.findAll().stream()
+        .filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
+            .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now()))
+        .count();
+    double countPostsWithThisTag = tag.getPosts().stream()
+        .filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
+            .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now()))
+        .count();
     List<Tag> allTags = tagRepository.findAll();
     double maxPostsTag = 0.0;
     for (Tag tags : allTags) {
@@ -447,25 +471,25 @@ public class PostService {
           .filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
               .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now()))
           .count();
-      if (activePosts > maxPostsTag){
+      if (activePosts > maxPostsTag) {
         maxPostsTag = activePosts;
       }
     }
-    double coefficient = countActivePosts/maxPostsTag;
-    double weight = (countPostsWithThisTag/countActivePosts) * coefficient;
+    double coefficient = countActivePosts / maxPostsTag;
+    double weight = (countPostsWithThisTag / countActivePosts) * coefficient;
     return weight;
   }
 
   @Transactional
   public boolean moderationPost(Integer postId, String decision) throws Exception {
     Optional<Post> postById = postRepository.findById(postId);
-    if(!postById.isEmpty() && decision.equalsIgnoreCase("accept")
-        || !postById.isEmpty() && decision.equalsIgnoreCase("decline")){
+    if (!postById.isEmpty() && decision.equalsIgnoreCase("accept")
+        || !postById.isEmpty() && decision.equalsIgnoreCase("decline")) {
       Post postToModeration = postRepository.getOne(postId);
-      if (decision.equalsIgnoreCase("accept")){
+      if (decision.equalsIgnoreCase("accept")) {
         postToModeration.setModerationStatus(ModerationStatus.ACCEPTED);
       }
-      if (decision.equalsIgnoreCase("decline")){
+      if (decision.equalsIgnoreCase("decline")) {
         postToModeration.setModerationStatus(ModerationStatus.DECLINED);
       }
       User currentUser = userService.getCurrentUser();
@@ -474,5 +498,36 @@ public class PostService {
     } else {
       throw new Exception("post does not exist or decision is impossible");
     }
+  }
+
+  public JsonNode getAllPostsInYear(String year) {
+    List<Post> allPosts = postRepository.findAll();
+    List<Post> allPostsInYear;
+    if (year.equals("") || !year.matches("\\d{4}")) {
+      String yearNow = String.valueOf(LocalDateTime.now().getYear());
+      allPostsInYear = allPosts.stream().filter(p -> p.getTime().toString().startsWith(yearNow))
+          .collect(Collectors.toList());
+    } else {
+      allPostsInYear = allPosts.stream().filter(p -> p.getTime().toString().startsWith(year))
+          .collect(Collectors.toList());
+    }
+    Set<Integer> allYears = allPosts.stream().map(p -> p.getTime().getYear())
+        .collect(Collectors.toSet());
+    List<Integer> years = allYears.stream().sorted(Comparator.reverseOrder())
+        .collect(Collectors.toList());
+    Map<String, Integer> dateToCountPosts = new HashMap<>();
+    for (Post post : allPostsInYear) {
+      Integer countPosts = Math.toIntExact(
+          allPostsInYear.stream().filter(p -> p.getTime().toString().substring(0, 10)
+              .equals(post.getTime().toString().substring(0, 10))).count());
+      dateToCountPosts.put(post.getTime().toString().substring(0, 10), countPosts);
+    }
+    ObjectMapper mapper = new ObjectMapper();
+    ArrayNode array = mapper.valueToTree(years);
+    JsonNode map = mapper.valueToTree(dateToCountPosts);
+    ObjectNode object = mapper.createObjectNode();
+    object.putArray("years").addAll(array);
+    object.put("posts", map);
+    return object;
   }
 }

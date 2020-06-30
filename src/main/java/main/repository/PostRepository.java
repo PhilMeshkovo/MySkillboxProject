@@ -14,8 +14,25 @@ import org.springframework.stereotype.Repository;
 public interface PostRepository extends JpaRepository<Post, Integer> {
 
   @Query(nativeQuery = true,
-      value = "SELECT * FROM posts ORDER BY posts.time DESC ")
-  Page<Post> findAllPostsOrderedByTime(Pageable pageable);
+      value =
+          "SELECT * FROM posts WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time < now()"
+              + "  ORDER BY posts.time DESC limit :limit offset :offset")
+  List<Post> findAllPostsOrderedByTimeDesc(@Param("offset") Integer offset,
+      @Param("limit") Integer limit);
+
+  @Query(nativeQuery = true,
+      value =
+          "SELECT * FROM posts WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time < now()"
+              + "  ORDER BY posts.time limit :limit offset :offset")
+  List<Post> findAllPostsOrderedByTime(@Param("offset") Integer offset,
+      @Param("limit") Integer limit);
+
+  @Query(nativeQuery = true,
+      value =
+          "SELECT * FROM posts WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time < now()"
+              + "   limit :limit offset :offset")
+  List<Post> findAllPostsPageable(@Param("offset") Integer offset,
+      @Param("limit") Integer limit);
 
   @Query(nativeQuery = true,
       value = "SELECT * FROM posts WHERE title = :query ")
@@ -33,4 +50,12 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
   @Query(nativeQuery = true,
       value = "SELECT * FROM posts WHERE user_id = :id ")
   Page<Post> findAllMyPosts(Pageable pageable, @Param("id") int id);
+
+
+//  @Query(nativeQuery = true,
+//      value =
+//          "SELECT * FROM posts WHERE DATEPART(yy-mm-dd, time) LIKE ':date%' AND is_active = 1 AND moderation_status = 'ACCEPTED' "
+//              + "AND time < now() limit :limit offset :offset")
+//  List<Post> findAllByDate(@Param("offset")Integer offset,@Param("limit") Integer limit,
+//      @Param("date") String date);
 }
