@@ -6,6 +6,7 @@ import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +30,12 @@ public class ApiAuthController {
       @RequestParam(value = "email") String email,
       @RequestParam(value = "password") String password) {
     JsonNode object = userService.login(email, password);
+    return new ResponseEntity<>(object, HttpStatus.OK);
+  }
+
+  @GetMapping("/check")
+  public ResponseEntity<?> checkUser() {
+    JsonNode object = userService.check();
     return new ResponseEntity<>(object, HttpStatus.OK);
   }
 }

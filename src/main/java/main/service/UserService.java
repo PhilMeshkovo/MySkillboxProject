@@ -11,6 +11,7 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import main.dto.UserDto;
 import main.model.RegisterForm;
 import main.model.Role;
 import main.model.User;
@@ -30,6 +31,8 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class UserService implements UserDetailsService {
+
+  private static  Map<String, Integer> authorizedUsers = new HashMap<>();
 
   @Autowired
   UserRepository userRepository;
@@ -90,23 +93,54 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode login(String email, String password) {
-    Map<String, Integer> authorizedUsers = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    ObjectNode objectUser = mapper.createObjectNode();
     Optional<User> userByEmail = userRepository.findByEmail(email);
     if (!userByEmail.isEmpty() && passwordEncoder()
         .matches(password, userByEmail.get().getPassword())) {
       String sessionId = request.getSession().getId();
       User currentUser = userByEmail.get();
       authorizedUsers.put(sessionId, currentUser.getId());
+      UserDto userDto = UserDto.builder()
+          .id(currentUser.getId())
+          .name(currentUser.getName())
+          .photo(currentUser.getPhoto())
+          .email(currentUser.getEmail())
+          .moderation(true)
+          .moderationCount(21)
+          .settings(true)
+          .build();
 
-      objectUser.put("id", userByEmail.get().getId());
-      objectUser.put("name", userByEmail.get().getName());
-      objectUser.put("email", userByEmail.get().getEmail());
-      objectUser.put("moderation", true);
-      objectUser.put("moderationCount", 21);
-      objectUser.put("settings", true);
+      ObjectNode objectUser = mapper.valueToTree(userDto);
+
+      object.put("result", true);
+      object.put("user", objectUser);
+    } else {
+      object.put("result", false);
+    }
+    return object;
+  }
+
+  public JsonNode check() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    String sessionId = request.getSession().getId();
+    if (authorizedUsers.containsKey(sessionId)) {
+      Integer id = authorizedUsers.get(sessionId);
+      User user = userRepository.findById(id).get();
+
+      UserDto userDto = UserDto.builder()
+          .id(id)
+          .name(user.getName())
+          .photo(user.getPhoto())
+          .email(user.getEmail())
+          .moderation(true)
+          .moderationCount(21)
+          .settings(true)
+          .build();
+
+      ObjectNode objectUser = mapper.valueToTree(userDto);
+
       object.put("result", true);
       object.put("user", objectUser);
     } else {
