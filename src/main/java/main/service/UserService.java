@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -32,13 +33,16 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class UserService implements UserDetailsService {
 
-  private static  Map<String, Integer> authorizedUsers = new HashMap<>();
+  private static Map<String, Integer> authorizedUsers = new HashMap<>();
 
   @Autowired
   UserRepository userRepository;
 
   @Autowired
   HttpServletRequest request;
+
+  @Autowired
+  private MailSender mailSender;
 
   @Override
   public UserDetails loadUserByUsername(@NonNull String username)
@@ -67,6 +71,7 @@ public class UserService implements UserDetailsService {
     user.setRole(new Role(1, "ROLE_USER"));
     user.setRegTime(LocalDateTime.now());
     user.setPassword(passwordEncoder().encode(registerFormUser.getPassword()));
+    user.setCode(UUID.randomUUID().toString());
     userRepository.save(user);
     log.info("saved user");
     return true;
@@ -147,5 +152,19 @@ public class UserService implements UserDetailsService {
       object.put("result", false);
     }
     return object;
+  }
+
+  public JsonNode restore(String email) {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    Optional<User> userByEmail = userRepository.findByEmail(email);
+    if (!userByEmail.isEmpty()) {
+      mailSender.send(email, "Code", userByEmail.get().getCode());
+      object.put("result", true);
+      return object;
+    } else {
+      object.put("result", false);
+      return object;
+    }
   }
 }

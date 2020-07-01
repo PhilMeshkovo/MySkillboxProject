@@ -38,4 +38,11 @@ public class ApiAuthController {
     JsonNode object = userService.check();
     return new ResponseEntity<>(object, HttpStatus.OK);
   }
+
+  @PostMapping("/restore")
+  public ResponseEntity<?> restore(
+      @RequestParam(value = "email", required = false) String email) {
+    JsonNode jsonNode = userService.restore(email);
+    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+  }
 }
