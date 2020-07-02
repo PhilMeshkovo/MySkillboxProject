@@ -45,4 +45,14 @@ public class ApiAuthController {
     JsonNode jsonNode = userService.restore(email);
     return new ResponseEntity<>(jsonNode, HttpStatus.OK);
   }
+
+  @PostMapping("/password")
+  public ResponseEntity<?> postNewPassword(
+      @RequestParam(value = "code", required = false) String code,
+      @RequestParam(value = "password") String password,
+      @RequestParam(value = "captcha") Integer captcha,
+      @RequestParam(value = "captcha_secret") Integer captcha_secret) {
+    JsonNode jsonNode = userService.postNewPassword(code, password, captcha, captcha_secret);
+    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+  }
 }

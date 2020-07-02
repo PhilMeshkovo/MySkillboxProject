@@ -34,7 +34,7 @@ public class MailConfig {
     mailSender.setHost(host);
     mailSender.setPort(port);
     mailSender.setUsername(username);
-    mailSender.setPassword("03081977");
+    mailSender.setPassword(password);
 
     Properties properties = mailSender.getJavaMailProperties();
     properties.setProperty("mail.transport.protocol", protocol);

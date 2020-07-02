@@ -13,7 +13,8 @@ INSERT INTO users(id, is_moderator, reg_time, name, email, password, code, photo
 (7, -1, '1988-03-03','Elisha Schmitz',   'Melda.Mercier27@nowhere.com', '9433394', '1234', '1234'),
 (8, 1,'1991-06-22','Clifford Tomlin',   'FossD3@nowhere.com', '8272165', '1234', '1234'),
 (9, -1,'2009-03-09','Kenneth Rayburn',   'Copeland@example.com', '$2a$10$cAB8OjwxRpXpFX1hPGu3ZeM/clcv48hihWGOnclIbG0YU.vCHKrNq', '1234', '1234'),
-(10, 1, '1987-07-09','Dominique Schneider',  'Meacham33@nowhere.com', '8223815', '1234', '1234');
+(10, 1, '1987-07-09','Dominique Schneider',  'Meacham33@nowhere.com', '8223815', '1234', '1234'),
+(11, 0, '2019-07-09','phil',  'gmeshkovo1977@gmail.com', '$2a$10$mrctKO/LYECQkj7vY9a5wuXhzrL./0Kc4NrzoNWjO9gPGzDg5x1AK', 'd6cb2c50-6d5c-4584-b5bc-13ed6b58a650', '1234');
 
 INSERT INTO posts(id, moderation_status,moderator_id, view_count, time, user_id, title, text, is_active) VALUES
 (1,'NEW',9,7, '1971-01-01 00:28:11', 9, 'Non nostrum dignissimos.', 'Focusing on the latest investigations, we can positively say that the example of the feedback system must stay true to an importance of the well-known practice.  ',1),

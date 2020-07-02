@@ -13,9 +13,11 @@ import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import main.dto.UserDto;
+import main.model.CaptchaCode;
 import main.model.RegisterForm;
 import main.model.Role;
 import main.model.User;
+import main.repository.CaptchaCodeRepository;
 import main.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +30,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -37,6 +40,9 @@ public class UserService implements UserDetailsService {
 
   @Autowired
   UserRepository userRepository;
+
+  @Autowired
+  CaptchaCodeRepository captchaCodeRepository;
 
   @Autowired
   HttpServletRequest request;
@@ -159,12 +165,58 @@ public class UserService implements UserDetailsService {
     ObjectNode object = mapper.createObjectNode();
     Optional<User> userByEmail = userRepository.findByEmail(email);
     if (!userByEmail.isEmpty()) {
-      mailSender.send(email, "Code", userByEmail.get().getCode());
+      mailSender.send(email, "Code", "/login/change-password/" + userByEmail.get().getCode());
       object.put("result", true);
       return object;
     } else {
       object.put("result", false);
       return object;
     }
+  }
+
+  @Transactional
+  public JsonNode postNewPassword(String code, String password, Integer captcha,
+      Integer captcha_secret) {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    ObjectNode objectError = mapper.createObjectNode();
+    Optional<User> userByCode = userRepository.findByCode(code);
+    Optional<CaptchaCode> captchaCode = captchaCodeRepository.findByCode(captcha);
+    if (!userByCode.isEmpty() && !captchaCode.isEmpty() && password.length() > 5
+        && captchaCode.get().getSecretCode() == captcha_secret) {
+      User user = userRepository.getOne(userByCode.get().getId());
+      user.setPassword(passwordEncoder().encode(password));
+
+      object.put("result", true);
+    }
+    if (password.length() < 6) {
+      objectError.put("password", "Пароль короче 6-ти символов");
+      if (!captchaCode.isEmpty() && captchaCode.get().getSecretCode() != captcha_secret
+          || captchaCode.isEmpty()) {
+        objectError.put("captcha", "Код с картинки введён неверно");
+      }
+      if (userByCode.isEmpty()) {
+        objectError.put("code", "Ссылка для восстановления пароля устарела."
+            + "     <a href=     \"/auth/restore\">Запросить ссылку снова</a>");
+      }
+      object.put("result", false);
+      object.put("errors", objectError);
+    }
+    if (userByCode.isEmpty()) {
+      objectError.put("code", "Ссылка для восстановления пароля устарела."
+          + "     <a href=     \"/auth/restore\">Запросить ссылку снова</a>");
+      if (!captchaCode.isEmpty() && captchaCode.get().getSecretCode() != captcha_secret
+          || captchaCode.isEmpty()) {
+        objectError.put("captcha", "Код с картинки введён неверно");
+      }
+      object.put("result", false);
+      object.put("errors", objectError);
+    }
+    if (!captchaCode.isEmpty() && captchaCode.get().getSecretCode() != captcha_secret) {
+      objectError.put("captcha", "Код с картинки введён неверно");
+      object.put("result", false);
+      object.put("errors", objectError);
+    }
+    return object;
   }
 }

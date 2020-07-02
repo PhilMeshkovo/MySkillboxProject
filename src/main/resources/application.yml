@@ -14,7 +14,7 @@ spring:
 
 spring.mail.host: smtp.yandex.ru
 spring.mail.username: ivanivanov1977.ivashka@yandex.ru
-spring.mail.password: 03081977
+spring.mail.password: '03081977'
 spring.mail.port: 465
 spring.mail.protocol: smtps
 mail.debug: true
