@@ -21,8 +21,9 @@ public class ApiAuthController {
   UserService userService;
 
   @PostMapping("/register")
-  public boolean addUser(@RequestBody RegisterForm registerForm) {
-    return userService.saveUser(registerForm);
+  public ResponseEntity<?> addUser(@RequestBody RegisterForm registerForm) {
+    JsonNode jsonNode = userService.saveUser(registerForm);
+    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
   }
 
   @PostMapping("/login")
@@ -53,6 +54,10 @@ public class ApiAuthController {
       @RequestParam(value = "captcha") Integer captcha,
       @RequestParam(value = "captcha_secret") Integer captcha_secret) {
     JsonNode jsonNode = userService.postNewPassword(code, password, captcha, captcha_secret);
-    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    if (jsonNode.has("error")) {
+      return new ResponseEntity<>(jsonNode, HttpStatus.BAD_REQUEST);
+    } else {
+      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    }
   }
 }

@@ -38,6 +38,14 @@ public class UserService implements UserDetailsService {
 
   private static Map<String, Integer> authorizedUsers = new HashMap<>();
 
+  private static final String SHORT_PASSWORD = "Пароль короче 6-ти символов";
+
+  private static final String WRONG_CAPTCHA = "Код с картинки введён неверно";
+
+  private static final String EMAIL_PATTERN =
+      "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@" +
+          "[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$";
+
   @Autowired
   UserRepository userRepository;
 
@@ -65,22 +73,38 @@ public class UserService implements UserDetailsService {
     return new BCryptPasswordEncoder();
   }
 
-  public boolean saveUser(RegisterForm registerFormUser) {
+  public JsonNode saveUser(RegisterForm registerFormUser) {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    ObjectNode objectError = mapper.createObjectNode();
+
     Optional<User> byEmail = userRepository.findByEmail(registerFormUser.getEmail());
-    System.out.println(registerFormUser.toString());
-    if (!byEmail.isEmpty()) {
-      return false;
+    if (byEmail.isEmpty() && registerFormUser.getPassword().length() > 5
+        && registerFormUser.getName().length() > 0 && registerFormUser.getName().length() < 1000) {
+      User user = new User();
+      user.setEmail(registerFormUser.getEmail());
+      user.setName(registerFormUser.getName());
+      user.setRole(new Role(1, "ROLE_USER"));
+      user.setRegTime(LocalDateTime.now());
+      user.setPassword(passwordEncoder().encode(registerFormUser.getPassword()));
+      user.setCode(UUID.randomUUID().toString());
+      userRepository.save(user);
+      object.put("result", true);
+    } else {
+      object.put("result", false);
+      if (!byEmail.isEmpty()) {
+        objectError.put("email", "Этот e-mail уже зарегистрирован");
+      }
+      if (registerFormUser.getPassword().length() < 6) {
+        objectError.put("password", SHORT_PASSWORD);
+      }
+      if (registerFormUser.getName().length() < 1 || registerFormUser.getName().length() > 1000) {
+        objectError.put("name", "Имя указано неверно");
+      }
+      object.put("errors", objectError);
     }
-    User user = new User();
-    user.setEmail(registerFormUser.getEmail());
-    user.setName(registerFormUser.getName());
-    user.setRole(new Role(1, "ROLE_USER"));
-    user.setRegTime(LocalDateTime.now());
-    user.setPassword(passwordEncoder().encode(registerFormUser.getPassword()));
-    user.setCode(UUID.randomUUID().toString());
-    userRepository.save(user);
-    log.info("saved user");
-    return true;
+
+    return object;
   }
 
   public User getCurrentUser() throws Exception {
@@ -188,33 +212,19 @@ public class UserService implements UserDetailsService {
       user.setPassword(passwordEncoder().encode(password));
 
       object.put("result", true);
-    }
-    if (password.length() < 6) {
-      objectError.put("password", "Пароль короче 6-ти символов");
+    } else {
+      object.put("result", false);
+      if (password.length() < 6) {
+        objectError.put("password", SHORT_PASSWORD);
+      }
       if (!captchaCode.isEmpty() && captchaCode.get().getSecretCode() != captcha_secret
           || captchaCode.isEmpty()) {
-        objectError.put("captcha", "Код с картинки введён неверно");
+        objectError.put("captcha", WRONG_CAPTCHA);
       }
       if (userByCode.isEmpty()) {
         objectError.put("code", "Ссылка для восстановления пароля устарела."
             + "     <a href=     \"/auth/restore\">Запросить ссылку снова</a>");
       }
-      object.put("result", false);
-      object.put("errors", objectError);
-    }
-    if (userByCode.isEmpty()) {
-      objectError.put("code", "Ссылка для восстановления пароля устарела."
-          + "     <a href=     \"/auth/restore\">Запросить ссылку снова</a>");
-      if (!captchaCode.isEmpty() && captchaCode.get().getSecretCode() != captcha_secret
-          || captchaCode.isEmpty()) {
-        objectError.put("captcha", "Код с картинки введён неверно");
-      }
-      object.put("result", false);
-      object.put("errors", objectError);
-    }
-    if (!captchaCode.isEmpty() && captchaCode.get().getSecretCode() != captcha_secret) {
-      objectError.put("captcha", "Код с картинки введён неверно");
-      object.put("result", false);
       object.put("errors", objectError);
     }
     return object;
