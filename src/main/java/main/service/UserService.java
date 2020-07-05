@@ -12,9 +12,10 @@ import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import main.dto.NewProfileForm;
+import main.dto.RegisterForm;
 import main.dto.UserDto;
 import main.model.CaptchaCode;
-import main.model.RegisterForm;
 import main.model.Role;
 import main.model.User;
 import main.repository.CaptchaCodeRepository;
@@ -31,6 +32,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Slf4j
@@ -41,10 +43,6 @@ public class UserService implements UserDetailsService {
   private static final String SHORT_PASSWORD = "Пароль короче 6-ти символов";
 
   private static final String WRONG_CAPTCHA = "Код с картинки введён неверно";
-
-  private static final String EMAIL_PATTERN =
-      "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@" +
-          "[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$";
 
   @Autowired
   UserRepository userRepository;
@@ -57,6 +55,9 @@ public class UserService implements UserDetailsService {
 
   @Autowired
   private MailSender mailSender;
+
+  @Autowired
+  private InitService initService;
 
   @Override
   public UserDetails loadUserByUsername(@NonNull String username)
@@ -224,6 +225,66 @@ public class UserService implements UserDetailsService {
       if (userByCode.isEmpty()) {
         objectError.put("code", "Ссылка для восстановления пароля устарела."
             + "     <a href=     \"/auth/restore\">Запросить ссылку снова</a>");
+      }
+      object.put("errors", objectError);
+    }
+    return object;
+  }
+
+  @Transactional
+  public JsonNode postNewProfile(NewProfileForm newProfileForm, MultipartFile photo) throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    ObjectNode objectError = mapper.createObjectNode();
+    User user = getCurrentUser();
+    Optional<User> userByEmail = userRepository.findByEmail(newProfileForm.getEmail());
+    if (userByEmail.isEmpty() && newProfileForm.getName() != null
+        && newProfileForm.getName().length() > 0 &&
+        newProfileForm.getName().length() < 1000 && newProfileForm.getEmail() != null &&
+        newProfileForm.getPassword() == null && newProfileForm.getPhoto() == null &&
+        newProfileForm.getRemovePhoto() == null) {
+      User userToUpdate = userRepository.getOne(user.getId());
+      userToUpdate.setName(newProfileForm.getName());
+      userToUpdate.setEmail(newProfileForm.getEmail());
+      object.put("result", true);
+    }
+    if (newProfileForm.getName() != null && newProfileForm.getName().length() > 0 &&
+        newProfileForm.getName().length() < 1000 && newProfileForm.getEmail() != null &&
+        newProfileForm.getPassword() != null && newProfileForm.getPhoto() == null &&
+        newProfileForm.getRemovePhoto() == null) {
+      User userToUpdate = userRepository.getOne(user.getId());
+      userToUpdate.setPassword(passwordEncoder().encode(newProfileForm.getPassword()));
+      object.put("result", true);
+    }
+    if (newProfileForm.getName() != null && newProfileForm.getName().length() > 0 &&
+        newProfileForm.getName().length() < 1000 && newProfileForm.getEmail() != null &&
+        newProfileForm.getPassword() == null && newProfileForm.getPhoto() != null &&
+        newProfileForm.getRemovePhoto() == 1) {
+      User userToUpdate = userRepository.getOne(user.getId());
+      userToUpdate.setPhoto(null);
+      object.put("result", true);
+    }
+    if (newProfileForm.getName() != null && newProfileForm.getName().length() > 0 &&
+        newProfileForm.getName().length() < 1000 && newProfileForm.getEmail() != null &&
+        newProfileForm.getPassword() != null && newProfileForm.getPhoto() == null &&
+        newProfileForm.getRemovePhoto() != null && !photo.isEmpty()) {
+      User userToUpdate = userRepository.getOne(user.getId());
+      userToUpdate.setPhoto(initService.uploadImage(photo));
+      userToUpdate.setPassword(passwordEncoder().encode(newProfileForm.getPassword()));
+      object.put("result", true);
+    }
+    if (!userByEmail.isEmpty() && !user.getEmail().equals(userByEmail.get().getEmail()) || newProfileForm.getName().length() < 1
+    || newProfileForm.getName().length() > 1000 || newProfileForm.getPassword().length() < 6){
+      object.put("result", false);
+      if (!userByEmail.isEmpty() && !user.getEmail().equals(userByEmail.get().getEmail())){
+        objectError.put("email", "Этот e-mail уже зарегистрирован");
+      }
+      if ( newProfileForm.getName().length() < 1
+          || newProfileForm.getName().length() > 1000 ){
+        objectError.put("name", "Имя указано неверно");
+      }
+      if (newProfileForm.getPassword().length() < 6){
+        objectError.put("password", "Пароль короче 6-ти символов");
       }
       object.put("errors", objectError);
     }
