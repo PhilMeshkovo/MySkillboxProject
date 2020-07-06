@@ -20,6 +20,8 @@ import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import main.api.response.PostListApi;
+import main.api.response.ResponsePostApi;
 import main.dto.NewProfileForm;
 import main.dto.RegisterForm;
 import main.dto.UserDto;
@@ -27,10 +29,12 @@ import main.model.CaptchaCode;
 import main.model.Role;
 import main.model.User;
 import main.repository.CaptchaCodeRepository;
+import main.repository.PostRepository;
 import main.repository.UserRepository;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -67,6 +71,13 @@ public class UserService implements UserDetailsService {
 
   @Autowired
   private InitService initService;
+
+  @Autowired
+  PostService postService;
+
+  @Autowired
+  PostRepository postRepository;
+
 
   @Override
   public UserDetails loadUserByUsername(@NonNull String username)
@@ -329,5 +340,36 @@ public class UserService implements UserDetailsService {
     Random random = new Random();
     char c = (char) (random.nextInt(26) + 'a');
     return String.valueOf(c);
+  }
+
+  public JsonNode getMyStatistics() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    PostListApi postListApi = postService.getAllMyPosts(PageRequest.of
+        (0, (int) postRepository.count()), "published");
+    List<ResponsePostApi> postList = postListApi.getPostList();
+    object.put("postsCount", postList.size());
+    int likesCount = 0;
+    for (ResponsePostApi post : postList) {
+      likesCount += post.getLikeCount();
+    }
+    object.put("likesCount", likesCount);
+
+    int dislikesCount = 0;
+    for (ResponsePostApi post : postList) {
+      dislikesCount += post.getDislikeCount();
+    }
+    object.put("dislikesCount", dislikesCount);
+
+    int viewsCount = 0;
+    for (ResponsePostApi post : postList) {
+      viewsCount += post.getViewCount();
+    }
+    object.put("viewsCount", viewsCount);
+
+    String firstPublication = postList.stream().map(p -> p.getTime()).min(LocalDateTime::compareTo)
+        .get().toString();
+    object.put("firstPublication", firstPublication);
+    return object;
   }
 }

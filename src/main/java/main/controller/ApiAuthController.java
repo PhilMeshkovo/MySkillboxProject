@@ -69,7 +69,7 @@ public class ApiAuthController {
     }
   }
 
-  @PostMapping(value = "/profile/my")
+  @PostMapping("/profile/my")
   @ResponseStatus(HttpStatus.OK)
   public ResponseEntity<?> postNewProfile(
       @RequestPart("newProfileForm") NewProfileForm newProfileForm,
@@ -79,6 +79,21 @@ public class ApiAuthController {
       return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.OK);
+    }
+  }
+
+  @GetMapping("/auth/captcha")
+  public ResponseEntity<?> getCaptcha() {
+    return new ResponseEntity<>("captcha", HttpStatus.OK);
+  }
+
+  @GetMapping("/statistics/my")
+  public ResponseEntity<?> getMyStatistics() {
+    try {
+      JsonNode jsonNode = userService.getMyStatistics();
+      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    } catch (Exception e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 }
