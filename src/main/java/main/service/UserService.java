@@ -3,12 +3,20 @@ package main.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +28,7 @@ import main.model.Role;
 import main.model.User;
 import main.repository.CaptchaCodeRepository;
 import main.repository.UserRepository;
+import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.acls.model.NotFoundException;
@@ -232,7 +241,8 @@ public class UserService implements UserDetailsService {
   }
 
   @Transactional
-  public JsonNode postNewProfile(NewProfileForm newProfileForm, MultipartFile photo) throws Exception {
+  public JsonNode postNewProfile(NewProfileForm newProfileForm, MultipartFile photo)
+      throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     ObjectNode objectError = mapper.createObjectNode();
@@ -269,25 +279,55 @@ public class UserService implements UserDetailsService {
         newProfileForm.getPassword() != null && newProfileForm.getPhoto() == null &&
         newProfileForm.getRemovePhoto() != null && !photo.isEmpty()) {
       User userToUpdate = userRepository.getOne(user.getId());
-      userToUpdate.setPhoto(initService.uploadImage(photo));
+      userToUpdate.setPhoto(uploadImage(photo));
       userToUpdate.setPassword(passwordEncoder().encode(newProfileForm.getPassword()));
       object.put("result", true);
     }
-    if (!userByEmail.isEmpty() && !user.getEmail().equals(userByEmail.get().getEmail()) || newProfileForm.getName().length() < 1
-    || newProfileForm.getName().length() > 1000 || newProfileForm.getPassword().length() < 6){
+    if (!userByEmail.isEmpty() && !user.getEmail().equals(userByEmail.get().getEmail())
+        || newProfileForm.getName().length() < 1
+        || newProfileForm.getName().length() > 1000 || newProfileForm.getPassword().length() < 6) {
       object.put("result", false);
-      if (!userByEmail.isEmpty() && !user.getEmail().equals(userByEmail.get().getEmail())){
+      if (!userByEmail.isEmpty() && !user.getEmail().equals(userByEmail.get().getEmail())) {
         objectError.put("email", "Этот e-mail уже зарегистрирован");
       }
-      if ( newProfileForm.getName().length() < 1
-          || newProfileForm.getName().length() > 1000 ){
+      if (newProfileForm.getName().length() < 1
+          || newProfileForm.getName().length() > 1000) {
         objectError.put("name", "Имя указано неверно");
       }
-      if (newProfileForm.getPassword().length() < 6){
+      if (newProfileForm.getPassword().length() < 6) {
         objectError.put("password", "Пароль короче 6-ти символов");
       }
       object.put("errors", objectError);
     }
     return object;
+  }
+
+  public String uploadImage(MultipartFile image) throws IOException {
+    byte[] byteArr = image.getBytes();
+    InputStream inputStream = new ByteArrayInputStream(byteArr);
+    BufferedImage bufferedImage = ImageIO.read(inputStream);
+    BufferedImage scaledImage = Scalr.resize(bufferedImage, 100);
+    List<String> listDirs = List.of(randomLetter(), randomLetter(), randomLetter());
+    File dir = new File("src/main/resources/static/upload");
+    if (!dir.exists()) {
+      dir.mkdir();
+    }
+    for (String listDir : listDirs) {
+      File theDir = new File(dir + "/" + listDir);
+      if (!theDir.exists()) {
+        theDir.mkdir();
+      }
+      dir = theDir;
+    }
+    Random random = new Random();
+    File filePath = new File(dir + "/" + random.nextInt(100000) + ".jpg");
+    ImageIO.write(scaledImage, "jpg", filePath);
+    return filePath.toString();
+  }
+
+  private String randomLetter() {
+    Random random = new Random();
+    char c = (char) (random.nextInt(26) + 'a');
+    return String.valueOf(c);
   }
 }
