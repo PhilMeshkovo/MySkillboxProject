@@ -358,22 +358,14 @@ public class UserService implements UserDetailsService {
         (0, (int) postRepository.count()), "published");
     List<ResponsePostApi> postList = postListApi.getPostList();
     object.put("postsCount", postList.size());
-    int likesCount = 0;
-    for (ResponsePostApi post : postList) {
-      likesCount += post.getLikeCount();
-    }
+
+    int likesCount = postList.stream().mapToInt(p -> p.getLikeCount()).sum();
     object.put("likesCount", likesCount);
 
-    int dislikesCount = 0;
-    for (ResponsePostApi post : postList) {
-      dislikesCount += post.getDislikeCount();
-    }
+    int dislikesCount = postList.stream().mapToInt(p -> p.getDislikeCount()).sum();
     object.put("dislikesCount", dislikesCount);
 
-    int viewsCount = 0;
-    for (ResponsePostApi post : postList) {
-      viewsCount += post.getViewCount();
-    }
+    int viewsCount = postList.stream().mapToInt(p -> p.getViewCount()).sum();
     object.put("viewsCount", viewsCount);
 
     String firstPublication = postList.stream().map(p -> p.getTime()).min(LocalDateTime::compareTo)
@@ -391,22 +383,13 @@ public class UserService implements UserDetailsService {
     object.put("postsCount", allPosts.size());
     List<ResponsePostApi> postList = commentMapper
         .addCommentsCountAndLikesForPosts(allPosts);
-    int likesCount = 0;
-    for (ResponsePostApi post : postList) {
-      likesCount += post.getLikeCount();
-    }
+    int likesCount = postList.stream().mapToInt(p -> p.getLikeCount()).sum();
     object.put("likesCount", likesCount);
 
-    int dislikesCount = 0;
-    for (ResponsePostApi post : postList) {
-      dislikesCount += post.getDislikeCount();
-    }
+    int dislikesCount = postList.stream().mapToInt(p -> p.getDislikeCount()).sum();
     object.put("dislikesCount", dislikesCount);
 
-    int viewsCount = 0;
-    for (ResponsePostApi post : postList) {
-      viewsCount += post.getViewCount();
-    }
+    int viewsCount = postList.stream().mapToInt(p -> p.getViewCount()).sum();
     object.put("viewsCount", viewsCount);
 
     String firstPublication = postList.stream().map(p -> p.getTime()).min(LocalDateTime::compareTo)

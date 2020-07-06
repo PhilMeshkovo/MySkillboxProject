@@ -30,6 +30,7 @@ import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.Post;
 import main.model.PostComment;
+import main.model.PostVotes;
 import main.model.Tag;
 import main.model.User;
 import main.model.enums.ModerationStatus;
@@ -528,6 +529,67 @@ public class PostService {
     ObjectNode object = mapper.createObjectNode();
     object.putArray("years").addAll(array);
     object.put("posts", map);
+    return object;
+  }
+
+  @Transactional
+  public JsonNode postLike(Integer postId) throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    User currentUser = userService.getCurrentUser();
+    Optional<Post> post = postRepository.findById(postId);
+    Optional<PostVotes> postVotesOptional = postVotesRepository
+        .findByPostIdAndUserId(postId, currentUser.getId());
+    if (post.isEmpty() || !postVotesOptional.isEmpty() && postVotesOptional.get().getValue() == 1) {
+      object.put("result", false);
+    }
+    if (!post.isEmpty() && postVotesOptional.isEmpty()) {
+      PostVotes postVotes = PostVotes.builder()
+          .time(LocalDateTime.now())
+          .value(1)
+          .post(post.get())
+          .user(currentUser)
+          .build();
+      postVotesRepository.save(postVotes);
+      object.put("result", true);
+    }
+    if (!post.isEmpty() && !postVotesOptional.isEmpty()
+        && postVotesOptional.get().getValue() == -1) {
+      PostVotes postVotes = postVotesRepository.getOne(postVotesOptional.get().getId());
+      postVotes.setValue(1);
+      object.put("result", true);
+    }
+    return object;
+  }
+
+  @Transactional
+  public JsonNode postDislike(Integer postId) throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    User currentUser = userService.getCurrentUser();
+    Optional<Post> post = postRepository.findById(postId);
+    Optional<PostVotes> postVotesOptional = postVotesRepository
+        .findByPostIdAndUserId(postId, currentUser.getId());
+    if (post.isEmpty()
+        || !postVotesOptional.isEmpty() && postVotesOptional.get().getValue() == -1) {
+      object.put("result", false);
+    }
+    if (!post.isEmpty() && postVotesOptional.isEmpty()) {
+      PostVotes postVotes = PostVotes.builder()
+          .time(LocalDateTime.now())
+          .value(-1)
+          .post(post.get())
+          .user(currentUser)
+          .build();
+      postVotesRepository.save(postVotes);
+      object.put("result", true);
+    }
+    if (!post.isEmpty() && !postVotesOptional.isEmpty()
+        && postVotesOptional.get().getValue() == 1) {
+      PostVotes postVotes = postVotesRepository.getOne(postVotesOptional.get().getId());
+      postVotes.setValue(-1);
+      object.put("result", true);
+    }
     return object;
   }
 }

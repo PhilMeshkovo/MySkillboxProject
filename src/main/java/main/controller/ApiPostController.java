@@ -149,31 +149,54 @@ public class ApiPostController {
   }
 
   @GetMapping("/tag")
-  public ResponseEntity<?> getTags(@RequestParam(value = "query", defaultValue = "")String query){
+  public ResponseEntity<?> getTags(@RequestParam(value = "query", defaultValue = "") String query) {
 
     try {
-      ListTagsDto listTagsDto  = postService.getTag(query);
+      ListTagsDto listTagsDto = postService.getTag(query);
       return new ResponseEntity<>(listTagsDto, HttpStatus.OK);
-    } catch (EntityNotFoundException e){
+    } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
   @PostMapping("/moderation")
   public ResponseEntity<?> moderationPost(
-      @RequestParam(value = "post_id")Integer postId,
-      @RequestParam(value = "decision")String decision) throws Exception {
+      @RequestParam(value = "post_id") Integer postId,
+      @RequestParam(value = "decision") String decision) throws Exception {
     try {
       boolean answer = postService.moderationPost(postId, decision);
       return new ResponseEntity<>(answer, HttpStatus.OK);
-    } catch (Exception e){
+    } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
+
   @GetMapping("/calendar")
   public ResponseEntity<?> getAllPostsInYear(
-      @RequestParam(value = "year", defaultValue = "")String year){
+      @RequestParam(value = "year", defaultValue = "") String year) {
     JsonNode object = postService.getAllPostsInYear(year);
     return new ResponseEntity<>(object, HttpStatus.OK);
+  }
+
+  @PostMapping("/post/like")
+  public ResponseEntity<?> postLike(
+      @RequestParam(value = "post_id") Integer postId) {
+    try {
+      JsonNode jsonNode = postService.postLike(postId);
+      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    } catch (Exception e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @PostMapping("/post/dislike")
+  public ResponseEntity<?> postDislike(
+      @RequestParam(value = "post_id") Integer postId) {
+    try {
+      JsonNode jsonNode = postService.postDislike(postId);
+      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    } catch (Exception e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
   }
 }
