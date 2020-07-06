@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
@@ -25,6 +26,8 @@ import main.api.response.ResponsePostApi;
 import main.dto.NewProfileForm;
 import main.dto.RegisterForm;
 import main.dto.UserDto;
+import main.mapper.CommentMapper;
+import main.mapper.PostMapper;
 import main.model.CaptchaCode;
 import main.model.Role;
 import main.model.User;
@@ -59,6 +62,12 @@ public class UserService implements UserDetailsService {
 
   @Autowired
   UserRepository userRepository;
+
+  @Autowired
+  CommentMapper commentMapper;
+
+  @Autowired
+  PostMapper postMapper;
 
   @Autowired
   CaptchaCodeRepository captchaCodeRepository;
@@ -313,7 +322,7 @@ public class UserService implements UserDetailsService {
     return object;
   }
 
-  public String uploadImage(MultipartFile image) throws IOException {
+  private String uploadImage(MultipartFile image) throws IOException {
     byte[] byteArr = image.getBytes();
     InputStream inputStream = new ByteArrayInputStream(byteArr);
     BufferedImage bufferedImage = ImageIO.read(inputStream);
@@ -349,6 +358,39 @@ public class UserService implements UserDetailsService {
         (0, (int) postRepository.count()), "published");
     List<ResponsePostApi> postList = postListApi.getPostList();
     object.put("postsCount", postList.size());
+    int likesCount = 0;
+    for (ResponsePostApi post : postList) {
+      likesCount += post.getLikeCount();
+    }
+    object.put("likesCount", likesCount);
+
+    int dislikesCount = 0;
+    for (ResponsePostApi post : postList) {
+      dislikesCount += post.getDislikeCount();
+    }
+    object.put("dislikesCount", dislikesCount);
+
+    int viewsCount = 0;
+    for (ResponsePostApi post : postList) {
+      viewsCount += post.getViewCount();
+    }
+    object.put("viewsCount", viewsCount);
+
+    String firstPublication = postList.stream().map(p -> p.getTime()).min(LocalDateTime::compareTo)
+        .get().toString();
+    object.put("firstPublication", firstPublication);
+    return object;
+  }
+
+  public JsonNode getAllStatistics() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    List<ResponsePostApi> allPosts = postRepository.findAll().stream()
+        .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
+    ;
+    object.put("postsCount", allPosts.size());
+    List<ResponsePostApi> postList = commentMapper
+        .addCommentsCountAndLikesForPosts(allPosts);
     int likesCount = 0;
     for (ResponsePostApi post : postList) {
       likesCount += post.getLikeCount();

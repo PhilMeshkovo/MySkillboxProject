@@ -96,4 +96,14 @@ public class ApiAuthController {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
+
+  @GetMapping("/statistics/all")
+  public ResponseEntity<?> getAllStatistics() {
+    try {
+      JsonNode jsonNode = userService.getAllStatistics();
+      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    } catch (Exception e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
+    }
+  }
 }
