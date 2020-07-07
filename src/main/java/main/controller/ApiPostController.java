@@ -46,7 +46,7 @@ public class ApiPostController {
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
       @RequestParam(value = "query", defaultValue = "tagName", required = false) String query) {
     try {
-      PostListApi postListApi = postService.getAllPostsByTagAndTitle(offset, limit, query);
+      PostListApi postListApi = postService.getAllPostsByTextAndTitle(offset, limit, query);
       return new ResponseEntity<>(postListApi, HttpStatus.OK);
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);

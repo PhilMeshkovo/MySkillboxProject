@@ -46,8 +46,13 @@ public class ApiGeneralController {
 
   @GetMapping("/settings")
   public ResponseEntity<?> getSettings() {
-    JsonNode jsonNode = userService.getSettings();
-    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    try {
+      JsonNode jsonNode = userService.getSettings();
+      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    } catch (Exception e){
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
+    }
+
   }
 
   @PutMapping("/settings")

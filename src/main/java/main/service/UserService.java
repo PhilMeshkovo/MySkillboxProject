@@ -412,14 +412,20 @@ public class UserService implements UserDetailsService {
     return object;
   }
 
-  public JsonNode getSettings() {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
-    List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
-    for (GlobalSettings globalSetting : globalSettings) {
-      object.put(globalSetting.getCode(), stringToBoolean(globalSetting.getValue()));
+  public JsonNode getSettings() throws Exception {
+    GlobalSettings globalSettingStatistics = globalSettingsRepository.findAll().stream()
+        .filter(p -> p.getCode().equals("STATISTICS_IS_PUBLIC")).findAny().get();
+    if (globalSettingStatistics.getValue().equals("1")) {
+      ObjectMapper mapper = new ObjectMapper();
+      ObjectNode object = mapper.createObjectNode();
+      List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
+      for (GlobalSettings globalSetting : globalSettings) {
+        object.put(globalSetting.getCode(), stringToBoolean(globalSetting.getValue()));
+      }
+      return object;
+    } else {
+      throw new Exception("Statistics is not public");
     }
-    return object;
   }
 
 

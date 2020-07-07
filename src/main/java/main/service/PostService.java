@@ -11,13 +11,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.persistence.EntityNotFoundException;
 import main.api.response.PostByIdApi;
 import main.api.response.PostListApi;
@@ -134,24 +132,15 @@ public class PostService {
     return null;
   }
 
-  public PostListApi getAllPostsByTagAndTitle(Integer offset, Integer limit, String query)
+  public PostListApi getAllPostsByTextAndTitle(Integer offset, Integer limit, String query)
       throws EntityNotFoundException {
-    Optional<Tag> tag = tagRepository.findTagByQuery(query);
-    if (!tag.isEmpty()) {
-      Set<Post> posts = tagRepository.findById(tag.get().getId()).get().getPosts();
-      HashSet<Post> postByQuery = postRepository.findPostByQuery(query);
-      Set<Post> union = Stream.concat(posts.stream(), postByQuery.stream()).
-          filter(p -> p.getTime().isBefore(LocalDateTime.now())).
-          collect(Collectors.toSet());
-      List<ResponsePostApi> pageApi;
-      pageApi = union.stream().map(p -> postMapper.postToResponsePostApi(p)).
-          collect(Collectors.toList());
-      List<ResponsePostApi> responsePostApis = commentMapper
-          .addCommentsCountAndLikesForPosts(pageApi);
-      return new PostListApi(responsePostApis, responsePostApis.size());
-    } else {
-      throw new EntityNotFoundException("Nothing found");
-    }
+    List<Post> postByQuery = postRepository.findPostByQuery(offset, limit, query);
+    List<ResponsePostApi> pageApi;
+    pageApi = postByQuery.stream().map(p -> postMapper.postToResponsePostApi(p)).
+        collect(Collectors.toList());
+    List<ResponsePostApi> responsePostApis = commentMapper
+        .addCommentsCountAndLikesForPosts(pageApi);
+    return new PostListApi(responsePostApis, responsePostApis.size());
   }
 
   public PostListApi getAllPostsByTag(Integer offset, Integer limit, String tag) {

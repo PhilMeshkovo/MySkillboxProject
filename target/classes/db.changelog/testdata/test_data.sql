@@ -78,16 +78,9 @@ INSERT INTO post_votes(id, time, user_id, post_id, value) VALUES
 (10, '1984-10-31 07:25:26', 4, 4, 1);
 
 INSERT INTO global_settings(id, code, name, value) VALUES
-(1, 'MULTIUSER_MODE', 'Многопользовательский режим', 'YES' ),
-(2, 'POST_PREMODERATION', 'Премодерация постов', 'YES' ),
-(3, 'STATISTICS_IS_PUBLIC', 'Показывать всем статистику блога', 'YES' ),
-(4, 'MULTIUSER_MODE', 'Многопользовательский режим', 'NO'),
-(5, 'POST_PREMODERATION', 'Премодерация постов', 'NO'),
-(6, 'STATISTICS_IS_PUBLIC', 'Показывать всем статистику блога', 'NO'),
-(7, 'MULTIUSER_MODE', 'Многопользовательский режим', 'YES'),
-(8, 'STATISTICS_IS_PUBLIC', 'Показывать всем статистику блога', 'YES'),
-(9, 'POST_PREMODERATION', 'Премодерация постов', 'YES'),
-(10, 'MULTIUSER_MODE', 'Многопользовательский режим', 'NO');
+(1, 'MULTIUSER_MODE', 'Многопользовательский режим', false),
+(2, 'POST_PREMODERATION', 'Премодерация постов', true),
+(3, 'STATISTICS_IS_PUBLIC', 'Показывать всем статистику блога', true);
 
 INSERT INTO tag2post(post_id, tag_id) VALUES
 (5, 5),

@@ -1,6 +1,5 @@
 package main.repository;
 
-import java.util.HashSet;
 import java.util.List;
 import main.model.Post;
 import org.springframework.data.domain.Page;
@@ -35,8 +34,13 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
       @Param("limit") Integer limit);
 
   @Query(nativeQuery = true,
-      value = "SELECT * FROM posts WHERE title = :query ")
-  HashSet<Post> findPostByQuery(@Param("query") String query);
+      value =
+          "SELECT * FROM posts WHERE is_active = 1 AND "
+              + "moderation_status = 'ACCEPTED' AND time < now() AND (title LIKE %:query%"
+              + " OR text LIKE %:query%) limit :limit offset :offset")
+  List<Post> findPostByQuery(@Param("offset") Integer offset,
+      @Param("limit") Integer limit,
+      @Param("query") String query);
 
   @Query(nativeQuery = true,
       value = "SELECT * FROM posts WHERE user_id = :id ")
@@ -50,7 +54,6 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
   @Query(nativeQuery = true,
       value = "SELECT * FROM posts WHERE user_id = :id ")
   Page<Post> findAllMyPosts(Pageable pageable, @Param("id") int id);
-
 
 //  @Query(nativeQuery = true,
 //      value =
