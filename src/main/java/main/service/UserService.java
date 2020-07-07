@@ -29,9 +29,11 @@ import main.dto.UserDto;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.CaptchaCode;
+import main.model.GlobalSettings;
 import main.model.Role;
 import main.model.User;
 import main.repository.CaptchaCodeRepository;
+import main.repository.GlobalSettingsRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
 import org.imgscalr.Scalr;
@@ -62,6 +64,9 @@ public class UserService implements UserDetailsService {
 
   @Autowired
   UserRepository userRepository;
+
+  @Autowired
+  GlobalSettingsRepository globalSettingsRepository;
 
   @Autowired
   CommentMapper commentMapper;
@@ -396,5 +401,68 @@ public class UserService implements UserDetailsService {
         .get().toString();
     object.put("firstPublication", firstPublication);
     return object;
+  }
+
+  public JsonNode logout() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    String sessionId = request.getSession().getId();
+    authorizedUsers.remove(sessionId);
+    object.put("result", true);
+    return object;
+  }
+
+  public JsonNode getSettings() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
+    for (GlobalSettings globalSetting : globalSettings) {
+      object.put(globalSetting.getCode(), stringToBoolean(globalSetting.getValue()));
+    }
+    return object;
+  }
+
+
+  @Transactional
+  public void putSettings(boolean multiuserMode, boolean postPremoderation,
+      boolean statisticsIsPublic)
+      throws Exception {
+    User currentUser = getCurrentUser();
+    if (currentUser.getIsModerator() == 1) {
+      List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
+      for (GlobalSettings globalSetting : globalSettings) {
+        if (globalSetting.getCode().equals("MULTIUSER_MODE")
+            && String.valueOf(multiuserMode) != null) {
+          globalSetting.setValue(booleanToString(multiuserMode));
+        }
+        if (globalSetting.getCode().equals("POST_PREMODERATION") &&
+            String.valueOf(postPremoderation) != null) {
+          globalSetting.setValue(booleanToString(postPremoderation));
+        }
+        if (globalSetting.getCode().equals("STATISTICS_IS_PUBLIC") &&
+            String.valueOf(statisticsIsPublic) != null) {
+          globalSetting.setValue(booleanToString(statisticsIsPublic));
+        }
+      }
+    }
+  }
+
+  private boolean stringToBoolean(String string) {
+    if (string.equals("1")) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private String booleanToString(boolean value) throws Exception {
+    if (String.valueOf(value).equals("true")) {
+      return "1";
+    }
+    if (String.valueOf(value).equals("false")) {
+      return "0";
+    } else {
+      throw new Exception("impossible value");
+    }
   }
 }

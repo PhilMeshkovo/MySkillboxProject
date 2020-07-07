@@ -106,4 +106,10 @@ public class ApiAuthController {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
   }
+
+  @GetMapping("/auth/logout")
+  public ResponseEntity<?> logout(){
+    JsonNode jsonNode = userService.logout();
+    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+  }
 }
