@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +41,6 @@ import main.repository.PostVotesRepository;
 import main.repository.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -164,10 +166,12 @@ public class PostService {
     }
   }
 
-  public PostListApi getAllPostsByDate(Integer offset, Integer limit, String date) {
-    Page<Post> allPosts = postRepository.findAll(PageRequest.of(offset, limit));
-    List<Post> datePosts = allPosts.stream().filter(p -> p.getTime().toString().
-        startsWith(date)).collect(Collectors.toList());
+  public PostListApi getAllPostsByDate(Integer offset, Integer limit, String date)
+      throws ParseException {
+    SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+    Date localDate = dateFormatter.parse(date);
+    List<Post> datePosts = postRepository
+        .findAllPostsByTime(offset, limit, localDate);
     if (datePosts.size() > 0) {
       List<ResponsePostApi> pageApi = datePosts.stream()
           .map(p -> postMapper.postToResponsePostApi(p))

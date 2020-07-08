@@ -1,6 +1,7 @@
 package main.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.text.ParseException;
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import main.api.response.PostByIdApi;
@@ -74,7 +75,7 @@ public class ApiPostController {
     try {
       PostListApi postListApi = postService.getAllPostsByDate(offset, limit, date);
       return new ResponseEntity<>(postListApi, HttpStatus.OK);
-    } catch (EntityNotFoundException e) {
+    } catch (EntityNotFoundException | ParseException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
 

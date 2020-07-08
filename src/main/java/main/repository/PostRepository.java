@@ -1,5 +1,6 @@
 package main.repository;
 
+import java.util.Date;
 import java.util.List;
 import main.model.Post;
 import org.springframework.data.domain.Page;
@@ -55,10 +56,12 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
       value = "SELECT * FROM posts WHERE user_id = :id ")
   Page<Post> findAllMyPosts(Pageable pageable, @Param("id") int id);
 
-//  @Query(nativeQuery = true,
-//      value =
-//          "SELECT * FROM posts WHERE DATEPART(yy-mm-dd, time) LIKE ':date%' AND is_active = 1 AND moderation_status = 'ACCEPTED' "
-//              + "AND time < now() limit :limit offset :offset")
-//  List<Post> findAllByDate(@Param("offset")Integer offset,@Param("limit") Integer limit,
-//      @Param("date") String date);
+  @Query(nativeQuery = true,
+      value = "SELECT * FROM posts WHERE is_active = 1 AND "
+          + " moderation_status = 'ACCEPTED' AND time < now() AND "
+          + " time >= :time AND time < :time + INTERVAL 1 DAY "
+          + "limit :limit offset :offset")
+  List<Post> findAllPostsByTime(@Param("offset") Integer offset,
+      @Param("limit") Integer limit, @Param("time") Date time);
+
 }
