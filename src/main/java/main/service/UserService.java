@@ -92,6 +92,9 @@ public class UserService implements UserDetailsService {
   @Autowired
   PostRepository postRepository;
 
+  public static Map<String, Integer> getAuthorizedUsers() {
+    return authorizedUsers;
+  }
 
   @Override
   public UserDetails loadUserByUsername(@NonNull String username)
@@ -357,6 +360,7 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode getMyStatistics() throws Exception {
+    User currentUser = getCurrentUser();
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     PostListApi postListApi = postService.getAllMyPosts(PageRequest.of
@@ -373,8 +377,7 @@ public class UserService implements UserDetailsService {
     int viewsCount = postList.stream().mapToInt(p -> p.getViewCount()).sum();
     object.put("viewsCount", viewsCount);
 
-    String firstPublication = postList.stream().map(p -> p.getTime()).min(LocalDateTime::compareTo)
-        .get().toString();
+    String firstPublication = postRepository.findFirstMyPublication(currentUser.getId()).toString();
     object.put("firstPublication", firstPublication);
     return object;
   }
@@ -397,8 +400,8 @@ public class UserService implements UserDetailsService {
     int viewsCount = postList.stream().mapToInt(p -> p.getViewCount()).sum();
     object.put("viewsCount", viewsCount);
 
-    String firstPublication = postList.stream().map(p -> p.getTime()).min(LocalDateTime::compareTo)
-        .get().toString();
+    String firstPublication = postRepository.findFirstPublication().toString();
+
     object.put("firstPublication", firstPublication);
     return object;
   }

@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpServletRequest;
 import main.api.response.PostByIdApi;
 import main.api.response.PostListApi;
 import main.api.response.ResponsePostApi;
@@ -39,6 +40,7 @@ import main.repository.PostCommentRepository;
 import main.repository.PostRepository;
 import main.repository.PostVotesRepository;
 import main.repository.TagRepository;
+import main.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -52,6 +54,12 @@ public class PostService {
 
   @Autowired
   PostRepository postRepository;
+
+  @Autowired
+  UserRepository userRepository;
+
+  @Autowired
+  HttpServletRequest request;
 
   @Autowired
   PostCommentRepository postCommentRepository;
@@ -70,6 +78,8 @@ public class PostService {
 
   @Autowired
   UserService userService;
+
+  private static Map<String, Integer> authorizedUsers = UserService.getAuthorizedUsers();
 
   public PostListApi getAllPosts(Integer offset, Integer limit, String mode) {
     List<ResponsePostApi> responsePostApiList;
@@ -184,8 +194,10 @@ public class PostService {
     }
   }
 
+  @Transactional
   public PostByIdApi findPostById(int postId) {
     Optional<Post> optional = postRepository.findById(postId);
+    String sessionId = request.getSession().getId();
     if (!optional.isEmpty()) {
       PostByIdApi postByIdApi = new PostByIdApi();
       Post post = optional.get();
@@ -199,6 +211,15 @@ public class PostService {
         Set<Tag> tags = postRepository.findById(postId).get().getTags();
         List<String> strings = tags.stream().map(t -> t.getName())
             .collect(Collectors.toList());
+
+        if (!authorizedUsers.containsKey(sessionId) || authorizedUsers.containsKey(sessionId)
+            && post.getUser().getId() != authorizedUsers.get(sessionId) &&
+            userRepository.findById(authorizedUsers.get(sessionId)).get().getIsModerator() != 1) {
+          Post post1 = postRepository.getOne(postId);
+          int viewCount = post.getView_count() + 1;
+          post1.setView_count(viewCount);
+        }
+
         postByIdApi.setTags(strings);
 
       }

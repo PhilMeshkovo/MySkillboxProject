@@ -1,5 +1,6 @@
 package main.mapper;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CommentMapper {
+  DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd, hh-mm");
 
   @Autowired
   UserMapper userMapper;
@@ -28,7 +30,7 @@ public class CommentMapper {
   public CommentsApi postCommentToCommentsApi(PostComment postComment) {
     CommentsApi commentsApi = new CommentsApi();
     commentsApi.setId(postComment.getId());
-    commentsApi.setTime(postComment.getTime());
+    commentsApi.setTime(postComment.getTime().format(formatter));
     commentsApi.setText(postComment.getText());
     commentsApi.setUser(userMapper.userToUserWithPhoto(postComment.getUser()));
     return commentsApi;

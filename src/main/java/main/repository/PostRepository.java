@@ -1,5 +1,6 @@
 package main.repository;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import main.model.Post;
@@ -64,4 +65,12 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
   List<Post> findAllPostsByTime(@Param("offset") Integer offset,
       @Param("limit") Integer limit, @Param("time") Date time);
 
+  @Query(nativeQuery = true,
+  value = "SELECT min(time) FROM posts")
+  LocalDateTime findFirstPublication();
+
+  @Query(nativeQuery = true,
+      value = "SELECT min(time) FROM posts WHERE user_id = :id AND is_active = 1 AND "
+          + "moderation_status = 'ACCEPTED' AND time < now() ")
+  LocalDateTime findFirstMyPublication(@Param("id") Integer id);
 }

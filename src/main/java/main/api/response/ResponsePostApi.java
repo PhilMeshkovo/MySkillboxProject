@@ -9,10 +9,10 @@ import lombok.NoArgsConstructor;
 public class ResponsePostApi {
 
   private int id;
-  private LocalDateTime time;
+  private String time;
   private UserApi user;
   private String title;
-  private String announce;
+  private String text;
   private int likeCount;
   private int dislikeCount;
   private int commentCount;

@@ -15,7 +15,7 @@ public class CommentsApi {
 
   private int id;
 
-  private LocalDateTime time;
+  private String time;
 
   private String text;
 
