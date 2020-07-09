@@ -159,10 +159,11 @@ public class PostService {
     Optional<Tag> tagById = tagRepository.findTagByQuery(tag);
     if (!tagById.isEmpty()) {
       Set<Post> posts = tagById.get().getPosts();
-      List<ResponsePostApi> pageApi = posts.stream()
-          .filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
-              .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now())).
-              map(p -> postMapper.postToResponsePostApi(p)).
+      List<Integer> idList = posts.stream().map(p -> p.getId()).collect(Collectors.toList());
+      List<Post> postListWithPagination = postRepository
+          .findByIdIn(idList, offset, limit);
+      List<ResponsePostApi> pageApi = postListWithPagination.stream()
+          .map(p -> postMapper.postToResponsePostApi(p)).
               collect(Collectors.toList());
       if (pageApi.size() > 0) {
         List<ResponsePostApi> responsePostApis = commentMapper

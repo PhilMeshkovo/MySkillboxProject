@@ -66,11 +66,17 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
       @Param("limit") Integer limit, @Param("time") Date time);
 
   @Query(nativeQuery = true,
-  value = "SELECT min(time) FROM posts")
+      value = "SELECT min(time) FROM posts")
   LocalDateTime findFirstPublication();
 
   @Query(nativeQuery = true,
       value = "SELECT min(time) FROM posts WHERE user_id = :id AND is_active = 1 AND "
           + "moderation_status = 'ACCEPTED' AND time < now() ")
   LocalDateTime findFirstMyPublication(@Param("id") Integer id);
+
+  @Query(nativeQuery = true,
+      value = "SELECT * FROM posts WHERE id IN (:ids) AND is_active = 1 AND"
+          + " moderation_status = 'ACCEPTED' AND time < now() limit :limit offset :offset")
+  List<Post> findByIdIn(@Param("ids") List<Integer> ids, @Param("offset") Integer offset,
+      @Param("limit") Integer limit);
 }
