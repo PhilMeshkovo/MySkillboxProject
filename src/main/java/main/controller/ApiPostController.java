@@ -10,7 +10,6 @@ import main.dto.ListTagsDto;
 import main.dto.PostCommentDto;
 import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -100,7 +99,7 @@ public class ApiPostController {
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
       @RequestParam(value = "status", defaultValue = "inactive", required = false) String status)
       throws Exception {
-    return postService.getAllMyPosts(PageRequest.of(offset, limit), status);
+    return postService.getAllMyPosts(offset, limit, status);
   }
 
   @GetMapping("/post/moderation")
@@ -108,7 +107,7 @@ public class ApiPostController {
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
       @RequestParam(value = "status", defaultValue = "new", required = false) String status) {
-    return postService.getAllPostsToModeration(PageRequest.of(offset, limit), status);
+    return postService.getAllPostsToModeration(offset, limit, status);
   }
 
   @PostMapping("/post")

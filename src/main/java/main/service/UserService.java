@@ -39,7 +39,6 @@ import main.repository.UserRepository;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.acls.model.NotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -363,8 +362,8 @@ public class UserService implements UserDetailsService {
     User currentUser = getCurrentUser();
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    PostListApi postListApi = postService.getAllMyPosts(PageRequest.of
-        (0, (int) postRepository.count()), "published");
+    PostListApi postListApi = postService
+        .getAllMyPosts(0, (int) postRepository.count(), "published");
     List<ResponsePostApi> postList = postListApi.getPostList();
     object.put("postsCount", postList.size());
 

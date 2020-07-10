@@ -4,8 +4,6 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import main.model.Post;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -49,13 +47,17 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
   List<Post> findAllByAuthorId(@Param("id") Integer id);
 
   @Query(nativeQuery = true,
-      value = "SELECT * FROM posts WHERE moderation_status = :status AND is_active = 1 ")
-  Page<Post> findAllPostsToModeration(Pageable pageable, @Param("status") String status);
+      value = "SELECT * FROM posts WHERE moderation_status = :status"
+          + " AND is_active = 1 limit :limit offset :offset")
+  List<Post> findAllPostsToModeration(@Param("offset") Integer offset,
+      @Param("limit") Integer limit, @Param("status") String status);
 
 
   @Query(nativeQuery = true,
-      value = "SELECT * FROM posts WHERE user_id = :id ")
-  Page<Post> findAllMyPosts(Pageable pageable, @Param("id") int id);
+      value = "SELECT * FROM posts WHERE user_id = :id AND is_active = 1 AND"
+          + " moderation_status = :status limit :limit offset :offset")
+  List<Post> findAllMyPosts(@Param("offset") Integer offset, @Param("limit") Integer limit,
+      @Param("status") String status, @Param("id") int id);
 
   @Query(nativeQuery = true,
       value = "SELECT * FROM posts WHERE is_active = 1 AND "
@@ -79,4 +81,9 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
           + " moderation_status = 'ACCEPTED' AND time < now() limit :limit offset :offset")
   List<Post> findByIdIn(@Param("ids") List<Integer> ids, @Param("offset") Integer offset,
       @Param("limit") Integer limit);
+
+  @Query(nativeQuery = true,
+      value = "SELECT * FROM posts WHERE user_id = :id AND is_active = 0 limit :limit offset :offset")
+  List<Post> findAllMyPostsInactive(@Param("offset") Integer offset, @Param("limit") Integer limit,
+      @Param("id") int id);
 }
