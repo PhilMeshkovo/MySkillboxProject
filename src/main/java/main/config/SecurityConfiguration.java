@@ -34,6 +34,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       "/api/auth/check",
       "/api/auth/restore",
       "/api/auth/password",
+      "/api/auth/captcha",
       "/api/statistics/all",
       "/api/auth/logout",
       "/api/settings"

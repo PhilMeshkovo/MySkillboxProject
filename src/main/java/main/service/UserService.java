@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -244,7 +245,7 @@ public class UserService implements UserDetailsService {
     Optional<User> userByCode = userRepository.findByCode(code);
     Optional<CaptchaCode> captchaCode = captchaCodeRepository.findByCode(captcha);
     if (!userByCode.isEmpty() && !captchaCode.isEmpty() && password.length() > 5
-        && captchaCode.get().getSecretCode() == captcha_secret) {
+        && captchaCode.get().getSecretCode().equals(captcha_secret)) {
       User user = userRepository.getOne(userByCode.get().getId());
       user.setPassword(passwordEncoder().encode(password));
 
@@ -254,7 +255,7 @@ public class UserService implements UserDetailsService {
       if (password.length() < 6) {
         objectError.put("password", SHORT_PASSWORD);
       }
-      if (!captchaCode.isEmpty() && captchaCode.get().getSecretCode() != captcha_secret
+      if (!captchaCode.isEmpty() && !captchaCode.get().getSecretCode().equals(captcha_secret)
           || captchaCode.isEmpty()) {
         objectError.put("captcha", WRONG_CAPTCHA);
       }
@@ -455,6 +456,27 @@ public class UserService implements UserDetailsService {
     }
   }
 
+  public JsonNode getCaptcha() throws IOException {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    String code = createCaptchaValue(4);
+    String secretCode = createCaptchaValue(22);
+    CaptchaCode captchaCode = CaptchaCode.builder()
+        .time(LocalDateTime.now().plusHours(3))
+        .code(code)
+        .secretCode(secretCode)
+        .build();
+    captchaCodeRepository.save(captchaCode);
+
+    byte[] imageCaptcha = CaptchaCreateImage.getCaptcha(code, "png");
+    String encodedString = Base64.getEncoder().encodeToString(imageCaptcha);
+    object.put("secret", secretCode);
+    object.put("image", "data:image/png;base64, " + encodedString);
+
+    captchaCodeRepository.deleteByTimeBefore(LocalDateTime.now().plusHours(2));
+    return object;
+  }
+
   private boolean stringToBoolean(String string) {
     if (string.equals("1")) {
       return true;
@@ -473,4 +495,24 @@ public class UserService implements UserDetailsService {
       throw new Exception("impossible value");
     }
   }
+
+  public static String createCaptchaValue(int size) {
+    Random random = new Random();
+    int lenght = size + (Math.abs(random.nextInt()) % 3);
+    StringBuffer captchaStrBuffer = new StringBuffer();
+    for (int i = 0; i < lenght; i++) {
+      int baseCharacterNumber = Math.abs(random.nextInt()) % 62;
+      int characterNumber = 0;
+      if (baseCharacterNumber < 26) {
+        characterNumber = 65 + baseCharacterNumber;
+      } else if (baseCharacterNumber < 52) {
+        characterNumber = 97 + (baseCharacterNumber - 26);
+      } else {
+        characterNumber = 48 + (baseCharacterNumber - 52);
+      }
+      captchaStrBuffer.append((char) characterNumber);
+    }
+    return captchaStrBuffer.toString();
+  }
+
 }

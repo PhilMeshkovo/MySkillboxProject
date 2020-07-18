@@ -1,6 +1,7 @@
 package main.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
 import main.dto.NewProfileForm;
 import main.dto.RegisterForm;
 import main.service.InitService;
@@ -82,11 +83,6 @@ public class ApiAuthController {
     }
   }
 
-  @GetMapping("/auth/captcha")
-  public ResponseEntity<?> getCaptcha() {
-    return new ResponseEntity<>("captcha", HttpStatus.OK);
-  }
-
   @GetMapping("/statistics/my")
   public ResponseEntity<?> getMyStatistics() {
     try {
@@ -108,8 +104,14 @@ public class ApiAuthController {
   }
 
   @GetMapping("/auth/logout")
-  public ResponseEntity<?> logout(){
+  public ResponseEntity<?> logout() {
     JsonNode jsonNode = userService.logout();
+    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+  }
+
+  @GetMapping("/auth/captcha")
+  public ResponseEntity<?> getCaptcha() throws IOException {
+    JsonNode jsonNode = userService.getCaptcha();
     return new ResponseEntity<>(jsonNode, HttpStatus.OK);
   }
 }

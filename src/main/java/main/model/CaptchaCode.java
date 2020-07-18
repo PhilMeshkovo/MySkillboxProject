@@ -7,13 +7,17 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "CaptchaCodes")
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class CaptchaCode {
 
   @Id
@@ -26,8 +30,8 @@ public class CaptchaCode {
   private LocalDateTime time;
 
   @Column(nullable = false)
-  private int code;
+  private String code;
 
   @Column(name = "secret_code")
-  private int secretCode;
+  private String secretCode;
 }
