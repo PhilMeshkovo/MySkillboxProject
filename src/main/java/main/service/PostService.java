@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import main.api.response.PostByIdApi;
 import main.api.response.PostListApi;
 import main.api.response.ResponsePostApi;
+import main.api.response.ResponsePostApiWithAnnounce;
 import main.dto.ListTagsDto;
 import main.dto.PostCommentDto;
 import main.dto.TagDto;
@@ -86,7 +87,10 @@ public class PostService {
           .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
       List<ResponsePostApi> pageApiNew = commentMapper
           .addCommentsCountAndLikesForPosts(responsePostApiList);
-      return new PostListApi(pageApiNew, pageApiNew.size());
+      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+          pageApiNew.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+              collect(Collectors.toList());
+      return new PostListApi(responseWithAnnounceList, pageApiNew.size());
     }
     if (mode.equalsIgnoreCase("EARLY")) {
       responsePostApiList = postRepository
@@ -94,7 +98,10 @@ public class PostService {
           .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
       List<ResponsePostApi> pageApiNew = commentMapper
           .addCommentsCountAndLikesForPosts(responsePostApiList);
-      return new PostListApi(pageApiNew, pageApiNew.size());
+      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+          pageApiNew.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+              collect(Collectors.toList());
+      return new PostListApi(responseWithAnnounceList, pageApiNew.size());
     }
     if (mode.equalsIgnoreCase("POPULAR")) {
       responsePostApiList = postRepository
@@ -114,8 +121,10 @@ public class PostService {
                 return 1;
               }
             }
-          }).collect(Collectors.toList());
-      return new PostListApi(sortedPageApi, pageApiNew.size());
+          }).collect(Collectors.toList()); List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+          sortedPageApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+              collect(Collectors.toList());
+      return new PostListApi(responseWithAnnounceList, pageApiNew.size());
     }
     if (mode.equalsIgnoreCase("BEST")) {
       responsePostApiList = postRepository
@@ -136,7 +145,10 @@ public class PostService {
               }
             }
           }).collect(Collectors.toList());
-      return new PostListApi(sortedPageApi, pageApiNew.size());
+      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+          sortedPageApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+              collect(Collectors.toList());
+      return new PostListApi(responseWithAnnounceList, pageApiNew.size());
     }
     return null;
   }

@@ -5,13 +5,13 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class ResponsePostApi {
+public class ResponsePostApiWithAnnounce {
 
   private int id;
   private String time;
   private UserApi user;
   private String title;
-  private String text;
+  private String announce;
   private int likeCount;
   private int dislikeCount;
   private int commentCount;

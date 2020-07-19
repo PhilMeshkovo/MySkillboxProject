@@ -19,8 +19,8 @@ public class InitService {
     ResponseApiInit responseApiInit = new ResponseApiInit();
     responseApiInit.setTitle("DevPub");
     responseApiInit.setSubtitle("Рассказы разработчиков");
-    responseApiInit.setPhone("+7 903 444 55 55");
-    responseApiInit.setEmail("mail@mail.ru");
+    responseApiInit.setPhone("+7 984 888 10 10");
+    responseApiInit.setEmail("meshkovo1977@mail.ru");
     responseApiInit.setCopyright("Блинов Филипп");
     responseApiInit.setCopyrightFrom("2020");
     return responseApiInit;
