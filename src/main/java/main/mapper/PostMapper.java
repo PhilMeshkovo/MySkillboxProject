@@ -2,13 +2,12 @@ package main.mapper;
 
 
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import main.api.response.PostByIdApi;
-import main.api.response.ResponsePostApi;
-import main.api.response.ResponsePostApiToModeration;
-import main.api.response.ResponsePostApiWithAnnounce;
+import main.dto.PostByIdApi;
+import main.dto.ResponsePostApi;
+import main.dto.ResponsePostApiToModeration;
+import main.dto.ResponsePostApiWithAnnounce;
 import main.model.Post;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

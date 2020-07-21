@@ -2,7 +2,7 @@ package main.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
-import main.api.response.ResponseApiInit;
+import main.dto.ResponseApiInit;
 import main.service.InitService;
 import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;

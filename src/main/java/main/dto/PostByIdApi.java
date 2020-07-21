@@ -1,4 +1,4 @@
-package main.api.response;
+package main.dto;
 
 import java.util.List;
 import lombok.AllArgsConstructor;

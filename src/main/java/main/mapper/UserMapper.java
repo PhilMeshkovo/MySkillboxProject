@@ -1,7 +1,7 @@
 package main.mapper;
 
-import main.api.response.UserApi;
-import main.api.response.UserApiWithPhoto;
+import main.dto.UserApi;
+import main.dto.UserApiWithPhoto;
 import main.model.User;
 import org.springframework.stereotype.Component;
 

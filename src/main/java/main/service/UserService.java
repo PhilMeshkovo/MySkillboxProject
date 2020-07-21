@@ -22,8 +22,8 @@ import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import main.api.response.PostListApi;
-import main.api.response.ResponsePostApi;
+import main.dto.PostListApi;
+import main.dto.ResponsePostApi;
 import main.dto.NewProfileForm;
 import main.dto.RegisterForm;
 import main.dto.UserDto;
@@ -116,11 +116,11 @@ public class UserService implements UserDetailsService {
     ObjectNode object = mapper.createObjectNode();
     ObjectNode objectError = mapper.createObjectNode();
 
-    Optional<User> byEmail = userRepository.findByEmail(registerFormUser.getEmail());
+    Optional<User> byEmail = userRepository.findByEmail(registerFormUser.getE_mail());
     if (byEmail.isEmpty() && registerFormUser.getPassword().length() > 5
         && registerFormUser.getName().length() > 0 && registerFormUser.getName().length() < 1000) {
       User user = new User();
-      user.setEmail(registerFormUser.getEmail());
+      user.setEmail(registerFormUser.getE_mail());
       user.setName(registerFormUser.getName());
       user.setRole(new Role(1, "ROLE_USER"));
       user.setRegTime(LocalDateTime.now());
@@ -237,8 +237,8 @@ public class UserService implements UserDetailsService {
   }
 
   @Transactional
-  public JsonNode postNewPassword(String code, String password, Integer captcha,
-      Integer captcha_secret) {
+  public JsonNode postNewPassword(String code, String password, String captcha,
+      String captcha_secret) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     ObjectNode objectError = mapper.createObjectNode();
@@ -402,7 +402,7 @@ public class UserService implements UserDetailsService {
 
     String firstPublication = postRepository.findFirstPublication().toString();
 
-    object.put("firstPublication", firstPublication);
+    object.put("firstPublication", firstPublication.replace("T", " "));
     return object;
   }
 
@@ -498,7 +498,7 @@ public class UserService implements UserDetailsService {
 
   public static String createCaptchaValue(int size) {
     Random random = new Random();
-    int lenght = size + (Math.abs(random.nextInt()) % 3);
+    int lenght = size + (Math.abs(random.nextInt()) % 2);
     StringBuffer captchaStrBuffer = new StringBuffer();
     for (int i = 0; i < lenght; i++) {
       int baseCharacterNumber = Math.abs(random.nextInt()) % 62;

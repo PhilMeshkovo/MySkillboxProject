@@ -37,7 +37,7 @@ public class ApiAuthController {
 
   @PostMapping("/auth/login")
   public ResponseEntity<?> login(
-      @RequestParam(value = "email") String email,
+      @RequestParam(value = "e_mail") String email,
       @RequestParam(value = "password") String password) {
     JsonNode object = userService.login(email, password);
     return new ResponseEntity<>(object, HttpStatus.OK);
@@ -60,8 +60,8 @@ public class ApiAuthController {
   public ResponseEntity<?> postNewPassword(
       @RequestParam(value = "code", required = false) String code,
       @RequestParam(value = "password") String password,
-      @RequestParam(value = "captcha") Integer captcha,
-      @RequestParam(value = "captcha_secret") Integer captcha_secret) {
+      @RequestParam(value = "captcha") String captcha,
+      @RequestParam(value = "captcha_secret") String captcha_secret) {
     JsonNode jsonNode = userService.postNewPassword(code, password, captcha, captcha_secret);
     if (jsonNode.has("error")) {
       return new ResponseEntity<>(jsonNode, HttpStatus.BAD_REQUEST);

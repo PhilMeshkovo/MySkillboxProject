@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Random;
 import javax.imageio.ImageIO;
-import main.api.response.ResponseApiInit;
+import main.dto.ResponseApiInit;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 

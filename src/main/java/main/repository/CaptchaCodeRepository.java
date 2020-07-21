@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public interface CaptchaCodeRepository extends JpaRepository<CaptchaCode, Integer> {
 
-  Optional<CaptchaCode> findByCode(Integer captcha);
+  Optional<CaptchaCode> findByCode(String code);
 
   @Modifying
   @Transactional

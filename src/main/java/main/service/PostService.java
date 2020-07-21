@@ -21,10 +21,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
-import main.api.response.PostByIdApi;
-import main.api.response.PostListApi;
-import main.api.response.ResponsePostApi;
-import main.api.response.ResponsePostApiWithAnnounce;
+import main.dto.PostByIdApi;
+import main.dto.PostListApi;
+import main.dto.ResponsePostApi;
+import main.dto.ResponsePostApiWithAnnounce;
 import main.dto.ListTagsDto;
 import main.dto.PostCommentDto;
 import main.dto.TagDto;
@@ -161,7 +161,10 @@ public class PostService {
         collect(Collectors.toList());
     List<ResponsePostApi> responsePostApis = commentMapper
         .addCommentsCountAndLikesForPosts(pageApi);
-    return new PostListApi(responsePostApis, responsePostApis.size());
+    List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+        responsePostApis.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+            collect(Collectors.toList());
+    return new PostListApi(responseWithAnnounceList, responsePostApis.size());
   }
 
   public PostListApi getAllPostsByTag(Integer offset, Integer limit, String tag) {
@@ -177,7 +180,10 @@ public class PostService {
       if (pageApi.size() > 0) {
         List<ResponsePostApi> responsePostApis = commentMapper
             .addCommentsCountAndLikesForPosts(pageApi);
-        return new PostListApi(responsePostApis, responsePostApis.size());
+        List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+            responsePostApis.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+                collect(Collectors.toList());
+        return new PostListApi(responseWithAnnounceList, responsePostApis.size());
       } else {
         throw new EntityNotFoundException("No active posts or moderated");
       }
@@ -198,7 +204,10 @@ public class PostService {
           .collect(Collectors.toList());
       List<ResponsePostApi> responsePostApis = commentMapper
           .addCommentsCountAndLikesForPosts(pageApi);
-      return new PostListApi(responsePostApis, responsePostApis.size());
+      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+          responsePostApis.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+              collect(Collectors.toList());
+      return new PostListApi(responseWithAnnounceList, responsePostApis.size());
     } else {
       throw new EntityNotFoundException("Nothing found");
     }
@@ -250,7 +259,10 @@ public class PostService {
           .map(p -> postMapper.postToResponsePostApi(p))
           .collect(Collectors.toList());
       listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
-      return new PostListApi(listResponseApi, listResponseApi.size());
+      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+          listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+              collect(Collectors.toList());
+      return new PostListApi(responseWithAnnounceList, listResponseApi.size());
     }
     if (status.toUpperCase().equals("PENDING")) {
       listResponse = postRepository.findAllMyPosts(offset, limit, "NEW", currentUser.getId())
@@ -258,7 +270,10 @@ public class PostService {
           .map(p -> postMapper.postToResponsePostApi(p))
           .collect(Collectors.toList());
       listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
-      return new PostListApi(listResponseApi, listResponseApi.size());
+      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+          listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+              collect(Collectors.toList());
+      return new PostListApi(responseWithAnnounceList, listResponseApi.size());
     }
     if (status.toUpperCase().equals("DECLINED")) {
       listResponse = postRepository.findAllMyPosts(offset, limit, "DECLINED", currentUser.getId())
@@ -266,7 +281,10 @@ public class PostService {
           .map(p -> postMapper.postToResponsePostApi(p))
           .collect(Collectors.toList());
       listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
-      return new PostListApi(listResponseApi, listResponseApi.size());
+      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+          listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+              collect(Collectors.toList());
+      return new PostListApi(responseWithAnnounceList, listResponseApi.size());
     }
     if (status.toUpperCase().equals("PUBLISHED")) {
       listResponse = postRepository.findAllMyPosts(offset, limit, "ACCEPTED", currentUser.getId())
@@ -274,7 +292,10 @@ public class PostService {
           .map(p -> postMapper.postToResponsePostApi(p))
           .collect(Collectors.toList());
       listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
-      return new PostListApi(listResponseApi, listResponseApi.size());
+      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+          listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+              collect(Collectors.toList());
+      return new PostListApi(responseWithAnnounceList, listResponseApi.size());
     }
     return null;
   }
@@ -285,7 +306,10 @@ public class PostService {
         .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
     List<ResponsePostApi> responsePosts = commentMapper
         .addCommentsCountAndLikesForPosts(postApiNew);
-    return new PostListApi(responsePosts, responsePosts.size());
+    List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+        responsePosts.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+            collect(Collectors.toList());
+    return new PostListApi(responseWithAnnounceList, responsePosts.size());
   }
 
   public JsonNode addPost(String time, Integer active, String title, String text, String tags)
