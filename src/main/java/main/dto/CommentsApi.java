@@ -13,10 +13,7 @@ import lombok.NoArgsConstructor;
 public class CommentsApi {
 
   private int id;
-
-  private String time;
-
+  private Long timestamp;
   private String text;
-
   private UserApi user;
 }

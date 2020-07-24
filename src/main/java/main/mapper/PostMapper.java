@@ -1,6 +1,9 @@
 package main.mapper;
 
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +26,10 @@ public class PostMapper {
   public ResponsePostApi postToResponsePostApi(Post post) {
     ResponsePostApi responsePostApi = new ResponsePostApi();
     responsePostApi.setId(post.getId());
-    responsePostApi.setTime(post.getTime().format(formatter));
+    LocalDateTime time = post.getTime();
+    ZonedDateTime timeZoned = time.atZone(ZoneId.systemDefault());
+    ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+    responsePostApi.setTimestamp(utcZoned.toInstant().getEpochSecond());
     responsePostApi.setUser(userMapper.userToUserApi(post.getUser()));
     responsePostApi.setTitle(post.getTitle());
     responsePostApi.setText(post.getText());
@@ -34,7 +40,10 @@ public class PostMapper {
   public ResponsePostApi postToResponsePostApiWithEmailName(Post post) {
     ResponsePostApi responsePostApi = new ResponsePostApi();
     responsePostApi.setId(post.getId());
-    responsePostApi.setTime(post.getTime().format(formatter));
+    LocalDateTime time = post.getTime();
+    ZonedDateTime timeZoned = time.atZone(ZoneId.systemDefault());
+    ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+    responsePostApi.setTimestamp(utcZoned.toInstant().getEpochSecond());
     responsePostApi.setUser(userMapper.userToUserApiWithEmailName(post.getUser()));
     responsePostApi.setTitle(post.getTitle());
     responsePostApi.setText(post.getText());
@@ -53,7 +62,10 @@ public class PostMapper {
   public PostByIdApi postToPostById(Post post) {
     PostByIdApi postByIdApi = new PostByIdApi();
     postByIdApi.setId(post.getId());
-    postByIdApi.setTime(post.getTime().format(formatter));
+    LocalDateTime time = post.getTime();
+    ZonedDateTime timeZoned = time.atZone(ZoneId.systemDefault());
+    ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+    postByIdApi.setTimestamp(utcZoned.toInstant().getEpochSecond());
     postByIdApi.setUser(userMapper.userToUserApi(post.getUser()));
     postByIdApi.setTitle(post.getTitle());
     postByIdApi.setText(post.getText());
@@ -74,15 +86,15 @@ public class PostMapper {
   }
 
   public ResponsePostApiWithAnnounce responsePostApiToResponseWithAnnounce
-      (ResponsePostApi responsePostApi){
+      (ResponsePostApi responsePostApi) {
     ResponsePostApiWithAnnounce response = new ResponsePostApiWithAnnounce();
     response.setId(responsePostApi.getId());
-    response.setTime(responsePostApi.getTime());
+    response.setTimestamp(responsePostApi.getTimestamp());
     response.setUser(responsePostApi.getUser());
     response.setTitle(responsePostApi.getTitle());
     String text = responsePostApi.getText();
-    String announce = text.replaceAll ("\\<.*?\\>", "");
-    if (announce.length() > 200){
+    String announce = text.replaceAll("\\<.*?\\>", "");
+    if (announce.length() > 200) {
       response.setAnnounce(announce.substring(0, 200));
     } else {
       response.setAnnounce(announce);

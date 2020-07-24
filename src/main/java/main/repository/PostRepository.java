@@ -59,6 +59,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
   List<Post> findAllMyPosts(@Param("offset") Integer offset, @Param("limit") Integer limit,
       @Param("status") String status, @Param("id") int id);
 
+
   @Query(nativeQuery = true,
       value = "SELECT * FROM posts WHERE is_active = 1 AND "
           + " moderation_status = 'ACCEPTED' AND time < now() AND "

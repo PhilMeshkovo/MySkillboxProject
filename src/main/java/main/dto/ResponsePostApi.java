@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 public class ResponsePostApi {
 
   private int id;
-  private String time;
+  private Long timestamp;
   private UserApi user;
   private String title;
   private String text;

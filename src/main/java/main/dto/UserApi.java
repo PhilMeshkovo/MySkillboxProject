@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 public class UserApi {
 
   private int id;
-
   private String name;
 
 }

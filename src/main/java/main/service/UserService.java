@@ -9,6 +9,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -23,15 +25,14 @@ import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import main.dto.LoginDto;
-import main.dto.PostListApi;
-import main.dto.ResponsePostApi;
-import main.dto.NewProfileForm;
 import main.dto.RegisterForm;
+import main.dto.ResponsePostApi;
 import main.dto.UserDto;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.CaptchaCode;
 import main.model.GlobalSettings;
+import main.model.Post;
 import main.model.Role;
 import main.model.User;
 import main.repository.CaptchaCodeRepository;
@@ -365,10 +366,11 @@ public class UserService implements UserDetailsService {
     User currentUser = getCurrentUser();
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    PostListApi postListApi = postService
-        .getAllMyPosts(0, (int) postRepository.count(), "published");
-    List<ResponsePostApi> postList = postListApi.getPostList();
-    object.put("postsCount", postList.size());
+    List<Post> myPosts = postRepository.findAllMyPosts(0, (int) postRepository.count(),
+        "ACCEPTED", currentUser.getId());
+    List<ResponsePostApi> postList = myPosts.stream().map(p -> postMapper.postToResponsePostApi(p))
+        .collect(Collectors.toList());
+    object.put("postsCount", myPosts.size());
 
     int likesCount = postList.stream().mapToInt(p -> p.getLikeCount()).sum();
     object.put("likesCount", likesCount);
@@ -379,8 +381,12 @@ public class UserService implements UserDetailsService {
     int viewsCount = postList.stream().mapToInt(p -> p.getViewCount()).sum();
     object.put("viewsCount", viewsCount);
 
-    String firstPublication = postRepository.findFirstMyPublication(currentUser.getId()).toString();
-    object.put("firstPublication", firstPublication);
+    LocalDateTime firstPublication = postRepository.findFirstMyPublication(currentUser.getId());
+
+    ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
+    ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+
+    object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
     return object;
   }
 
@@ -402,9 +408,12 @@ public class UserService implements UserDetailsService {
     int viewsCount = postList.stream().mapToInt(p -> p.getViewCount()).sum();
     object.put("viewsCount", viewsCount);
 
-    String firstPublication = postRepository.findFirstPublication().toString();
+    LocalDateTime firstPublication = postRepository.findFirstPublication();
 
-    object.put("firstPublication", firstPublication.replace("T", " "));
+    ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
+    ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+
+    object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
     return object;
   }
 

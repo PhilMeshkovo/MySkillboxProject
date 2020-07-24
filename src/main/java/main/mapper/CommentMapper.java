@@ -1,5 +1,8 @@
 package main.mapper;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +33,10 @@ public class CommentMapper {
   public CommentsApi postCommentToCommentsApi(PostComment postComment) {
     CommentsApi commentsApi = new CommentsApi();
     commentsApi.setId(postComment.getId());
-    commentsApi.setTime(postComment.getTime().format(formatter));
+    LocalDateTime time = postComment.getTime();
+    ZonedDateTime timeZoned = time.atZone(ZoneId.systemDefault());
+    ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+    commentsApi.setTimestamp(utcZoned.toInstant().getEpochSecond());
     commentsApi.setText(postComment.getText());
     commentsApi.setUser(userMapper.userToUserWithPhoto(postComment.getUser()));
     return commentsApi;
