@@ -9,12 +9,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PostCommentDto {
 
-  private Integer parentId;
-  private int postId;
+  private Integer parent_id;
+  private int post_id;
   private String text;
 
-  public PostCommentDto(int postId, String text) {
-    this.postId = postId;
+  public PostCommentDto(int post_id, String text) {
+    this.post_id = post_id;
     this.text = text;
   }
 }

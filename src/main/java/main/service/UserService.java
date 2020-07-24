@@ -22,6 +22,7 @@ import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import main.dto.LoginDto;
 import main.dto.PostListApi;
 import main.dto.ResponsePostApi;
 import main.dto.NewProfileForm;
@@ -165,12 +166,12 @@ public class UserService implements UserDetailsService {
     return us;
   }
 
-  public JsonNode login(String email, String password) {
+  public JsonNode login(LoginDto loginDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    Optional<User> userByEmail = userRepository.findByEmail(email);
+    Optional<User> userByEmail = userRepository.findByEmail(loginDto.getE_mail());
     if (!userByEmail.isEmpty() && passwordEncoder()
-        .matches(password, userByEmail.get().getPassword())) {
+        .matches(loginDto.getPassword(), userByEmail.get().getPassword())) {
       String sessionId = request.getSession().getId();
       User currentUser = userByEmail.get();
       authorizedUsers.put(sessionId, currentUser.getId());
@@ -269,60 +270,61 @@ public class UserService implements UserDetailsService {
   }
 
   @Transactional
-  public JsonNode postNewProfile(NewProfileForm newProfileForm, MultipartFile photo)
+  public JsonNode postNewProfile(MultipartFile photo, String name, String email,
+      String password, Integer removePhoto)
       throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     ObjectNode objectError = mapper.createObjectNode();
     User user = getCurrentUser();
-    Optional<User> userByEmail = userRepository.findByEmail(newProfileForm.getEmail());
-    if (userByEmail.isEmpty() && newProfileForm.getName() != null
-        && newProfileForm.getName().length() > 0 &&
-        newProfileForm.getName().length() < 1000 && newProfileForm.getEmail() != null &&
-        newProfileForm.getPassword() == null && newProfileForm.getPhoto() == null &&
-        newProfileForm.getRemovePhoto() == null) {
+    Optional<User> userByEmail = userRepository.findByEmail(email);
+    if (userByEmail.isEmpty() && name != null
+        && name.length() > 0 &&
+        name.length() < 1000 && email != null &&
+        password == null && photo == null &&
+        removePhoto == null) {
       User userToUpdate = userRepository.getOne(user.getId());
-      userToUpdate.setName(newProfileForm.getName());
-      userToUpdate.setEmail(newProfileForm.getEmail());
+      userToUpdate.setName(name);
+      userToUpdate.setEmail(email);
       object.put("result", true);
     }
-    if (newProfileForm.getName() != null && newProfileForm.getName().length() > 0 &&
-        newProfileForm.getName().length() < 1000 && newProfileForm.getEmail() != null &&
-        newProfileForm.getPassword() != null && newProfileForm.getPhoto() == null &&
-        newProfileForm.getRemovePhoto() == null) {
+    if (name != null && name.length() > 0 &&
+        name.length() < 1000 && email != null &&
+        password != null && photo == null &&
+        removePhoto == null) {
       User userToUpdate = userRepository.getOne(user.getId());
-      userToUpdate.setPassword(passwordEncoder().encode(newProfileForm.getPassword()));
+      userToUpdate.setPassword(passwordEncoder().encode(password));
       object.put("result", true);
     }
-    if (newProfileForm.getName() != null && newProfileForm.getName().length() > 0 &&
-        newProfileForm.getName().length() < 1000 && newProfileForm.getEmail() != null &&
-        newProfileForm.getPassword() == null && newProfileForm.getPhoto() != null &&
-        newProfileForm.getRemovePhoto() == 1) {
+    if (name != null && name.length() > 0 &&
+        name.length() < 1000 && email != null &&
+        password == null && photo != null &&
+        removePhoto == 1) {
       User userToUpdate = userRepository.getOne(user.getId());
       userToUpdate.setPhoto(null);
       object.put("result", true);
     }
-    if (newProfileForm.getName() != null && newProfileForm.getName().length() > 0 &&
-        newProfileForm.getName().length() < 1000 && newProfileForm.getEmail() != null &&
-        newProfileForm.getPassword() != null && newProfileForm.getPhoto() == null &&
-        newProfileForm.getRemovePhoto() != null && !photo.isEmpty()) {
+    if (name != null && name.length() > 0 &&
+        name.length() < 1000 && email != null &&
+        password != null && photo != null &&
+        removePhoto != null) {
       User userToUpdate = userRepository.getOne(user.getId());
-      userToUpdate.setPhoto(uploadImage(photo));
-      userToUpdate.setPassword(passwordEncoder().encode(newProfileForm.getPassword()));
+      userToUpdate.setPhoto(uploadImage(photo).replaceAll("\\\\", "/"));
+      userToUpdate.setPassword(passwordEncoder().encode(password));
       object.put("result", true);
     }
     if (!userByEmail.isEmpty() && !user.getEmail().equals(userByEmail.get().getEmail())
-        || newProfileForm.getName().length() < 1
-        || newProfileForm.getName().length() > 1000 || newProfileForm.getPassword().length() < 6) {
+        || name.length() < 1
+        || name.length() > 1000 || password.length() < 6) {
       object.put("result", false);
       if (!userByEmail.isEmpty() && !user.getEmail().equals(userByEmail.get().getEmail())) {
         objectError.put("email", "Этот e-mail уже зарегистрирован");
       }
-      if (newProfileForm.getName().length() < 1
-          || newProfileForm.getName().length() > 1000) {
+      if (name.length() < 1
+          || name.length() > 1000) {
         objectError.put("name", "Имя указано неверно");
       }
-      if (newProfileForm.getPassword().length() < 6) {
+      if (password.length() < 6) {
         objectError.put("password", "Пароль короче 6-ти символов");
       }
       object.put("errors", objectError);

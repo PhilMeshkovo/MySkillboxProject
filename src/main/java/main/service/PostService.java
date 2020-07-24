@@ -414,15 +414,15 @@ public class PostService {
   public JsonNode addCommentToPost(PostCommentDto postCommentDto) throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    Integer postId = postCommentDto.getPostId();
+    Integer postId = postCommentDto.getPost_id();
     String text = postCommentDto.getText();
     Optional<Post> postById = postRepository.findById(postId);
     User currentUser = userService.getCurrentUser();
-    if (!postById.isEmpty() && text.length() > 10 && postCommentDto.getParentId() != null
-        && !postCommentRepository.findById(postCommentDto.getParentId()).isEmpty()
-        && postCommentRepository.findById(postCommentDto.getParentId()).get().getPost()
+    if (!postById.isEmpty() && text.length() > 10 && postCommentDto.getParent_id() != null
+        && !postCommentRepository.findById(postCommentDto.getParent_id()).isEmpty()
+        && postCommentRepository.findById(postCommentDto.getParent_id()).get().getPost()
         .equals(postById.get())) {
-      PostComment parent = postCommentRepository.findById(postCommentDto.getParentId()).get();
+      PostComment parent = postCommentRepository.findById(postCommentDto.getParent_id()).get();
       PostComment postComment = PostComment.builder()
           .post(postById.get())
           .parent(parent)
@@ -433,7 +433,7 @@ public class PostService {
       PostComment savedPostComment = postCommentRepository.save(postComment);
       object.put("id", savedPostComment.getId());
     }
-    if (!postById.isEmpty() && text.length() > 9 && postCommentDto.getParentId() == null) {
+    if (!postById.isEmpty() && text.length() > 9 && postCommentDto.getParent_id() == null) {
       PostComment postComment = PostComment.builder()
           .post(postById.get())
           .user(currentUser)
@@ -443,8 +443,8 @@ public class PostService {
       PostComment savedPostComment = postCommentRepository.save(postComment);
       object.put("id", savedPostComment.getId());
     }
-    if (postCommentDto.getParentId() != null && !postById.isEmpty() && !postCommentRepository
-        .findById(postCommentDto.getParentId()).get().getPost().equals(postById.get())) {
+    if (postCommentDto.getParent_id() != null && !postById.isEmpty() && !postCommentRepository
+        .findById(postCommentDto.getParent_id()).get().getPost().equals(postById.get())) {
       object.put("result", false);
       ObjectNode objectError = mapper.createObjectNode();
       objectError.put("parent", "No parent comment on this post");

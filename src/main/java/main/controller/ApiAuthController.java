@@ -2,7 +2,7 @@ package main.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
-import main.dto.NewProfileForm;
+import main.dto.LoginDto;
 import main.dto.RegisterForm;
 import main.service.InitService;
 import main.service.UserService;
@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,9 +35,8 @@ public class ApiAuthController {
 
   @PostMapping("/auth/login")
   public ResponseEntity<?> login(
-      @RequestParam(value = "e_mail") String email,
-      @RequestParam(value = "password") String password) {
-    JsonNode object = userService.login(email, password);
+      @RequestBody LoginDto loginDto) {
+    JsonNode object = userService.login(loginDto);
     return new ResponseEntity<>(object, HttpStatus.OK);
   }
 
@@ -70,13 +67,16 @@ public class ApiAuthController {
     }
   }
 
-  @PostMapping("/profile/my")
-  @ResponseStatus(HttpStatus.OK)
+  @PostMapping(path = "/profile/my", consumes = {"multipart/form-data"})
   public ResponseEntity<?> postNewProfile(
-      @RequestPart("newProfileForm") NewProfileForm newProfileForm,
-      @RequestPart(value = "photo", required = false) MultipartFile photo) {
+      @RequestParam(value = "photo", required = false) MultipartFile photo,
+      @RequestParam(value = "email", required = false) String email,
+      @RequestParam(value = "password", required = false) String password,
+      @RequestParam(value = "removePhoto", required = false) Integer removePhoto,
+      @RequestParam(value = "name", required = false) String name) {
     try {
-      JsonNode jsonNode = userService.postNewProfile(newProfileForm, photo);
+      JsonNode jsonNode = userService.postNewProfile(photo, name,
+          email, password, removePhoto);
       return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.OK);
