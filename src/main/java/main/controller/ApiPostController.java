@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.text.ParseException;
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
-import main.dto.PostByIdApi;
-import main.dto.PostListApi;
+import main.dto.AddPostDto;
 import main.dto.ListTagsDto;
+import main.dto.PostByIdApi;
 import main.dto.PostCommentDto;
+import main.dto.PostListApi;
+import main.dto.PostModerationDto;
 import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -112,12 +114,8 @@ public class ApiPostController {
 
   @PostMapping("/post")
   public JsonNode addPost(
-      @RequestParam(value = "time", required = false) String time,
-      @RequestParam(value = "active", required = false) Integer active,
-      @RequestParam(value = "title", required = false) String title,
-      @RequestParam(value = "text", required = false) String text,
-      @RequestParam(value = "tags", required = false) String tags) throws Exception {
-    JsonNode object = postService.addPost(time, active, title, text, tags);
+      @RequestBody AddPostDto addPostDto) throws Exception {
+    JsonNode object = postService.addPost(addPostDto);
     return object;
   }
 
@@ -161,10 +159,9 @@ public class ApiPostController {
 
   @PostMapping("/moderation")
   public ResponseEntity<?> moderationPost(
-      @RequestParam(value = "post_id") Integer postId,
-      @RequestParam(value = "decision") String decision) throws Exception {
+      @RequestBody PostModerationDto postModerationDto) throws Exception {
     try {
-      boolean answer = postService.moderationPost(postId, decision);
+      boolean answer = postService.moderationPost(postModerationDto);
       return new ResponseEntity<>(answer, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);

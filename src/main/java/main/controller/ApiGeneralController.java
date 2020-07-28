@@ -1,19 +1,24 @@
 package main.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
 import main.dto.ResponseApiInit;
 import main.service.InitService;
 import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +32,13 @@ public class ApiGeneralController {
 
   @Autowired
   UserService userService;
+
+  @Autowired
+  private ObjectMapper mapper;
+
+  public void before() {
+    mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+  }
 
   @GetMapping("/init")
   public ResponseApiInit getInit() {
@@ -44,12 +56,21 @@ public class ApiGeneralController {
     }
   }
 
+  @GetMapping(value = "/image/{link}", produces = MediaType.IMAGE_JPEG_VALUE)
+  public @ResponseBody
+  byte[] getImage(
+      @PathVariable String link) throws IOException {
+    before();
+    byte[] image = initService.getImage(link);
+    return image;
+  }
+
   @GetMapping("/settings")
   public ResponseEntity<?> getSettings() {
     try {
       JsonNode jsonNode = userService.getSettings();
       return new ResponseEntity<>(jsonNode, HttpStatus.OK);
-    } catch (Exception e){
+    } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 

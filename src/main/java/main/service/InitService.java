@@ -5,10 +5,15 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import main.dto.ResponseApiInit;
+import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,18 +35,16 @@ public class InitService {
     byte[] byteArr = image.getBytes();
     InputStream inputStream = new ByteArrayInputStream(byteArr);
     BufferedImage bufferedImage = ImageIO.read(inputStream);
-    List<String> listDirs = List.of(randomLetter(), randomLetter(), randomLetter());
+    String listDirs = randomLetter() + "-" + randomLetter() + "-" + randomLetter();
     File dir = new File("src/main/resources/static/upload");
     if (!dir.exists()) {
       dir.mkdir();
     }
-    for (String listDir : listDirs) {
-      File theDir = new File(dir + "/" + listDir);
-      if (!theDir.exists()) {
-        theDir.mkdir();
-      }
-      dir = theDir;
+    File theDir = new File(dir + "/" + listDirs);
+    if (!theDir.exists()) {
+      theDir.mkdir();
     }
+    dir = theDir;
     Random random = new Random();
     File filePath = new File(dir + "/" + random.nextInt(100000) + ".jpg");
     ImageIO.write(bufferedImage, "jpg", filePath);
@@ -52,5 +55,24 @@ public class InitService {
     Random random = new Random();
     char c = (char) (random.nextInt(26) + 'a');
     return String.valueOf(c);
+  }
+
+  public byte[] getImage(String link) throws IOException {
+    List<String> files = getAllFiles("src/main/resources/static/avatars/");
+    for (String file1 : files) {
+      if (file1.endsWith(link)) {
+        File newFile = new File(file1);
+        return FileUtils.readFileToByteArray(newFile);
+      }
+    }
+    return null;
+  }
+
+  private List getAllFiles(String link) throws IOException {
+    List<String> files = Files.walk(Paths.get(link))
+        .filter(Files::isRegularFile)
+        .map(Path::toString)
+        .collect(Collectors.toList());
+    return files;
   }
 }

@@ -4,7 +4,7 @@ BEGIN;
 ALTER TABLE posts MODIFY text TEXT;
 
 INSERT INTO users(id, is_moderator, reg_time, name, email, password, code, photo) VALUES
-(1, 1,  '2016-01-06','Bonita Boyer',  'tarakan@mail.ru', '$2y$12$tfeBz8zV72agV/JS/UJy4OHD7sEcPsyworySRx0jaTgpQljHRe4Jm', '1234', '1234'),
+(1, 1,  '2016-01-06','Bonita Boyer',  'tarakan@mail.ru', '$2y$12$tfeBz8zV72agV/JS/UJy4OHD7sEcPsyworySRx0jaTgpQljHRe4Jm', '1234', '/api/image/default-1.png'),
 (2, 1,'2014-09-30', 'Ernie Adamson',  'WaltraudK.Pearson96@example.com', '44968843', '1234', '1234'),
 (3, -1, '2000-02-16','Hosea Tolliver',  'dydqi814@example.com', '982937485', '1234', '1234'),
 (4, 1, '1996-04-22','Maryanna Boykin',   'ElliottSkaggs@example.com', '989219271', '1234', '1234'),

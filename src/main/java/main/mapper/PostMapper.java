@@ -4,7 +4,6 @@ package main.mapper;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import main.dto.PostByIdApi;
@@ -17,8 +16,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PostMapper {
-
-  DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy hh-mm");
 
   @Autowired
   UserMapper userMapper;

@@ -3,7 +3,6 @@ package main.mapper;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CommentMapper {
-  DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd, hh-mm");
 
   @Autowired
   UserMapper userMapper;

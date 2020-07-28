@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,12 +23,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
+import main.dto.AddPostDto;
+import main.dto.ListTagsDto;
 import main.dto.PostByIdApi;
+import main.dto.PostCommentDto;
 import main.dto.PostListApi;
+import main.dto.PostModerationDto;
 import main.dto.ResponsePostApi;
 import main.dto.ResponsePostApiWithAnnounce;
-import main.dto.ListTagsDto;
-import main.dto.PostCommentDto;
 import main.dto.TagDto;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
@@ -121,7 +125,8 @@ public class PostService {
                 return 1;
               }
             }
-          }).collect(Collectors.toList()); List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
+          }).collect(Collectors.toList());
+      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
           sortedPageApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
       return new PostListApi(responseWithAnnounceList, pageApiNew.size());
@@ -312,48 +317,49 @@ public class PostService {
     return new PostListApi(responseWithAnnounceList, responsePosts.size());
   }
 
-  public JsonNode addPost(String time, Integer active, String title, String text, String tags)
+  public JsonNode addPost(AddPostDto addPostDto)
       throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    if (title.length() >= 10 && text.length() >= 500) {
+    if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
       User currentUser = userService.getCurrentUser();
 
-      String[] arrayTags = tags.split(",");
-      Set<Tag> setTags = Arrays.stream(arrayTags).map(t -> tagRepository.findTagByQuery(t).get())
+      Set<Tag> setTags = Arrays.stream(addPostDto.getTags())
+          .map(t -> tagRepository.findTagByQuery(t).get())
           .collect(Collectors.toSet());
-      DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-      LocalDate localDate = LocalDate.parse(time, dateFormatter);
-      LocalDateTime localDateTime = localDate.atStartOfDay().plusHours(3L);
+
+      LocalDateTime localDateTime = LocalDateTime
+          .ofInstant(Instant.ofEpochSecond(addPostDto.getTimestamp()),
+              ZoneId.systemDefault());
       if (localDateTime.isAfter(LocalDateTime.now().plusHours(3L))) {
         localDateTime = LocalDateTime.now().plusHours(3L);
       }
       Post post = Post.builder()
           .user(currentUser)
           .moderationStatus(ModerationStatus.NEW)
-          .title(title)
-          .isActive(active)
+          .title(addPostDto.getTitle())
+          .isActive(addPostDto.getActive())
           .tags(setTags)
           .moderator(currentUser)
-          .text(text)
-          .time(localDateTime)
+          .text(addPostDto.getText())
+          .time(localDateTime.plusHours(3L))
           .view_count(0)
           .build();
       postRepository.save(post);
 
       object.put("result", true);
     }
-    if (title.length() < 10) {
+    if (addPostDto.getTitle().length() < 10) {
       object.put("result", false);
       ObjectNode objectError = mapper.createObjectNode();
       objectError.put("title", "Заголовок не установлен или короче 10 символов");
       object.put("error", objectError);
-      if (text.length() < 500) {
+      if (addPostDto.getText().length() < 500) {
         objectError.put("text", "Текст публикации слишком кроткий");
         object.put("error", objectError);
       }
     }
-    if (text.length() < 500 && title.length() >= 10) {
+    if (addPostDto.getText().length() < 500 && addPostDto.getTitle().length() >= 10) {
       object.put("result", false);
       ObjectNode objectError = mapper.createObjectNode();
       objectError.put("text", "Текст публикации слишком кроткий");
@@ -490,11 +496,11 @@ public class PostService {
       for (String arrayTag : arrayTags) {
         Optional<Tag> tagByQuery = tagRepository.findTagByQuery(arrayTag);
         if (!tagByQuery.isEmpty()) {
-          getWeightOfTag(tagByQuery.get());
-          int amountTagInPosts = tagByQuery.get().getPosts().size();
+          double weight = getWeightOfTag(tagByQuery.get());
+//          int amountTagInPosts = tagByQuery.get().getPosts().size();
           TagDto tagDto = TagDto.builder()
               .name(tagByQuery.get().getName())
-              .weight(getWeightOfTag(tagByQuery.get()))
+              .weight(weight)
               .build();
           tagDtoList.add(tagDto);
         } else {
@@ -532,15 +538,15 @@ public class PostService {
   }
 
   @Transactional
-  public boolean moderationPost(Integer postId, String decision) throws Exception {
-    Optional<Post> postById = postRepository.findById(postId);
-    if (!postById.isEmpty() && decision.equalsIgnoreCase("accept")
-        || !postById.isEmpty() && decision.equalsIgnoreCase("decline")) {
-      Post postToModeration = postRepository.getOne(postId);
-      if (decision.equalsIgnoreCase("accept")) {
+  public boolean moderationPost(PostModerationDto postModerationDto) throws Exception {
+    Optional<Post> postById = postRepository.findById(postModerationDto.getPost_id());
+    if (!postById.isEmpty() && postModerationDto.getDecision().equalsIgnoreCase("accept")
+        || !postById.isEmpty() && postModerationDto.getDecision().equalsIgnoreCase("decline")) {
+      Post postToModeration = postRepository.getOne(postModerationDto.getPost_id());
+      if (postModerationDto.getDecision().equalsIgnoreCase("accept")) {
         postToModeration.setModerationStatus(ModerationStatus.ACCEPTED);
       }
-      if (decision.equalsIgnoreCase("decline")) {
+      if (postModerationDto.getDecision().equalsIgnoreCase("decline")) {
         postToModeration.setModerationStatus(ModerationStatus.DECLINED);
       }
       User currentUser = userService.getCurrentUser();

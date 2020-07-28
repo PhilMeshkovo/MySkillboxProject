@@ -310,7 +310,9 @@ public class UserService implements UserDetailsService {
         password != null && photo != null &&
         removePhoto != null) {
       User userToUpdate = userRepository.getOne(user.getId());
-      userToUpdate.setPhoto(uploadImage(photo).replaceAll("\\\\", "/"));
+      String fileName = uploadImageWithResize(photo, userToUpdate.getId());
+      File file = new File(fileName);
+      userToUpdate.setPhoto("/api/image/" + file.getName());
       userToUpdate.setPassword(passwordEncoder().encode(password));
       object.put("result", true);
     }
@@ -333,34 +335,32 @@ public class UserService implements UserDetailsService {
     return object;
   }
 
-  private String uploadImage(MultipartFile image) throws IOException {
+  private String uploadImageWithResize(MultipartFile image, int userId) throws IOException {
     byte[] byteArr = image.getBytes();
     InputStream inputStream = new ByteArrayInputStream(byteArr);
     BufferedImage bufferedImage = ImageIO.read(inputStream);
     BufferedImage scaledImage = Scalr.resize(bufferedImage, 100);
-    List<String> listDirs = List.of(randomLetter(), randomLetter(), randomLetter());
-    File dir = new File("src/main/resources/static/upload");
+//    String listDirs = randomLetter() + "-" + randomLetter() + "-" + randomLetter();
+    File dir = new File("src/main/resources/static/avatars");
     if (!dir.exists()) {
       dir.mkdir();
     }
-    for (String listDir : listDirs) {
-      File theDir = new File(dir + "/" + listDir);
-      if (!theDir.exists()) {
-        theDir.mkdir();
-      }
-      dir = theDir;
-    }
-    Random random = new Random();
-    File filePath = new File(dir + "/" + random.nextInt(100000) + ".jpg");
+//    File theDir = new File(dir + "/" + listDirs);
+//    if (!theDir.exists()) {
+//      theDir.mkdir();
+//    }
+//    dir = theDir;
+//    Random random = new Random();
+    File filePath = new File(dir + "/" + userId + ".jpg");
     ImageIO.write(scaledImage, "jpg", filePath);
     return filePath.toString();
   }
 
-  private String randomLetter() {
-    Random random = new Random();
-    char c = (char) (random.nextInt(26) + 'a');
-    return String.valueOf(c);
-  }
+//  private String randomLetter() {
+//    Random random = new Random();
+//    char c = (char) (random.nextInt(26) + 'a');
+//    return String.valueOf(c);
+//  }
 
   public JsonNode getMyStatistics() throws Exception {
     User currentUser = getCurrentUser();

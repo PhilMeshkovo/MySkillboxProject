@@ -27,7 +27,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       "/api/post/byTag",
       "/api/post/search",
       "/api/auth/register",
-      "/api/image",
+      "/api/image/**",
       "/api/auth/login",
       "/api/tag",
       "/api/calendar",
