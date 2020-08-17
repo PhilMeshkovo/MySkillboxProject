@@ -437,7 +437,6 @@ public class UserService implements UserDetailsService {
       boolean statisticsIsPublic)
       throws Exception {
     User currentUser = authenticationService.getCurrentUser();
-    ;
     if (currentUser.getIsModerator() == 1) {
       List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
       for (GlobalSettings globalSetting : globalSettings) {

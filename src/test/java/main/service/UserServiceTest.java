@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import main.dto.LoginDto;
 import main.dto.RegisterForm;
+import main.model.CaptchaCode;
 import main.model.Post;
 import main.model.Role;
 import main.model.User;
@@ -105,11 +106,20 @@ class UserServiceTest {
 
   @Test
   void postNewPassword() {
+    Mockito.doReturn(Optional.of(new User(1, 1, LocalDateTime.now(), "vanya",
+        "some@mail.ru", "$2a$10$FLwXXL.MI88B.UCf5zgHbek0Qk3k.oSqhzAUyyMPJFkYWOddpuLqu",
+        "123456", "123.jpr", new Role(1))))
+        .when(userRepository).findByCode("123456");
+    Mockito.doReturn(Optional.of(new CaptchaCode(1, LocalDateTime.now(), "123456", "123456")))
+        .when(captchaCodeRepository).findByCode("123456");
+    Mockito.doReturn(new User(1, 1, LocalDateTime.now(), "vanya",
+        "some@mail.ru", "$2a$10$FLwXXL.MI88B.UCf5zgHbek0Qk3k.oSqhzAUyyMPJFkYWOddpuLqu",
+        "123456", "123.jpr", new Role(1)))
+        .when(userRepository).getOne(1);
+    JsonNode jsonNode = userService.postNewPassword("123456", "123456", "123456", "123456");
+    Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
 
-  @Test
-  void postNewProfile() {
-  }
 
   @Test
   void getMyStatistics() throws Exception {
@@ -130,15 +140,10 @@ class UserServiceTest {
 
   @Test
   void logout() {
+    JsonNode jsonNode = userService.logout();
+    Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
 
-  @Test
-  void getSettings() {
-  }
-
-  @Test
-  void putSettings() {
-  }
 
   @Test
   void getCaptcha() throws IOException {

@@ -258,8 +258,6 @@ public class PostService {
 
   public PostListApi getAllMyPosts(Integer offset, Integer limit, String status) throws Exception {
     User currentUser = authenticationService.getCurrentUser();
-    ;
-    String email = currentUser.getEmail();
     List<ResponsePostApi> listResponse;
     List<ResponsePostApi> listResponseApi;
     if (status.toUpperCase().equals("INACTIVE")) {
@@ -500,7 +498,6 @@ public class PostService {
         Optional<Tag> tagByQuery = tagRepository.findTagByQuery(arrayTag);
         if (!tagByQuery.isEmpty()) {
           double weight = getWeightOfTag(tagByQuery.get());
-//          int amountTagInPosts = tagByQuery.get().getPosts().size();
           TagDto tagDto = TagDto.builder()
               .name(tagByQuery.get().getName())
               .weight(weight)
