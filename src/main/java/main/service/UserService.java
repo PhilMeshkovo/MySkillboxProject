@@ -94,6 +94,9 @@ public class UserService implements UserDetailsService {
   @Autowired
   PostRepository postRepository;
 
+  @Autowired
+  AuthenticationService authenticationService;
+
   public static Map<String, Integer> getAuthorizedUsers() {
     return authorizedUsers;
   }
@@ -147,26 +150,6 @@ public class UserService implements UserDetailsService {
     return object;
   }
 
-  public User getCurrentUser() throws Exception {
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-    if (null == auth) {
-      throw new NotFoundException("");
-    }
-
-    Object obj = auth.getPrincipal();
-    String username = "";
-
-    if (obj instanceof UserDetails) {
-      username = ((UserDetails) obj).getUsername();
-    } else {
-      username = obj.toString();
-    }
-
-    User us = userRepository.findByEmail(username).get();
-    return us;
-  }
-
   public JsonNode login(LoginDto loginDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
@@ -176,13 +159,16 @@ public class UserService implements UserDetailsService {
       String sessionId = request.getSession().getId();
       User currentUser = userByEmail.get();
       authorizedUsers.put(sessionId, currentUser.getId());
+      int allPosts = (int) postRepository.count();
+      int moderationCount = postRepository.findAllPostsToModeration(0,
+          allPosts, "NEW").size();
       UserDto userDto = UserDto.builder()
           .id(currentUser.getId())
           .name(currentUser.getName())
           .photo(currentUser.getPhoto())
           .email(currentUser.getEmail())
           .moderation(true)
-          .moderationCount(21)
+          .moderationCount(moderationCount)
           .settings(true)
           .build();
 
@@ -203,16 +189,31 @@ public class UserService implements UserDetailsService {
     if (authorizedUsers.containsKey(sessionId)) {
       Integer id = authorizedUsers.get(sessionId);
       User user = userRepository.findById(id).get();
-
-      UserDto userDto = UserDto.builder()
-          .id(id)
-          .name(user.getName())
-          .photo(user.getPhoto())
-          .email(user.getEmail())
-          .moderation(true)
-          .moderationCount(21)
-          .settings(true)
-          .build();
+      UserDto userDto;
+      if (user.getIsModerator() == 1) {
+        int allPosts = (int) postRepository.count();
+        int moderationCount = postRepository.findAllPostsToModeration(0,
+            allPosts, "NEW").size();
+        userDto = UserDto.builder()
+            .id(id)
+            .name(user.getName())
+            .photo(user.getPhoto())
+            .email(user.getEmail())
+            .moderation(true)
+            .moderationCount(moderationCount)
+            .settings(true)
+            .build();
+      } else {
+        userDto = UserDto.builder()
+            .id(id)
+            .name(user.getName())
+            .photo(user.getPhoto())
+            .email(user.getEmail())
+            .moderation(false)
+            .moderationCount(0)
+            .settings(true)
+            .build();
+      }
 
       ObjectNode objectUser = mapper.valueToTree(userDto);
 
@@ -277,7 +278,7 @@ public class UserService implements UserDetailsService {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     ObjectNode objectError = mapper.createObjectNode();
-    User user = getCurrentUser();
+    User user = authenticationService.getCurrentUser();
     Optional<User> userByEmail = userRepository.findByEmail(email);
     if (userByEmail.isEmpty() && name != null
         && name.length() > 0 &&
@@ -340,30 +341,17 @@ public class UserService implements UserDetailsService {
     InputStream inputStream = new ByteArrayInputStream(byteArr);
     BufferedImage bufferedImage = ImageIO.read(inputStream);
     BufferedImage scaledImage = Scalr.resize(bufferedImage, 100);
-//    String listDirs = randomLetter() + "-" + randomLetter() + "-" + randomLetter();
     File dir = new File("src/main/resources/static/avatars");
     if (!dir.exists()) {
       dir.mkdir();
     }
-//    File theDir = new File(dir + "/" + listDirs);
-//    if (!theDir.exists()) {
-//      theDir.mkdir();
-//    }
-//    dir = theDir;
-//    Random random = new Random();
     File filePath = new File(dir + "/" + userId + ".jpg");
     ImageIO.write(scaledImage, "jpg", filePath);
     return filePath.toString();
   }
 
-//  private String randomLetter() {
-//    Random random = new Random();
-//    char c = (char) (random.nextInt(26) + 'a');
-//    return String.valueOf(c);
-//  }
-
   public JsonNode getMyStatistics() throws Exception {
-    User currentUser = getCurrentUser();
+    User currentUser = authenticationService.getCurrentUser();;
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     List<Post> myPosts = postRepository.findAllMyPosts(0, (int) postRepository.count(),
@@ -383,10 +371,14 @@ public class UserService implements UserDetailsService {
 
     LocalDateTime firstPublication = postRepository.findFirstMyPublication(currentUser.getId());
 
-    ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
-    ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+    if (firstPublication != null) {
+      ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
+      ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
 
-    object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
+      object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
+    } else {
+      object.put("firstPublication", 0);
+    }
     return object;
   }
 
@@ -447,7 +439,7 @@ public class UserService implements UserDetailsService {
   public void putSettings(boolean multiuserMode, boolean postPremoderation,
       boolean statisticsIsPublic)
       throws Exception {
-    User currentUser = getCurrentUser();
+    User currentUser = authenticationService.getCurrentUser();;
     if (currentUser.getIsModerator() == 1) {
       List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
       for (GlobalSettings globalSetting : globalSettings) {

@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -27,6 +26,7 @@ import main.dto.AddPostDto;
 import main.dto.ListTagsDto;
 import main.dto.PostByIdApi;
 import main.dto.PostCommentDto;
+import main.dto.PostLikeDto;
 import main.dto.PostListApi;
 import main.dto.PostModerationDto;
 import main.dto.ResponsePostApi;
@@ -80,6 +80,9 @@ public class PostService {
 
   @Autowired
   UserService userService;
+
+  @Autowired
+  AuthenticationService authenticationService;
 
   private static Map<String, Integer> authorizedUsers = UserService.getAuthorizedUsers();
 
@@ -254,7 +257,8 @@ public class PostService {
   }
 
   public PostListApi getAllMyPosts(Integer offset, Integer limit, String status) throws Exception {
-    User currentUser = userService.getCurrentUser();
+    User currentUser = authenticationService.getCurrentUser();
+    ;
     String email = currentUser.getEmail();
     List<ResponsePostApi> listResponse;
     List<ResponsePostApi> listResponseApi;
@@ -322,7 +326,7 @@ public class PostService {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
-      User currentUser = userService.getCurrentUser();
+      User currentUser = authenticationService.getCurrentUser();
 
       Set<Tag> setTags = Arrays.stream(addPostDto.getTags())
           .map(t -> tagRepository.findTagByQuery(t).get())
@@ -369,28 +373,27 @@ public class PostService {
   }
 
   @Transactional
-  public JsonNode updatePost(int id, String time, Integer active, String title, String text,
-      String tags) throws Exception {
+  public JsonNode updatePost(int id, AddPostDto addPostDto) throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    User currentUser = userService.getCurrentUser();
-    if (title.length() >= 10 && text.length() >= 500) {
+    User currentUser = authenticationService.getCurrentUser();
+    if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
       Optional<Post> postById = postRepository.findById(id);
       if (!postById.isEmpty() && postById.get().getUser().equals(currentUser)) {
-        String[] arrayTags = tags.split(",");
-        Set<Tag> setTags = Arrays.stream(arrayTags).map(t -> tagRepository.findTagByQuery(t).get())
+        Set<Tag> setTags = Arrays.stream(addPostDto.getTags())
+            .map(t -> tagRepository.findTagByQuery(t).get())
             .collect(Collectors.toSet());
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate localDate = LocalDate.parse(time, dateFormatter);
-        LocalDateTime localDateTime = localDate.atStartOfDay().plusHours(3L);
+        LocalDateTime localDateTime = LocalDateTime
+            .ofInstant(Instant.ofEpochSecond(addPostDto.getTimestamp()),
+                ZoneId.systemDefault());
         if (localDateTime.isAfter(LocalDateTime.now().plusHours(3L))) {
           localDateTime = LocalDateTime.now().plusHours(3L);
         }
         Post postToUpdate = postRepository.getOne(id);
         postToUpdate.setTime(localDateTime);
-        postToUpdate.setIsActive(active);
-        postToUpdate.setTitle(title);
-        postToUpdate.setText(text);
+        postToUpdate.setIsActive(addPostDto.getActive());
+        postToUpdate.setTitle(addPostDto.getTitle());
+        postToUpdate.setText(addPostDto.getText());
         postToUpdate.setTags(setTags);
 
         object.put("result", true);
@@ -398,17 +401,17 @@ public class PostService {
         throw new EntityNotFoundException("post does not exist or it is not yours");
       }
     }
-    if (title.length() < 10) {
+    if (addPostDto.getTitle().length() < 10) {
       object.put("result", false);
       ObjectNode objectError = mapper.createObjectNode();
       objectError.put("title", "Заголовок не установлен или короче 10 символов");
       object.put("error", objectError);
-      if (text.length() < 500) {
+      if (addPostDto.getText().length() < 500) {
         objectError.put("text", "Текст публикации слишком кроткий");
         object.put("error", objectError);
       }
     }
-    if (text.length() < 500 && title.length() >= 10) {
+    if (addPostDto.getText().length() < 500 && addPostDto.getTitle().length() >= 10) {
       object.put("result", false);
       ObjectNode objectError = mapper.createObjectNode();
       objectError.put("text", "Текст публикации слишком кроткий");
@@ -423,7 +426,7 @@ public class PostService {
     Integer postId = postCommentDto.getPost_id();
     String text = postCommentDto.getText();
     Optional<Post> postById = postRepository.findById(postId);
-    User currentUser = userService.getCurrentUser();
+    User currentUser = authenticationService.getCurrentUser();
     if (!postById.isEmpty() && text.length() > 10 && postCommentDto.getParent_id() != null
         && !postCommentRepository.findById(postCommentDto.getParent_id()).isEmpty()
         && postCommentRepository.findById(postCommentDto.getParent_id()).get().getPost()
@@ -549,7 +552,7 @@ public class PostService {
       if (postModerationDto.getDecision().equalsIgnoreCase("decline")) {
         postToModeration.setModerationStatus(ModerationStatus.DECLINED);
       }
-      User currentUser = userService.getCurrentUser();
+      User currentUser = authenticationService.getCurrentUser();
       postToModeration.setModerator(currentUser);
       return true;
     } else {
@@ -589,13 +592,13 @@ public class PostService {
   }
 
   @Transactional
-  public JsonNode postLike(Integer postId) throws Exception {
+  public JsonNode postLike(PostLikeDto postLikeDto) throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    User currentUser = userService.getCurrentUser();
-    Optional<Post> post = postRepository.findById(postId);
+    User currentUser = authenticationService.getCurrentUser();
+    Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
     Optional<PostVotes> postVotesOptional = postVotesRepository
-        .findByPostIdAndUserId(postId, currentUser.getId());
+        .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
     if (post.isEmpty() || !postVotesOptional.isEmpty() && postVotesOptional.get().getValue() == 1) {
       object.put("result", false);
     }
@@ -619,13 +622,13 @@ public class PostService {
   }
 
   @Transactional
-  public JsonNode postDislike(Integer postId) throws Exception {
+  public JsonNode postDislike(PostLikeDto postLikeDto) throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    User currentUser = userService.getCurrentUser();
-    Optional<Post> post = postRepository.findById(postId);
+    User currentUser = authenticationService.getCurrentUser();
+    Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
     Optional<PostVotes> postVotesOptional = postVotesRepository
-        .findByPostIdAndUserId(postId, currentUser.getId());
+        .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
     if (post.isEmpty()
         || !postVotesOptional.isEmpty() && postVotesOptional.get().getValue() == -1) {
       object.put("result", false);

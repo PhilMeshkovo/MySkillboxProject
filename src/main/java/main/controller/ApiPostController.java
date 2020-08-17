@@ -8,6 +8,7 @@ import main.dto.AddPostDto;
 import main.dto.ListTagsDto;
 import main.dto.PostByIdApi;
 import main.dto.PostCommentDto;
+import main.dto.PostLikeDto;
 import main.dto.PostListApi;
 import main.dto.PostModerationDto;
 import main.service.PostService;
@@ -122,13 +123,9 @@ public class ApiPostController {
   @PutMapping("/post/{id}")
   public ResponseEntity<?> updatePost(
       @PathVariable int id,
-      @RequestParam(value = "time", required = false) String time,
-      @RequestParam(value = "active", required = false) Integer active,
-      @RequestParam(value = "title", required = false) String title,
-      @RequestParam(value = "text", required = false) String text,
-      @RequestParam(value = "tags", required = false) String tags) {
+      @RequestBody AddPostDto addPostDto) {
     try {
-      JsonNode jsonNode = postService.updatePost(id, time, active, title, text, tags);
+      JsonNode jsonNode = postService.updatePost(id, addPostDto);
       return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
@@ -177,9 +174,9 @@ public class ApiPostController {
 
   @PostMapping("/post/like")
   public ResponseEntity<?> postLike(
-      @RequestParam(value = "post_id") Integer postId) {
+      @RequestBody PostLikeDto postLikeDto) {
     try {
-      JsonNode jsonNode = postService.postLike(postId);
+      JsonNode jsonNode = postService.postLike(postLikeDto);
       return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -188,9 +185,9 @@ public class ApiPostController {
 
   @PostMapping("/post/dislike")
   public ResponseEntity<?> postDislike(
-      @RequestParam(value = "post_id") Integer postId) {
+      @RequestBody PostLikeDto postLikeDto) {
     try {
-      JsonNode jsonNode = postService.postDislike(postId);
+      JsonNode jsonNode = postService.postDislike(postLikeDto);
       return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);

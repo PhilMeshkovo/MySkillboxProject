@@ -7,7 +7,7 @@ public class ApplicationTest {
 
   @Test
   public void test() {
-    System.out.println(new BCryptPasswordEncoder().encode("password"));
+    System.out.println(new BCryptPasswordEncoder().encode("123456"));
   }
 
 }
