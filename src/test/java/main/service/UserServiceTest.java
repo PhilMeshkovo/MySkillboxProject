@@ -1,16 +1,23 @@
 package main.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import main.dto.LoginDto;
 import main.dto.RegisterForm;
+import main.model.Post;
 import main.model.Role;
 import main.model.User;
+import main.model.enums.ModerationStatus;
+import main.repository.CaptchaCodeRepository;
+import main.repository.PostRepository;
 import main.repository.UserRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,6 +38,14 @@ class UserServiceTest {
   @MockBean
   AuthenticationService authenticationService;
 
+  @MockBean
+  PostRepository postRepository;
+
+  @MockBean
+  MailSender mailSender;
+
+  @MockBean
+  CaptchaCodeRepository captchaCodeRepository;
 
   @Test
   void loadUserByUsername() {
@@ -57,7 +72,7 @@ class UserServiceTest {
   }
 
   @Test
-  void login() throws Exception {
+  void login() {
     Mockito.doReturn(Optional.of(new User(1, 1, LocalDateTime.now(), "vanya",
         "some@mail.ru", "$2a$10$FLwXXL.MI88B.UCf5zgHbek0Qk3k.oSqhzAUyyMPJFkYWOddpuLqu",
         "123456", "123.jpr", new Role(1))))
@@ -78,6 +93,14 @@ class UserServiceTest {
 
   @Test
   void restore() {
+    Mockito.doReturn(Optional.of(new User(1, 1, LocalDateTime.now(), "vanya",
+        "some@mail.ru", "$2a$10$FLwXXL.MI88B.UCf5zgHbek0Qk3k.oSqhzAUyyMPJFkYWOddpuLqu",
+        "123456", "123.jpr", new Role(1))))
+        .when(userRepository).findByEmail("some@mail.ru");
+    JsonNode jsonNode = userService.restore("some@mail.ru");
+    Mockito.verify(mailSender, Mockito.times(1))
+        .send("some@mail.ru", "Code", "/login/change-password/123456");
+    Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
 
   @Test
@@ -99,6 +122,10 @@ class UserServiceTest {
 
   @Test
   void getAllStatistics() {
+    Post post = newPost();
+    Mockito.doReturn(List.of(post)).when(postRepository).findAll();
+    JsonNode jsonNode = userService.getAllStatistics();
+    Assertions.assertEquals(2, jsonNode.get("viewsCount").asInt());
   }
 
   @Test
@@ -114,10 +141,18 @@ class UserServiceTest {
   }
 
   @Test
-  void getCaptcha() {
+  void getCaptcha() throws IOException {
+    JsonNode jsonNode = userService.getCaptcha();
+    Mockito.verify(captchaCodeRepository, Mockito.times(1))
+        .save(ArgumentMatchers.isNotNull());
+    Assertions.assertNotNull(jsonNode.get("secret").asText());
   }
 
-  @Test
-  void createCaptchaValue() {
+  private Post newPost() {
+    return new Post(1, 1, ModerationStatus.NEW, new User(1, 1, LocalDateTime.now(), "vanya",
+        "some@mail.ru", "123456", "123456", "123.jpr", new Role(1)),
+        new User(1, 1, LocalDateTime.now(), "vanya",
+            "some@mail.ru", "123456", "123456", "123.jpr", new Role(1)),
+        null, LocalDateTime.now(), "Hello World", "SSSSSSSSSSSSSSSSS", 2);
   }
 }

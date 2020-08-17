@@ -42,9 +42,6 @@ import main.repository.UserRepository;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.acls.model.NotFoundException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -58,7 +55,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class UserService implements UserDetailsService {
 
-  private static Map<String, Integer> authorizedUsers = new HashMap<>();
+  private static final Map<String, Integer> authorizedUsers = new HashMap<>();
 
   private static final String SHORT_PASSWORD = "Пароль короче 6-ти символов";
 
@@ -84,12 +81,6 @@ public class UserService implements UserDetailsService {
 
   @Autowired
   private MailSender mailSender;
-
-  @Autowired
-  private InitService initService;
-
-  @Autowired
-  PostService postService;
 
   @Autowired
   PostRepository postRepository;
@@ -135,7 +126,7 @@ public class UserService implements UserDetailsService {
       object.put("result", true);
     } else {
       object.put("result", false);
-      if (!byEmail.isEmpty()) {
+      if (byEmail.isPresent()) {
         objectError.put("email", "Этот e-mail уже зарегистрирован");
       }
       if (registerFormUser.getPassword().length() < 6) {
@@ -154,7 +145,7 @@ public class UserService implements UserDetailsService {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     Optional<User> userByEmail = userRepository.findByEmail(loginDto.getE_mail());
-    if (!userByEmail.isEmpty() && passwordEncoder()
+    if (userByEmail.isPresent() && passwordEncoder()
         .matches(loginDto.getPassword(), userByEmail.get().getPassword())) {
       String sessionId = request.getSession().getId();
       User currentUser = userByEmail.get();
@@ -229,7 +220,7 @@ public class UserService implements UserDetailsService {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     Optional<User> userByEmail = userRepository.findByEmail(email);
-    if (!userByEmail.isEmpty()) {
+    if (userByEmail.isPresent()) {
       mailSender.send(email, "Code", "/login/change-password/" + userByEmail.get().getCode());
       object.put("result", true);
       return object;
@@ -247,7 +238,7 @@ public class UserService implements UserDetailsService {
     ObjectNode objectError = mapper.createObjectNode();
     Optional<User> userByCode = userRepository.findByCode(code);
     Optional<CaptchaCode> captchaCode = captchaCodeRepository.findByCode(captcha);
-    if (!userByCode.isEmpty() && !captchaCode.isEmpty() && password.length() > 5
+    if (userByCode.isPresent() && captchaCode.isPresent() && password.length() > 5
         && captchaCode.get().getSecretCode().equals(captcha_secret)) {
       User user = userRepository.getOne(userByCode.get().getId());
       user.setPassword(passwordEncoder().encode(password));
@@ -258,7 +249,7 @@ public class UserService implements UserDetailsService {
       if (password.length() < 6) {
         objectError.put("password", SHORT_PASSWORD);
       }
-      if (!captchaCode.isEmpty() && !captchaCode.get().getSecretCode().equals(captcha_secret)
+      if (captchaCode.isPresent() && !captchaCode.get().getSecretCode().equals(captcha_secret)
           || captchaCode.isEmpty()) {
         objectError.put("captcha", WRONG_CAPTCHA);
       }
@@ -317,11 +308,11 @@ public class UserService implements UserDetailsService {
       userToUpdate.setPassword(passwordEncoder().encode(password));
       object.put("result", true);
     }
-    if (!userByEmail.isEmpty() && !user.getEmail().equals(userByEmail.get().getEmail())
+    if (userByEmail.isPresent() && !user.getEmail().equals(userByEmail.get().getEmail())
         || name.length() < 1
         || name.length() > 1000 || password.length() < 6) {
       object.put("result", false);
-      if (!userByEmail.isEmpty() && !user.getEmail().equals(userByEmail.get().getEmail())) {
+      if (userByEmail.isPresent() && !user.getEmail().equals(userByEmail.get().getEmail())) {
         objectError.put("email", "Этот e-mail уже зарегистрирован");
       }
       if (name.length() < 1
@@ -351,7 +342,8 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode getMyStatistics() throws Exception {
-    User currentUser = authenticationService.getCurrentUser();;
+    User currentUser = authenticationService.getCurrentUser();
+    ;
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     List<Post> myPosts = postRepository.findAllMyPosts(0, (int) postRepository.count(),
@@ -385,7 +377,8 @@ public class UserService implements UserDetailsService {
   public JsonNode getAllStatistics() {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    List<ResponsePostApi> allPosts = postRepository.findAll().stream()
+    List<Post> posts = postRepository.findAll();
+    List<ResponsePostApi> allPosts = posts.stream()
         .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
     ;
     object.put("postsCount", allPosts.size());
@@ -402,10 +395,14 @@ public class UserService implements UserDetailsService {
 
     LocalDateTime firstPublication = postRepository.findFirstPublication();
 
-    ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
-    ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+    if (firstPublication != null) {
+      ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
+      ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
 
-    object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
+      object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
+    } else {
+      object.put("firstPublication", 0);
+    }
     return object;
   }
 
@@ -439,7 +436,8 @@ public class UserService implements UserDetailsService {
   public void putSettings(boolean multiuserMode, boolean postPremoderation,
       boolean statisticsIsPublic)
       throws Exception {
-    User currentUser = authenticationService.getCurrentUser();;
+    User currentUser = authenticationService.getCurrentUser();
+    ;
     if (currentUser.getIsModerator() == 1) {
       List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
       for (GlobalSettings globalSetting : globalSettings) {
