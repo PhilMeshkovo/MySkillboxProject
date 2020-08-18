@@ -9,7 +9,6 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -52,8 +51,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class PostService {
 
-  private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
   @Autowired
   PostRepository postRepository;
 
@@ -79,12 +76,9 @@ public class PostService {
   CommentMapper commentMapper;
 
   @Autowired
-  UserService userService;
-
-  @Autowired
   AuthenticationService authenticationService;
 
-  private static Map<String, Integer> authorizedUsers = UserService.getAuthorizedUsers();
+  private static final Map<String, Integer> authorizedUsers = UserService.getAuthorizedUsers();
 
   public PostListApi getAllPosts(Integer offset, Integer limit, String mode) {
     List<ResponsePostApi> responsePostApiList;
@@ -177,7 +171,7 @@ public class PostService {
 
   public PostListApi getAllPostsByTag(Integer offset, Integer limit, String tag) {
     Optional<Tag> tagById = tagRepository.findTagByQuery(tag);
-    if (!tagById.isEmpty()) {
+    if (tagById.isPresent()) {
       Set<Post> posts = tagById.get().getPosts();
       List<Integer> idList = posts.stream().map(p -> p.getId()).collect(Collectors.toList());
       List<Post> postListWithPagination = postRepository
@@ -225,7 +219,7 @@ public class PostService {
   public PostByIdApi findPostById(int postId) {
     Optional<Post> optional = postRepository.findById(postId);
     String sessionId = request.getSession().getId();
-    if (!optional.isEmpty()) {
+    if (optional.isPresent()) {
       PostByIdApi postByIdApi = new PostByIdApi();
       Post post = optional.get();
       if (post.getIsActive() == 1 && post.getModerationStatus().equals(ModerationStatus.ACCEPTED) &&
@@ -377,7 +371,7 @@ public class PostService {
     User currentUser = authenticationService.getCurrentUser();
     if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
       Optional<Post> postById = postRepository.findById(id);
-      if (!postById.isEmpty() && postById.get().getUser().equals(currentUser)) {
+      if (postById.isPresent() && postById.get().getUser().equals(currentUser)) {
         Set<Tag> setTags = Arrays.stream(addPostDto.getTags())
             .map(t -> tagRepository.findTagByQuery(t).get())
             .collect(Collectors.toSet());
@@ -425,7 +419,7 @@ public class PostService {
     String text = postCommentDto.getText();
     Optional<Post> postById = postRepository.findById(postId);
     User currentUser = authenticationService.getCurrentUser();
-    if (!postById.isEmpty() && text.length() > 10 && postCommentDto.getParent_id() != null
+    if (postById.isPresent() && text.length() > 10 && postCommentDto.getParent_id() != null
         && !postCommentRepository.findById(postCommentDto.getParent_id()).isEmpty()
         && postCommentRepository.findById(postCommentDto.getParent_id()).get().getPost()
         .equals(postById.get())) {
@@ -440,7 +434,7 @@ public class PostService {
       PostComment savedPostComment = postCommentRepository.save(postComment);
       object.put("id", savedPostComment.getId());
     }
-    if (!postById.isEmpty() && text.length() > 9 && postCommentDto.getParent_id() == null) {
+    if (postById.isPresent() && text.length() > 9 && postCommentDto.getParent_id() == null) {
       PostComment postComment = PostComment.builder()
           .post(postById.get())
           .user(currentUser)
@@ -450,7 +444,7 @@ public class PostService {
       PostComment savedPostComment = postCommentRepository.save(postComment);
       object.put("id", savedPostComment.getId());
     }
-    if (postCommentDto.getParent_id() != null && !postById.isEmpty() && !postCommentRepository
+    if (postCommentDto.getParent_id() != null && postById.isPresent() && !postCommentRepository
         .findById(postCommentDto.getParent_id()).get().getPost().equals(postById.get())) {
       object.put("result", false);
       ObjectNode objectError = mapper.createObjectNode();
@@ -467,7 +461,7 @@ public class PostService {
         object.put("error", objectError);
       }
     }
-    if (!postById.isEmpty() && text.length() < 10) {
+    if (postById.isPresent() && text.length() < 10) {
       object.put("result", false);
       ObjectNode objectError = mapper.createObjectNode();
       objectError.put("text", "Comment text too short");
@@ -496,7 +490,7 @@ public class PostService {
       String[] arrayTags = query.split(",");
       for (String arrayTag : arrayTags) {
         Optional<Tag> tagByQuery = tagRepository.findTagByQuery(arrayTag);
-        if (!tagByQuery.isEmpty()) {
+        if (tagByQuery.isPresent()) {
           double weight = getWeightOfTag(tagByQuery.get());
           TagDto tagDto = TagDto.builder()
               .name(tagByQuery.get().getName())
