@@ -13,7 +13,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,8 +54,6 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class UserService implements UserDetailsService {
 
-  private static final Map<String, Integer> authorizedUsers = new HashMap<>();
-
   private static final String SHORT_PASSWORD = "Пароль короче 6-ти символов";
 
   private static final String WRONG_CAPTCHA = "Код с картинки введён неверно";
@@ -80,7 +77,7 @@ public class UserService implements UserDetailsService {
   HttpServletRequest request;
 
   @Autowired
-  private MailSender mailSender;
+  MailSender mailSender;
 
   @Autowired
   PostRepository postRepository;
@@ -88,9 +85,6 @@ public class UserService implements UserDetailsService {
   @Autowired
   AuthenticationService authenticationService;
 
-  public static Map<String, Integer> getAuthorizedUsers() {
-    return authorizedUsers;
-  }
 
   @Override
   public UserDetails loadUserByUsername(@NonNull String username)
@@ -111,7 +105,6 @@ public class UserService implements UserDetailsService {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     ObjectNode objectError = mapper.createObjectNode();
-
     Optional<User> byEmail = userRepository.findByEmail(registerFormUser.getE_mail());
     if (byEmail.isEmpty() && registerFormUser.getPassword().length() > 5
         && registerFormUser.getName().length() > 0 && registerFormUser.getName().length() < 1000) {
@@ -149,7 +142,9 @@ public class UserService implements UserDetailsService {
         .matches(loginDto.getPassword(), userByEmail.get().getPassword())) {
       String sessionId = request.getSession().getId();
       User currentUser = userByEmail.get();
+      Map<String, Integer> authorizedUsers = authenticationService.getAuthorizedUsers();
       authorizedUsers.put(sessionId, currentUser.getId());
+      authenticationService.setAuthorizedUsers(authorizedUsers);
       int allPosts = (int) postRepository.count();
       int moderationCount = postRepository.findAllPostsToModeration(0,
           allPosts, "NEW").size();
@@ -177,8 +172,8 @@ public class UserService implements UserDetailsService {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     String sessionId = request.getSession().getId();
-    if (authorizedUsers.containsKey(sessionId)) {
-      Integer id = authorizedUsers.get(sessionId);
+    if (authenticationService.getAuthorizedUsers().containsKey(sessionId)) {
+      Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
       User user = userRepository.findById(id).get();
       UserDto userDto;
       if (user.getIsModerator() == 1) {
@@ -223,11 +218,10 @@ public class UserService implements UserDetailsService {
     if (userByEmail.isPresent()) {
       mailSender.send(email, "Code", "/login/change-password/" + userByEmail.get().getCode());
       object.put("result", true);
-      return object;
     } else {
       object.put("result", false);
-      return object;
     }
+    return object;
   }
 
   @Transactional
@@ -269,7 +263,9 @@ public class UserService implements UserDetailsService {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     ObjectNode objectError = mapper.createObjectNode();
-    User user = authenticationService.getCurrentUser();
+    String sessionId = request.getSession().getId();
+    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+    User user = userRepository.findById(id).get();
     Optional<User> userByEmail = userRepository.findByEmail(email);
     if (userByEmail.isEmpty() && name != null
         && name.length() > 0 &&
@@ -410,7 +406,9 @@ public class UserService implements UserDetailsService {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     String sessionId = request.getSession().getId();
+    Map<String, Integer> authorizedUsers = authenticationService.getAuthorizedUsers();
     authorizedUsers.remove(sessionId);
+    authenticationService.setAuthorizedUsers(authorizedUsers);
     object.put("result", true);
     return object;
   }
@@ -436,7 +434,9 @@ public class UserService implements UserDetailsService {
   public void putSettings(boolean multiuserMode, boolean postPremoderation,
       boolean statisticsIsPublic)
       throws Exception {
-    User currentUser = authenticationService.getCurrentUser();
+    String sessionId = request.getSession().getId();
+    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+    User currentUser = userRepository.findById(id).get();
     if (currentUser.getIsModerator() == 1) {
       List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
       for (GlobalSettings globalSetting : globalSettings) {

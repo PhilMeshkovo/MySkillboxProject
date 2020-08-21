@@ -1,5 +1,8 @@
 package main.service;
 
+import java.util.HashMap;
+import java.util.Map;
+import lombok.Data;
 import main.model.User;
 import main.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,12 +12,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+@Data
 @Service
 public class AuthenticationService {
+
+  private Map<String, Integer> authorizedUsers = new HashMap<>();
+
   @Autowired
   UserRepository userRepository;
 
-  public User getCurrentUser() throws Exception {
+  public User getCurrentUser() {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
     if (null == auth) {

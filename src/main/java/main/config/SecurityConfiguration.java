@@ -11,23 +11,21 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Slf4j
 @EnableWebSecurity
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Autowired
-  private UserService userService;
+  UserService userService;
 
   private static final String[] AUTH_WHITELIST = {
-      "/api/post",
-      "/api/post/{id}",
+      "/**",
+      "/api/init",
       "/api/post/byDate",
       "/api/post/byTag",
       "/api/post/search",
       "/api/auth/register",
-      "/api/image/**",
       "/api/auth/login",
       "/api/tag",
       "/api/calendar",
@@ -35,36 +33,20 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       "/api/auth/restore",
       "/api/auth/password",
       "/api/auth/captcha",
-      "/api/statistics/all",
-      "/api/auth/logout",
-      "/api/settings"
-  };
-  private static final String[] AUTH_BLACKLIST = {
-      "/api/post/moderation",
-      "/api/post/my"
+      "/api/statistics/all"
   };
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
-    http.cors().disable().csrf().disable()
-        .authorizeRequests().antMatchers(AUTH_BLACKLIST).authenticated()
+    http.csrf().disable()
+        .authorizeRequests().antMatchers(AUTH_WHITELIST).permitAll()
         .and()
-        .authorizeRequests().antMatchers(HttpMethod.POST, "/api/post").authenticated()
+        .authorizeRequests().antMatchers(HttpMethod.GET, "/api/post").permitAll()
         .and()
-        .authorizeRequests().antMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+        .authorizeRequests().antMatchers(HttpMethod.GET, "/api/settings/").permitAll()
         .and()
-        .authorizeRequests().antMatchers(AUTH_WHITELIST).permitAll();
-    http.authorizeRequests().anyRequest().authenticated()
-        .and()
-        .formLogin().and()
-        .logout().logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-        .permitAll();
-//    http.csrf().disable()
-//        .authorizeRequests()
-//        .antMatchers("/**", "/api/post/**","/api/auth/login").permitAll()   // маска /** открывает доступ ко всему
-//        .anyRequest()
-//        .authenticated();
-
+        .authorizeRequests().antMatchers(HttpMethod.GET, "/api/post/{id}").permitAll()
+        .anyRequest().authenticated();
   }
 
   @Bean

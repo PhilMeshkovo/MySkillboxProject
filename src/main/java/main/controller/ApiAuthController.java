@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import main.dto.LoginDto;
 import main.dto.RegisterForm;
-import main.service.InitService;
 import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,9 +22,6 @@ public class ApiAuthController {
 
   @Autowired
   UserService userService;
-
-  @Autowired
-  InitService initService;
 
   @PostMapping("/auth/register")
   public ResponseEntity<?> addUser(@RequestBody RegisterForm registerForm) {
@@ -48,8 +44,8 @@ public class ApiAuthController {
 
   @PostMapping("/auth/restore")
   public ResponseEntity<?> restore(
-      @RequestParam(value = "email", required = false) String email) {
-    JsonNode jsonNode = userService.restore(email);
+      @RequestBody JsonNode email) {
+    JsonNode jsonNode = userService.restore(email.get("email").asText());
     return new ResponseEntity<>(jsonNode, HttpStatus.OK);
   }
 

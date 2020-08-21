@@ -18,7 +18,6 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -84,7 +83,7 @@ public class Post {
   @Setter
   private String title;
 
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "Text")
   @Getter
   @Setter
   private String text;

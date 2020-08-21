@@ -78,8 +78,6 @@ public class PostService {
   @Autowired
   AuthenticationService authenticationService;
 
-  private static final Map<String, Integer> authorizedUsers = UserService.getAuthorizedUsers();
-
   public PostListApi getAllPosts(Integer offset, Integer limit, String mode) {
     List<ResponsePostApi> responsePostApiList;
     if (mode.equalsIgnoreCase("RECENT")) {
@@ -233,9 +231,12 @@ public class PostService {
         List<String> strings = tags.stream().map(t -> t.getName())
             .collect(Collectors.toList());
 
-        if (!authorizedUsers.containsKey(sessionId) || authorizedUsers.containsKey(sessionId)
-            && post.getUser().getId() != authorizedUsers.get(sessionId) &&
-            userRepository.findById(authorizedUsers.get(sessionId)).get().getIsModerator() != 1) {
+        if (!authenticationService.getAuthorizedUsers().containsKey(sessionId)
+            || authenticationService.getAuthorizedUsers().containsKey(sessionId)
+            && post.getUser().getId() != authenticationService.getAuthorizedUsers().get(sessionId)
+            &&
+            userRepository.findById(authenticationService.getAuthorizedUsers().get(sessionId)).get()
+                .getIsModerator() != 1) {
           Post post1 = postRepository.getOne(postId);
           int viewCount = post.getView_count() + 1;
           post1.setView_count(viewCount);
@@ -250,8 +251,10 @@ public class PostService {
     }
   }
 
-  public PostListApi getAllMyPosts(Integer offset, Integer limit, String status) throws Exception {
-    User currentUser = authenticationService.getCurrentUser();
+  public PostListApi getAllMyPosts(Integer offset, Integer limit, String status) {
+    String sessionId = request.getSession().getId();
+    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+    User currentUser = userRepository.findById(id).get();
     List<ResponsePostApi> listResponse;
     List<ResponsePostApi> listResponseApi;
     if (status.toUpperCase().equals("INACTIVE")) {
@@ -313,13 +316,13 @@ public class PostService {
     return new PostListApi(responseWithAnnounceList, responsePosts.size());
   }
 
-  public JsonNode addPost(AddPostDto addPostDto)
-      throws Exception {
+  public JsonNode addPost(AddPostDto addPostDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
-      User currentUser = authenticationService.getCurrentUser();
-
+      String sessionId = request.getSession().getId();
+      Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+      User currentUser = userRepository.findById(id).get();
       Set<Tag> setTags = Arrays.stream(addPostDto.getTags())
           .map(t -> tagRepository.findTagByQuery(t).get())
           .collect(Collectors.toSet());
@@ -365,10 +368,12 @@ public class PostService {
   }
 
   @Transactional
-  public JsonNode updatePost(int id, AddPostDto addPostDto) throws Exception {
+  public JsonNode updatePost(int id, AddPostDto addPostDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    User currentUser = authenticationService.getCurrentUser();
+    String sessionId = request.getSession().getId();
+    Integer idUser = authenticationService.getAuthorizedUsers().get(sessionId);
+    User currentUser = userRepository.findById(idUser).get();
     if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
       Optional<Post> postById = postRepository.findById(id);
       if (postById.isPresent() && postById.get().getUser().equals(currentUser)) {
@@ -420,7 +425,7 @@ public class PostService {
     Optional<Post> postById = postRepository.findById(postId);
     User currentUser = authenticationService.getCurrentUser();
     if (postById.isPresent() && text.length() > 10 && postCommentDto.getParent_id() != null
-        && !postCommentRepository.findById(postCommentDto.getParent_id()).isEmpty()
+        && postCommentRepository.findById(postCommentDto.getParent_id()).isPresent()
         && postCommentRepository.findById(postCommentDto.getParent_id()).get().getPost()
         .equals(postById.get())) {
       PostComment parent = postCommentRepository.findById(postCommentDto.getParent_id()).get();
@@ -473,7 +478,6 @@ public class PostService {
 
   public ListTagsDto getTag(String query) {
     ListTagsDto listTagsDto = new ListTagsDto();
-    long totalPosts = postRepository.count();
     List<TagDto> tagDtoList = new ArrayList<>();
     if (query.equals("")) {
       List<Tag> allTags = tagRepository.findAll();
@@ -534,8 +538,8 @@ public class PostService {
   @Transactional
   public boolean moderationPost(PostModerationDto postModerationDto) throws Exception {
     Optional<Post> postById = postRepository.findById(postModerationDto.getPost_id());
-    if (!postById.isEmpty() && postModerationDto.getDecision().equalsIgnoreCase("accept")
-        || !postById.isEmpty() && postModerationDto.getDecision().equalsIgnoreCase("decline")) {
+    if (postById.isPresent() && postModerationDto.getDecision().equalsIgnoreCase("accept")
+        || postById.isPresent() && postModerationDto.getDecision().equalsIgnoreCase("decline")) {
       Post postToModeration = postRepository.getOne(postModerationDto.getPost_id());
       if (postModerationDto.getDecision().equalsIgnoreCase("accept")) {
         postToModeration.setModerationStatus(ModerationStatus.ACCEPTED);
@@ -543,7 +547,9 @@ public class PostService {
       if (postModerationDto.getDecision().equalsIgnoreCase("decline")) {
         postToModeration.setModerationStatus(ModerationStatus.DECLINED);
       }
-      User currentUser = authenticationService.getCurrentUser();
+      String sessionId = request.getSession().getId();
+      Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+      User currentUser = userRepository.findById(id).get();
       postToModeration.setModerator(currentUser);
       return true;
     } else {
@@ -583,17 +589,20 @@ public class PostService {
   }
 
   @Transactional
-  public JsonNode postLike(PostLikeDto postLikeDto) throws Exception {
+  public JsonNode postLike(PostLikeDto postLikeDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    User currentUser = authenticationService.getCurrentUser();
+    String sessionId = request.getSession().getId();
+    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+    User currentUser = userRepository.findById(id).get();
     Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
     Optional<PostVotes> postVotesOptional = postVotesRepository
         .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
-    if (post.isEmpty() || !postVotesOptional.isEmpty() && postVotesOptional.get().getValue() == 1) {
+    if (post.isEmpty()
+        || postVotesOptional.isPresent() && postVotesOptional.get().getValue() == 1) {
       object.put("result", false);
     }
-    if (!post.isEmpty() && postVotesOptional.isEmpty()) {
+    if (post.isPresent() && postVotesOptional.isEmpty()) {
       PostVotes postVotes = PostVotes.builder()
           .time(LocalDateTime.now())
           .value(1)
@@ -603,7 +612,7 @@ public class PostService {
       postVotesRepository.save(postVotes);
       object.put("result", true);
     }
-    if (!post.isEmpty() && !postVotesOptional.isEmpty()
+    if (post.isPresent() && postVotesOptional.isPresent()
         && postVotesOptional.get().getValue() == -1) {
       PostVotes postVotes = postVotesRepository.getOne(postVotesOptional.get().getId());
       postVotes.setValue(1);
@@ -613,18 +622,20 @@ public class PostService {
   }
 
   @Transactional
-  public JsonNode postDislike(PostLikeDto postLikeDto) throws Exception {
+  public JsonNode postDislike(PostLikeDto postLikeDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    User currentUser = authenticationService.getCurrentUser();
+    String sessionId = request.getSession().getId();
+    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+    User currentUser = userRepository.findById(id).get();
     Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
     Optional<PostVotes> postVotesOptional = postVotesRepository
         .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
     if (post.isEmpty()
-        || !postVotesOptional.isEmpty() && postVotesOptional.get().getValue() == -1) {
+        || postVotesOptional.isPresent() && postVotesOptional.get().getValue() == -1) {
       object.put("result", false);
     }
-    if (!post.isEmpty() && postVotesOptional.isEmpty()) {
+    if (post.isPresent() && postVotesOptional.isEmpty()) {
       PostVotes postVotes = PostVotes.builder()
           .time(LocalDateTime.now())
           .value(-1)
@@ -634,7 +645,7 @@ public class PostService {
       postVotesRepository.save(postVotes);
       object.put("result", true);
     }
-    if (!post.isEmpty() && !postVotesOptional.isEmpty()
+    if (post.isPresent() && postVotesOptional.isPresent()
         && postVotesOptional.get().getValue() == 1) {
       PostVotes postVotes = postVotesRepository.getOne(postVotesOptional.get().getId());
       postVotes.setValue(-1);
