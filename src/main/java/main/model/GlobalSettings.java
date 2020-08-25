@@ -17,15 +17,15 @@ public class GlobalSettings {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id", nullable = false, updatable = false)
+  @Column(name = "id", nullable = false)
   private int id;
 
-  @Column(nullable = false)
+  @Column(name = "code", nullable = false)
   private String code;
 
-  @Column(nullable = false)
+  @Column(name = "name", nullable = false)
   private String name;
 
-  @Column(nullable = false)
+  @Column(name = "value", nullable = false)
   private String value;
 }

@@ -120,16 +120,6 @@ class UserServiceTest {
     Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
 
-
-  @Test
-  void getMyStatistics() throws Exception {
-    Mockito.doReturn(new User(1, 1, LocalDateTime.now(), "vanya",
-        "some@mail.ru", "123456", "123456", "123.jpr", new Role(1)))
-        .when(authenticationService).getCurrentUser();
-    JsonNode jsonNode = userService.getMyStatistics();
-    Assertions.assertEquals(0, jsonNode.get("postsCount").asInt());
-  }
-
   @Test
   void getAllStatistics() {
     Post post = newPost();

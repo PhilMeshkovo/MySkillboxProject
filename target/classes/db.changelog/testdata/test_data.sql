@@ -1,8 +1,6 @@
 ﻿
 BEGIN;
 
-ALTER TABLE posts MODIFY text TEXT;
-
 INSERT INTO users(id, is_moderator, reg_time, name, email, password, code, photo) VALUES
 (1, 1,  '2016-01-06','Bonita Boyer',  'tarakan@mail.ru', '$2y$12$tfeBz8zV72agV/JS/UJy4OHD7sEcPsyworySRx0jaTgpQljHRe4Jm', '1234', '/api/image/default-1.png'),
 (2, 1,'2014-09-30', 'Ernie Adamson',  'WaltraudK.Pearson96@example.com', '44968843', '1234', '1234'),
@@ -78,9 +76,9 @@ INSERT INTO post_votes(id, time, user_id, post_id, value) VALUES
 (10, '1984-10-31 07:25:26', 4, 4, 1);
 
 INSERT INTO global_settings(id, code, name, value) VALUES
-(1, 'MULTIUSER_MODE', 'Многопользовательский режим', false),
-(2, 'POST_PREMODERATION', 'Премодерация постов', true),
-(3, 'STATISTICS_IS_PUBLIC', 'Показывать всем статистику блога', true);
+(1, 'MULTIUSER_MODE', 'Многопользовательский режим', 'NO'),
+(2, 'POST_PREMODERATION', 'Премодерация постов', 'YES'),
+(3, 'STATISTICS_IS_PUBLIC', 'Показывать всем статистику блога', 'YES');
 
 INSERT INTO tag2post(post_id, tag_id) VALUES
 (5, 5),

@@ -25,7 +25,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       "/api/post/byDate",
       "/api/post/byTag",
       "/api/post/search",
-      "/api/auth/register",
+      "/api/auth/register/",
       "/api/auth/login",
       "/api/tag",
       "/api/calendar",
@@ -46,7 +46,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .authorizeRequests().antMatchers(HttpMethod.GET, "/api/settings/").permitAll()
         .and()
         .authorizeRequests().antMatchers(HttpMethod.GET, "/api/post/{id}").permitAll()
-        .anyRequest().authenticated();
+        .anyRequest().authenticated()
+        .and().formLogin();
   }
 
   @Bean

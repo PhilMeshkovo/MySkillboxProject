@@ -20,9 +20,11 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
+import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import main.dto.GlobalSettingsDto;
 import main.dto.LoginDto;
 import main.dto.RegisterForm;
 import main.dto.ResponsePostApi;
@@ -102,36 +104,42 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode saveUser(RegisterForm registerFormUser) {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
-    ObjectNode objectError = mapper.createObjectNode();
-    Optional<User> byEmail = userRepository.findByEmail(registerFormUser.getE_mail());
-    if (byEmail.isEmpty() && registerFormUser.getPassword().length() > 5
-        && registerFormUser.getName().length() > 0 && registerFormUser.getName().length() < 1000) {
-      User user = new User();
-      user.setEmail(registerFormUser.getE_mail());
-      user.setName(registerFormUser.getName());
-      user.setRole(new Role(1, "ROLE_USER"));
-      user.setRegTime(LocalDateTime.now());
-      user.setPassword(passwordEncoder().encode(registerFormUser.getPassword()));
-      user.setCode(UUID.randomUUID().toString());
-      userRepository.save(user);
-      object.put("result", true);
-    } else {
-      object.put("result", false);
-      if (byEmail.isPresent()) {
-        objectError.put("email", "Этот e-mail уже зарегистрирован");
+    Optional<GlobalSettings> globalSettings = globalSettingsRepository.findById(1);
+    if (globalSettings.get().getValue().equals("YES")) {
+      ObjectMapper mapper = new ObjectMapper();
+      ObjectNode object = mapper.createObjectNode();
+      ObjectNode objectError = mapper.createObjectNode();
+      Optional<User> byEmail = userRepository.findByEmail(registerFormUser.getE_mail());
+      if (byEmail.isEmpty() && registerFormUser.getPassword().length() > 5
+          && registerFormUser.getName().length() > 0
+          && registerFormUser.getName().length() < 1000) {
+        User user = new User();
+        user.setEmail(registerFormUser.getE_mail());
+        user.setName(registerFormUser.getName());
+        user.setRole(new Role(1, "ROLE_USER"));
+        user.setRegTime(LocalDateTime.now());
+        user.setPassword(passwordEncoder().encode(registerFormUser.getPassword()));
+        user.setCode(UUID.randomUUID().toString());
+        userRepository.save(user);
+        object.put("result", true);
+      } else {
+        object.put("result", false);
+        if (byEmail.isPresent()) {
+          objectError.put("email", "Этот e-mail уже зарегистрирован");
+        }
+        if (registerFormUser.getPassword().length() < 6) {
+          objectError.put("password", SHORT_PASSWORD);
+        }
+        if (registerFormUser.getName().length() < 1 || registerFormUser.getName().length() > 1000) {
+          objectError.put("name", "Имя указано неверно");
+        }
+        object.put("errors", objectError);
       }
-      if (registerFormUser.getPassword().length() < 6) {
-        objectError.put("password", SHORT_PASSWORD);
-      }
-      if (registerFormUser.getName().length() < 1 || registerFormUser.getName().length() > 1000) {
-        objectError.put("name", "Имя указано неверно");
-      }
-      object.put("errors", objectError);
-    }
 
-    return object;
+      return object;
+    } else {
+      throw new EntityNotFoundException("MULTIUSER MODE OFF");
+    }
   }
 
   public JsonNode login(LoginDto loginDto) {
@@ -337,9 +345,10 @@ public class UserService implements UserDetailsService {
     return filePath.toString();
   }
 
-  public JsonNode getMyStatistics() throws Exception {
-    User currentUser = authenticationService.getCurrentUser();
-    ;
+  public JsonNode getMyStatistics() {
+    String sessionId = request.getSession().getId();
+    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+    User currentUser = userRepository.findById(id).get();
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     List<Post> myPosts = postRepository.findAllMyPosts(0, (int) postRepository.count(),
@@ -416,12 +425,13 @@ public class UserService implements UserDetailsService {
   public JsonNode getSettings() throws Exception {
     GlobalSettings globalSettingStatistics = globalSettingsRepository.findAll().stream()
         .filter(p -> p.getCode().equals("STATISTICS_IS_PUBLIC")).findAny().get();
-    if (globalSettingStatistics.getValue().equals("1")) {
+    if (globalSettingStatistics.getValue().equals("YES")) {
       ObjectMapper mapper = new ObjectMapper();
       ObjectNode object = mapper.createObjectNode();
       List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
       for (GlobalSettings globalSetting : globalSettings) {
-        object.put(globalSetting.getCode(), stringToBoolean(globalSetting.getValue()));
+        object.put(globalSetting.getCode(),
+            stringToBoolean(globalSetting.getValue()));
       }
       return object;
     } else {
@@ -431,28 +441,32 @@ public class UserService implements UserDetailsService {
 
 
   @Transactional
-  public void putSettings(boolean multiuserMode, boolean postPremoderation,
-      boolean statisticsIsPublic)
+  public void putSettings(GlobalSettingsDto globalSettingsDto)
       throws Exception {
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
     User currentUser = userRepository.findById(id).get();
     if (currentUser.getIsModerator() == 1) {
-      List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
-      for (GlobalSettings globalSetting : globalSettings) {
-        if (globalSetting.getCode().equals("MULTIUSER_MODE")
-            && String.valueOf(multiuserMode) != null) {
-          globalSetting.setValue(booleanToString(multiuserMode));
-        }
-        if (globalSetting.getCode().equals("POST_PREMODERATION") &&
-            String.valueOf(postPremoderation) != null) {
-          globalSetting.setValue(booleanToString(postPremoderation));
-        }
-        if (globalSetting.getCode().equals("STATISTICS_IS_PUBLIC") &&
-            String.valueOf(statisticsIsPublic) != null) {
-          globalSetting.setValue(booleanToString(statisticsIsPublic));
-        }
+      GlobalSettings globalSettingsMultiUser = globalSettingsRepository.getOne(1);
+      if (globalSettingsDto.isMULTIUSER_MODE()) {
+        globalSettingsMultiUser.setValue("YES");
+      } else {
+        globalSettingsMultiUser.setValue("NO");
       }
+      GlobalSettings globalSettingsPostPremoderation = globalSettingsRepository.getOne(2);
+      if (globalSettingsDto.isPOST_PREMODERATION()) {
+        globalSettingsPostPremoderation.setValue("YES");
+      } else {
+        globalSettingsPostPremoderation.setValue("NO");
+      }
+      GlobalSettings globalSettingsStat = globalSettingsRepository.getOne(3);
+      if (globalSettingsDto.isSTATISTICS_IS_PUBLIC()) {
+        globalSettingsStat.setValue("YES");
+      } else {
+        globalSettingsStat.setValue("NO");
+      }
+    } else {
+      throw new Exception("unauthorized");
     }
   }
 
@@ -478,7 +492,7 @@ public class UserService implements UserDetailsService {
   }
 
   private boolean stringToBoolean(String string) {
-    if (string.equals("1")) {
+    if (string.equals("YES")) {
       return true;
     } else {
       return false;

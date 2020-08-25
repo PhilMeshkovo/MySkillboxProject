@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
+import main.dto.GlobalSettingsDto;
 import main.dto.ResponseApiInit;
 import main.service.InitService;
 import main.service.UserService;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -78,10 +78,9 @@ public class ApiGeneralController {
 
   @PutMapping("/settings")
   public void putSettings(
-      @RequestParam(value = "MULTIUSER_MODE", required = false) boolean multiuserMode,
-      @RequestParam(value = "POST_PREMODERATION", required = false) boolean postPremoderation,
-      @RequestParam(value = "STATISTICS_IS_PUBLIC", required = false) boolean statisticsIsPublic)
+      @RequestBody GlobalSettingsDto globalSettingsDto
+  )
       throws Exception {
-    userService.putSettings(multiuserMode, postPremoderation, statisticsIsPublic);
+    userService.putSettings(globalSettingsDto);
   }
 }

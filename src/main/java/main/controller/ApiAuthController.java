@@ -2,6 +2,7 @@ package main.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
+import javax.persistence.EntityNotFoundException;
 import main.dto.LoginDto;
 import main.dto.RegisterForm;
 import main.service.UserService;
@@ -25,8 +26,12 @@ public class ApiAuthController {
 
   @PostMapping("/auth/register")
   public ResponseEntity<?> addUser(@RequestBody RegisterForm registerForm) {
-    JsonNode jsonNode = userService.saveUser(registerForm);
-    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    try {
+      JsonNode jsonNode = userService.saveUser(registerForm);
+      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    } catch (EntityNotFoundException e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+    }
   }
 
   @PostMapping("/auth/login")
