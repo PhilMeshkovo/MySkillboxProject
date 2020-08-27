@@ -5,23 +5,22 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionContext;
 import main.dto.AddPostDto;
 import main.dto.PostByIdApi;
 import main.dto.PostListApi;
+import main.model.GlobalSettings;
 import main.model.Post;
 import main.model.Tag;
 import main.model.User;
 import main.model.enums.ModerationStatus;
+import main.repository.GlobalSettingsRepository;
 import main.repository.PostRepository;
 import main.repository.TagRepository;
 import main.repository.UserRepository;
@@ -56,15 +55,27 @@ class PostServiceTest {
   UserRepository userRepository;
 
   @Mock
-  HttpServletRequest request;
+  private HttpServletRequest request;
 
+  @MockBean
+  GlobalSettingsRepository globalSettingsRepository;
+
+  @MockBean
+  HttpSession httpSession;
 
   @MockBean
   AuthenticationService authenticationService;
 
+  private final Map<String, Integer> authorizedUsers = new HashMap<>();
+
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
+  }
+
+  void initAuthorizedUsers() {
+    authorizedUsers.put("1", 0);
+    authorizedUsers.put("2", 0);
   }
 
   @Test
@@ -126,49 +137,43 @@ class PostServiceTest {
 
   @Test
   void addPost() {
-    Post post = Post.builder()
-        .id(0)
-        .user(getUser())
-        .moderationStatus(ModerationStatus.NEW)
-        .title("hello world again!")
-        .isActive(1)
-        .tags(Set.of())
-        .moderator(getUser())
-        .text(getText())
-        .time(LocalDateTime.now())
-        .view_count(0)
-        .build();
+    Post post = getPost();
+    AddPostDto addPostDto = new AddPostDto();
+    addPostDto.setTitle(post.getTitle());
+    addPostDto.setTimestamp(0L);
+    addPostDto.setText(getText());
+    addPostDto.setActive(1);
+    GlobalSettings globalSettings = new GlobalSettings();
+    globalSettings.setValue("YES");
+    Mockito.doReturn(Optional.of(globalSettings)).when(globalSettingsRepository).findById(2);
+    Mockito.doReturn("1").when(httpSession).getId();
+    Mockito.doReturn(httpSession).when(request).getSession();
+    initAuthorizedUsers();
+    Mockito.doReturn(authorizedUsers).when(authenticationService).getAuthorizedUsers();
+    Mockito.doReturn(Optional.of(getUser())).when(userRepository).findById(0);
     Mockito.doReturn(post).when(postRepository).save(post);
-    Assertions.assertEquals(0, post.getId());
+    JsonNode jsonNode = postService.addPost(addPostDto);
+    Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
 
   @Test
   void updatePost() {
     User user = getUser();
-    Tag tag = new Tag();
-    tag.setId(0);
-    tag.setName("java");
-    tag.setPosts(Set.of(getPost()));
     Post post = getPost();
     AddPostDto addPostDto = new AddPostDto();
     addPostDto.setActive(1);
     addPostDto.setText(getText());
     addPostDto.setTitle("DDDDDDDDDDDDDDDDDDDDDD");
     addPostDto.setTimestamp(0L);
-    String[] tags = {"java"};
-    addPostDto.setTags(tags);
-    HttpSession httpSession = getHttpSession();
     Mockito.doReturn(httpSession)
         .when(request).getSession();
-    Map<String, Integer> authUsers = new HashMap<>();
-    authUsers.put("1", 0);
-    Mockito.doReturn(authUsers)
+    initAuthorizedUsers();
+    Mockito.doReturn(authorizedUsers)
         .when(authenticationService).getAuthorizedUsers();
     Mockito.doReturn(Optional.of(user))
         .when(userRepository).findById(0);
     Mockito.doReturn(Optional.of(post)).when(postRepository).findById(0);
     Mockito.doReturn(post).when(postRepository).getOne(0);
-    Mockito.doReturn(Optional.of(tag)).when(tagRepository).findTagByQuery("java");
     JsonNode jsonNode = postService.updatePost(0, addPostDto);
     Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
@@ -197,7 +202,7 @@ class PostServiceTest {
     user.setId(0);
     user.setEmail("some@mail.ru");
     user.setName("vanya");
-    user.setRegTime(LocalDateTime.now());
+    user.setRegTime(LocalDateTime.of(2020, 5, 3, 2, 20));
     user.setPassword("123456");
     user.setCode("123456");
     return user;
@@ -206,7 +211,7 @@ class PostServiceTest {
   private Post getPost() {
     Tag tag = new Tag();
     tag.setId(0);
-    tag.setName("java");
+    tag.setName(null);
     tag.setPosts(Set.of());
     return Post.builder()
         .id(0)
@@ -220,95 +225,5 @@ class PostServiceTest {
         .time(LocalDateTime.now())
         .view_count(0)
         .build();
-  }
-
-  private HttpSession getHttpSession() {
-    HttpSession httpSession = new HttpSession() {
-      @Override
-      public long getCreationTime() {
-        return 0;
-      }
-
-      @Override
-      public String getId() {
-        return "1";
-      }
-
-      @Override
-      public long getLastAccessedTime() {
-        return 0;
-      }
-
-      @Override
-      public ServletContext getServletContext() {
-        return null;
-      }
-
-      @Override
-      public void setMaxInactiveInterval(int i) {
-
-      }
-
-      @Override
-      public int getMaxInactiveInterval() {
-        return 0;
-      }
-
-      @Override
-      public HttpSessionContext getSessionContext() {
-        return null;
-      }
-
-      @Override
-      public Object getAttribute(String s) {
-        return null;
-      }
-
-      @Override
-      public Object getValue(String s) {
-        return null;
-      }
-
-      @Override
-      public Enumeration<String> getAttributeNames() {
-        return null;
-      }
-
-      @Override
-      public String[] getValueNames() {
-        return new String[0];
-      }
-
-      @Override
-      public void setAttribute(String s, Object o) {
-
-      }
-
-      @Override
-      public void putValue(String s, Object o) {
-
-      }
-
-      @Override
-      public void removeAttribute(String s) {
-
-      }
-
-      @Override
-      public void removeValue(String s) {
-
-      }
-
-      @Override
-      public void invalidate() {
-
-      }
-
-      @Override
-      public boolean isNew() {
-        return false;
-      }
-    };
-    return httpSession;
   }
 }

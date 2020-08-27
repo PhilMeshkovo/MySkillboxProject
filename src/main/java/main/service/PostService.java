@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,12 +34,14 @@ import main.dto.ResponsePostApiWithAnnounce;
 import main.dto.TagDto;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
+import main.model.GlobalSettings;
 import main.model.Post;
 import main.model.PostComment;
 import main.model.PostVotes;
 import main.model.Tag;
 import main.model.User;
 import main.model.enums.ModerationStatus;
+import main.repository.GlobalSettingsRepository;
 import main.repository.PostCommentRepository;
 import main.repository.PostRepository;
 import main.repository.PostVotesRepository;
@@ -74,6 +77,9 @@ public class PostService {
 
   @Autowired
   CommentMapper commentMapper;
+
+  @Autowired
+  GlobalSettingsRepository globalSettingsRepository;
 
   @Autowired
   AuthenticationService authenticationService;
@@ -317,33 +323,54 @@ public class PostService {
   }
 
   public JsonNode addPost(AddPostDto addPostDto) {
+    Optional<GlobalSettings> globalSettings = globalSettingsRepository.findById(2);
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
       User currentUser = userRepository.findById(id).get();
-      Set<Tag> setTags = Arrays.stream(addPostDto.getTags())
-          .map(t -> tagRepository.findTagByQuery(t).get())
-          .collect(Collectors.toSet());
-
+      Set<Tag> setTags = new HashSet<>();
+      if (addPostDto.getTags() != null) {
+        setTags = Arrays.stream(addPostDto.getTags())
+            .map(t -> tagRepository.findTagByQuery(t).get())
+            .collect(Collectors.toSet());
+      }
       LocalDateTime localDateTime = LocalDateTime
           .ofInstant(Instant.ofEpochSecond(addPostDto.getTimestamp()),
               ZoneId.systemDefault());
       if (localDateTime.isAfter(LocalDateTime.now().plusHours(3L))) {
         localDateTime = LocalDateTime.now().plusHours(3L);
       }
-      Post post = Post.builder()
-          .user(currentUser)
-          .moderationStatus(ModerationStatus.NEW)
-          .title(addPostDto.getTitle())
-          .isActive(addPostDto.getActive())
-          .tags(setTags)
-          .moderator(currentUser)
-          .text(addPostDto.getText())
-          .time(localDateTime.plusHours(3L))
-          .view_count(0)
-          .build();
+      Post post = new Post();
+      if ((globalSettings.get().getValue().equals("NO") && addPostDto.getActive() == 1) ||
+          (globalSettings.get().getValue().equals("YES") && currentUser.getIsModerator() == 1
+              && addPostDto.getActive() == 1)) {
+        post = Post.builder()
+            .user(currentUser)
+            .moderationStatus(ModerationStatus.ACCEPTED)
+            .title(addPostDto.getTitle())
+            .isActive(addPostDto.getActive())
+            .tags(setTags)
+            .moderator(currentUser)
+            .text(addPostDto.getText())
+            .time(localDateTime.plusHours(3L))
+            .view_count(0)
+            .build();
+      }
+      if (globalSettings.get().getValue().equals("YES") && currentUser.getIsModerator() != 1) {
+        post = Post.builder()
+            .user(currentUser)
+            .moderationStatus(ModerationStatus.NEW)
+            .title(addPostDto.getTitle())
+            .isActive(addPostDto.getActive())
+            .tags(setTags)
+            .moderator(currentUser)
+            .text(addPostDto.getText())
+            .time(localDateTime.plusHours(3L))
+            .view_count(0)
+            .build();
+      }
       postRepository.save(post);
 
       object.put("result", true);
@@ -376,10 +403,14 @@ public class PostService {
     User currentUser = userRepository.findById(idUser).get();
     if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
       Optional<Post> postById = postRepository.findById(id);
-      if (postById.isPresent() && postById.get().getUser().equals(currentUser)) {
-        Set<Tag> setTags = Arrays.stream(addPostDto.getTags())
-            .map(t -> tagRepository.findTagByQuery(t).get())
-            .collect(Collectors.toSet());
+      if (postById.isPresent() && postById.get().getUser()
+          .equals(currentUser)) {
+        Set<Tag> setTags = new HashSet<>();
+        if (addPostDto.getTags() != null) {
+          setTags = Arrays.stream(addPostDto.getTags())
+              .map(t -> tagRepository.findTagByQuery(t).get())
+              .collect(Collectors.toSet());
+        }
         LocalDateTime localDateTime = LocalDateTime
             .ofInstant(Instant.ofEpochSecond(addPostDto.getTimestamp()),
                 ZoneId.systemDefault());

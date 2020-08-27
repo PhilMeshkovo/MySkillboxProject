@@ -379,36 +379,53 @@ public class UserService implements UserDetailsService {
     return object;
   }
 
-  public JsonNode getAllStatistics() {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
-    List<Post> posts = postRepository.findAll();
-    List<ResponsePostApi> allPosts = posts.stream()
-        .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
-    ;
-    object.put("postsCount", allPosts.size());
-    List<ResponsePostApi> postList = commentMapper
-        .addCommentsCountAndLikesForPosts(allPosts);
-    int likesCount = postList.stream().mapToInt(p -> p.getLikeCount()).sum();
-    object.put("likesCount", likesCount);
-
-    int dislikesCount = postList.stream().mapToInt(p -> p.getDislikeCount()).sum();
-    object.put("dislikesCount", dislikesCount);
-
-    int viewsCount = postList.stream().mapToInt(p -> p.getViewCount()).sum();
-    object.put("viewsCount", viewsCount);
-
-    LocalDateTime firstPublication = postRepository.findFirstPublication();
-
-    if (firstPublication != null) {
-      ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
-      ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
-
-      object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
+  public JsonNode getAllStatistics() throws Exception {
+    GlobalSettings globalSettings = globalSettingsRepository.findById(3).get();
+    Map<String, Integer> authUsers = authenticationService.getAuthorizedUsers();
+    User currentUser;
+    if (request.getSession() != null && authUsers.containsKey(request.getSession().getId())) {
+      String sessionId = request.getSession().getId();
+      Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+      Optional<User> optionalUser = userRepository.findById(id);
+      currentUser = optionalUser.orElse(null);
     } else {
-      object.put("firstPublication", 0);
+      currentUser = null;
     }
-    return object;
+    if ((globalSettings.getValue().equals("NO") && currentUser != null
+        && currentUser.getIsModerator() == 1)
+        || globalSettings.getValue().equals("YES")) {
+      ObjectMapper mapper = new ObjectMapper();
+      ObjectNode object = mapper.createObjectNode();
+      List<Post> posts = postRepository.findAll();
+      List<ResponsePostApi> allPosts = posts.stream()
+          .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
+      ;
+      object.put("postsCount", allPosts.size());
+      List<ResponsePostApi> postList = commentMapper
+          .addCommentsCountAndLikesForPosts(allPosts);
+      int likesCount = postList.stream().mapToInt(ResponsePostApi::getLikeCount).sum();
+      object.put("likesCount", likesCount);
+
+      int dislikesCount = postList.stream().mapToInt(ResponsePostApi::getDislikeCount).sum();
+      object.put("dislikesCount", dislikesCount);
+
+      int viewsCount = postList.stream().mapToInt(ResponsePostApi::getViewCount).sum();
+      object.put("viewsCount", viewsCount);
+
+      LocalDateTime firstPublication = postRepository.findFirstPublication();
+
+      if (firstPublication != null) {
+        ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
+        ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+
+        object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
+      } else {
+        object.put("firstPublication", 0);
+      }
+      return object;
+    } else {
+      throw new Exception("Statistics is not public");
+    }
   }
 
   public JsonNode logout() {
@@ -423,20 +440,14 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode getSettings() throws Exception {
-    GlobalSettings globalSettingStatistics = globalSettingsRepository.findAll().stream()
-        .filter(p -> p.getCode().equals("STATISTICS_IS_PUBLIC")).findAny().get();
-    if (globalSettingStatistics.getValue().equals("YES")) {
-      ObjectMapper mapper = new ObjectMapper();
-      ObjectNode object = mapper.createObjectNode();
-      List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
-      for (GlobalSettings globalSetting : globalSettings) {
-        object.put(globalSetting.getCode(),
-            stringToBoolean(globalSetting.getValue()));
-      }
-      return object;
-    } else {
-      throw new Exception("Statistics is not public");
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
+    for (GlobalSettings globalSetting : globalSettings) {
+      object.put(globalSetting.getCode(),
+          stringToBoolean(globalSetting.getValue()));
     }
+    return object;
   }
 
 
