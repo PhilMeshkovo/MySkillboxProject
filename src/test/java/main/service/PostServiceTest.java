@@ -168,8 +168,7 @@ class PostServiceTest {
     Mockito.doReturn(httpSession)
         .when(request).getSession();
     initAuthorizedUsers();
-    Mockito.doReturn(authorizedUsers)
-        .when(authenticationService).getAuthorizedUsers();
+    Mockito.doReturn(authorizedUsers).when(authenticationService).getAuthorizedUsers();
     Mockito.doReturn(Optional.of(user))
         .when(userRepository).findById(0);
     Mockito.doReturn(Optional.of(post)).when(postRepository).findById(0);

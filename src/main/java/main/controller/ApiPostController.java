@@ -178,8 +178,8 @@ public class ApiPostController {
     try {
       JsonNode jsonNode = postService.postLike(postLikeDto);
       return new ResponseEntity<>(jsonNode, HttpStatus.OK);
-    } catch (Exception e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    } catch (EntityNotFoundException e) {
+      return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
   }
 
@@ -189,8 +189,8 @@ public class ApiPostController {
     try {
       JsonNode jsonNode = postService.postDislike(postLikeDto);
       return new ResponseEntity<>(jsonNode, HttpStatus.OK);
-    } catch (Exception e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    } catch (EntityNotFoundException e) {
+      return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
   }
 }

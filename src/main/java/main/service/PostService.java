@@ -620,68 +620,90 @@ public class PostService {
   }
 
   @Transactional
-  public JsonNode postLike(PostLikeDto postLikeDto) {
+  public JsonNode postLike(PostLikeDto postLikeDto) throws EntityNotFoundException {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    String sessionId = request.getSession().getId();
-    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-    User currentUser = userRepository.findById(id).get();
-    Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
-    Optional<PostVotes> postVotesOptional = postVotesRepository
-        .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
-    if (post.isEmpty()
-        || postVotesOptional.isPresent() && postVotesOptional.get().getValue() == 1) {
-      object.put("result", false);
+    Map<String, Integer> authUsers = authenticationService.getAuthorizedUsers();
+    User currentUser;
+    if (request.getSession() != null && authUsers.containsKey(request.getSession().getId())) {
+      String sessionId = request.getSession().getId();
+      Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+      Optional<User> optionalUser = userRepository.findById(id);
+      currentUser = optionalUser.orElse(null);
+    } else {
+      currentUser = null;
     }
-    if (post.isPresent() && postVotesOptional.isEmpty()) {
-      PostVotes postVotes = PostVotes.builder()
-          .time(LocalDateTime.now())
-          .value(1)
-          .post(post.get())
-          .user(currentUser)
-          .build();
-      postVotesRepository.save(postVotes);
-      object.put("result", true);
+    if (currentUser != null) {
+      Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
+      Optional<PostVotes> postVotesOptional = postVotesRepository
+          .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
+      if (post.isEmpty()
+          || postVotesOptional.isPresent() && postVotesOptional.get().getValue() == 1) {
+        object.put("result", false);
+      }
+      if (post.isPresent() && postVotesOptional.isEmpty()) {
+        PostVotes postVotes = PostVotes.builder()
+            .time(LocalDateTime.now())
+            .value(1)
+            .post(post.get())
+            .user(currentUser)
+            .build();
+        postVotesRepository.save(postVotes);
+        object.put("result", true);
+      }
+      if (post.isPresent() && postVotesOptional.isPresent()
+          && postVotesOptional.get().getValue() == -1) {
+        PostVotes postVotes = postVotesRepository.getOne(postVotesOptional.get().getId());
+        postVotes.setValue(1);
+        object.put("result", true);
+      }
+      return object;
+    } else {
+      throw new EntityNotFoundException("User not authorized");
     }
-    if (post.isPresent() && postVotesOptional.isPresent()
-        && postVotesOptional.get().getValue() == -1) {
-      PostVotes postVotes = postVotesRepository.getOne(postVotesOptional.get().getId());
-      postVotes.setValue(1);
-      object.put("result", true);
-    }
-    return object;
   }
 
   @Transactional
-  public JsonNode postDislike(PostLikeDto postLikeDto) {
+  public JsonNode postDislike(PostLikeDto postLikeDto) throws EntityNotFoundException {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    String sessionId = request.getSession().getId();
-    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-    User currentUser = userRepository.findById(id).get();
-    Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
-    Optional<PostVotes> postVotesOptional = postVotesRepository
-        .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
-    if (post.isEmpty()
-        || postVotesOptional.isPresent() && postVotesOptional.get().getValue() == -1) {
-      object.put("result", false);
+    Map<String, Integer> authUsers = authenticationService.getAuthorizedUsers();
+    User currentUser;
+    if (request.getSession() != null && authUsers.containsKey(request.getSession().getId())) {
+      String sessionId = request.getSession().getId();
+      Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+      Optional<User> optionalUser = userRepository.findById(id);
+      currentUser = optionalUser.orElse(null);
+    } else {
+      currentUser = null;
     }
-    if (post.isPresent() && postVotesOptional.isEmpty()) {
-      PostVotes postVotes = PostVotes.builder()
-          .time(LocalDateTime.now())
-          .value(-1)
-          .post(post.get())
-          .user(currentUser)
-          .build();
-      postVotesRepository.save(postVotes);
-      object.put("result", true);
+    if (currentUser != null) {
+      Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
+      Optional<PostVotes> postVotesOptional = postVotesRepository
+          .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
+      if (post.isEmpty()
+          || postVotesOptional.isPresent() && postVotesOptional.get().getValue() == -1) {
+        object.put("result", false);
+      }
+      if (post.isPresent() && postVotesOptional.isEmpty()) {
+        PostVotes postVotes = PostVotes.builder()
+            .time(LocalDateTime.now())
+            .value(-1)
+            .post(post.get())
+            .user(currentUser)
+            .build();
+        postVotesRepository.save(postVotes);
+        object.put("result", true);
+      }
+      if (post.isPresent() && postVotesOptional.isPresent()
+          && postVotesOptional.get().getValue() == 1) {
+        PostVotes postVotes = postVotesRepository.getOne(postVotesOptional.get().getId());
+        postVotes.setValue(-1);
+        object.put("result", true);
+      }
+      return object;
+    } else {
+      throw new EntityNotFoundException("User not authorized");
     }
-    if (post.isPresent() && postVotesOptional.isPresent()
-        && postVotesOptional.get().getValue() == 1) {
-      PostVotes postVotes = postVotesRepository.getOne(postVotesOptional.get().getId());
-      postVotes.setValue(-1);
-      object.put("result", true);
-    }
-    return object;
   }
 }
