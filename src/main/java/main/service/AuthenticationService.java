@@ -2,6 +2,7 @@ package main.service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import lombok.Data;
 import main.model.User;
 import main.repository.UserRepository;
@@ -21,7 +22,7 @@ public class AuthenticationService {
   @Autowired
   UserRepository userRepository;
 
-  public User getCurrentUser() {
+  public Optional<User> getCurrentUser() {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
     if (null == auth) {
@@ -37,8 +38,8 @@ public class AuthenticationService {
       username = obj.toString();
     }
 
-    User user = userRepository.findByEmail(username).get();
-    return user;
+    Optional<User> optionalUser = userRepository.findByEmail(username);
+    return optionalUser;
   }
 
 }

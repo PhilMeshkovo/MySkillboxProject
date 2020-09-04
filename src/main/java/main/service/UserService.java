@@ -424,7 +424,7 @@ public class UserService implements UserDetailsService {
       }
       return object;
     } else {
-      throw new Exception("Statistics is not public");
+      throw new Exception("Statistics is not public or user is not authorized");
     }
   }
 
