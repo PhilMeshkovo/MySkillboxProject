@@ -36,9 +36,9 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
   @Query(
       nativeQuery = true,
       value =
-          "SELECT * FROM posts WHERE id IN(SELECT post_id FROM post_comments group by post_id "
-              + "order by count(id) DESC) AND is_active = 1 "
-              + "AND moderation_status = 'ACCEPTED' AND time < now() limit :limit offset :offset"
+          "SELECT * FROM posts join post_comments on posts.id = post_comments.post_id where"
+              + " is_active = 1 and moderation_status = 'ACCEPTED' AND posts.time < now()"
+              + " group by posts.id order by count(post_comments.id) desc limit :limit offset :offset"
   )
   List<Post> findAllPostsSortedByComments(@Param("offset") Integer offset,
       @Param("limit") Integer limit);
@@ -46,9 +46,10 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
   @Query(
       nativeQuery = true,
       value =
-          "SELECT * FROM posts WHERE id IN(SELECT post_id FROM post_votes where value = 1"
-              + " group by post_id order by count(id) desc) AND is_active = 1 "
-              + "AND moderation_status = 'ACCEPTED' AND time < now() limit :limit offset :offset"
+          "SELECT * FROM posts join post_votes on posts.id = post_votes.post_id "
+              + "where  is_active = 1 and moderation_status = 'ACCEPTED' AND posts.time < now() "
+              + "and post_votes.value = 1 group by posts.id order by count(post_votes.id) desc "
+              + " limit :limit offset :offset"
   )
   List<Post> findAllPostsSortedByLikes(@Param("offset") Integer offset,
       @Param("limit") Integer limit);
