@@ -345,38 +345,42 @@ public class UserService implements UserDetailsService {
     return filePath.toString();
   }
 
-  public JsonNode getMyStatistics() {
-    String sessionId = request.getSession().getId();
-    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-    User currentUser = userRepository.findById(id).get();
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
-    List<Post> myPosts = postRepository.findAllMyPosts(0, (int) postRepository.count(),
-        "ACCEPTED", currentUser.getId());
-    List<ResponsePostApi> postList = myPosts.stream().map(p -> postMapper.postToResponsePostApi(p))
-        .collect(Collectors.toList());
-    object.put("postsCount", myPosts.size());
+  public JsonNode getMyStatistics() throws Exception {
+    Optional<User> currentUser = authenticationService.getCurrentUser();
+    if (currentUser.isPresent()) {
+      ObjectMapper mapper = new ObjectMapper();
+      ObjectNode object = mapper.createObjectNode();
+      List<Post> myPosts = postRepository.findAllMyPosts(0, (int) postRepository.count(),
+          "ACCEPTED", currentUser.get().getId());
+      List<ResponsePostApi> postList = myPosts.stream()
+          .map(p -> postMapper.postToResponsePostApi(p))
+          .collect(Collectors.toList());
+      object.put("postsCount", myPosts.size());
 
-    int likesCount = postList.stream().mapToInt(p -> p.getLikeCount()).sum();
-    object.put("likesCount", likesCount);
+      int likesCount = postList.stream().mapToInt(p -> p.getLikeCount()).sum();
+      object.put("likesCount", likesCount);
 
-    int dislikesCount = postList.stream().mapToInt(p -> p.getDislikeCount()).sum();
-    object.put("dislikesCount", dislikesCount);
+      int dislikesCount = postList.stream().mapToInt(p -> p.getDislikeCount()).sum();
+      object.put("dislikesCount", dislikesCount);
 
-    int viewsCount = postList.stream().mapToInt(p -> p.getViewCount()).sum();
-    object.put("viewsCount", viewsCount);
+      int viewsCount = postList.stream().mapToInt(p -> p.getViewCount()).sum();
+      object.put("viewsCount", viewsCount);
 
-    LocalDateTime firstPublication = postRepository.findFirstMyPublication(currentUser.getId());
+      LocalDateTime firstPublication = postRepository
+          .findFirstMyPublication(currentUser.get().getId());
 
-    if (firstPublication != null) {
-      ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
-      ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+      if (firstPublication != null) {
+        ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
+        ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
 
-      object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
+        object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
+      } else {
+        object.put("firstPublication", 0);
+      }
+      return object;
     } else {
-      object.put("firstPublication", 0);
+      throw new Exception("User is not authorized");
     }
-    return object;
   }
 
   public JsonNode getAllStatistics() throws Exception {

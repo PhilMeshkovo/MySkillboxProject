@@ -90,7 +90,7 @@ public class ApiAuthController {
       JsonNode jsonNode = userService.getMyStatistics();
       return new ResponseEntity<>(jsonNode, HttpStatus.OK);
     } catch (Exception e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
   }
 

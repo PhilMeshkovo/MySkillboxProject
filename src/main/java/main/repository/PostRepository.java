@@ -33,6 +33,26 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
   List<Post> findAllPostsPageable(@Param("offset") Integer offset,
       @Param("limit") Integer limit);
 
+  @Query(
+      nativeQuery = true,
+      value =
+          "SELECT * FROM posts WHERE id IN(SELECT post_id FROM post_comments group by post_id "
+              + "order by count(id) DESC) AND is_active = 1 "
+              + "AND moderation_status = 'ACCEPTED' AND time < now() limit :limit offset :offset"
+  )
+  List<Post> findAllPostsSortedByComments(@Param("offset") Integer offset,
+      @Param("limit") Integer limit);
+
+  @Query(
+      nativeQuery = true,
+      value =
+          "SELECT * FROM posts WHERE id IN(SELECT post_id FROM post_votes where value = 1"
+              + " group by post_id order by count(id) desc) AND is_active = 1 "
+              + "AND moderation_status = 'ACCEPTED' AND time < now() limit :limit offset :offset"
+  )
+  List<Post> findAllPostsSortedByLikes(@Param("offset") Integer offset,
+      @Param("limit") Integer limit);
+
   @Query(nativeQuery = true,
       value =
           "SELECT * FROM posts WHERE is_active = 1 AND "
@@ -87,4 +107,5 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
       value = "SELECT * FROM posts WHERE user_id = :id AND is_active = 0 limit :limit offset :offset")
   List<Post> findAllMyPostsInactive(@Param("offset") Integer offset, @Param("limit") Integer limit,
       @Param("id") int id);
+
 }

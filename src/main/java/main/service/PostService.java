@@ -110,49 +110,24 @@ public class PostService {
     }
     if (mode.equalsIgnoreCase("POPULAR")) {
       responsePostApiList = postRepository
-          .findAllPostsPageable(offset, limit).stream()
+          .findAllPostsSortedByComments(offset, limit).stream()
           .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
       List<ResponsePostApi> pageApiNew = commentMapper
           .addCommentsCountAndLikesForPosts(responsePostApiList);
-      List<ResponsePostApi> sortedPageApi = pageApiNew.stream()
-          .sorted(new Comparator<ResponsePostApi>() {
-            @Override
-            public int compare(ResponsePostApi o1, ResponsePostApi o2) {
-              if (o1.getCommentCount() == o2.getCommentCount()) {
-                return 0;
-              } else if (o1.getCommentCount() > o2.getCommentCount()) {
-                return -1;
-              } else {
-                return 1;
-              }
-            }
-          }).collect(Collectors.toList());
       List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-          sortedPageApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+          pageApiNew
+              .stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
       return new PostListApi(responseWithAnnounceList, pageApiNew.size());
     }
     if (mode.equalsIgnoreCase("BEST")) {
       responsePostApiList = postRepository
-          .findAllPostsPageable(offset, limit).stream()
+          .findAllPostsSortedByLikes(offset, limit).stream()
           .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
       List<ResponsePostApi> pageApiNew = commentMapper
           .addCommentsCountAndLikesForPosts(responsePostApiList);
-      List<ResponsePostApi> sortedPageApi = pageApiNew.stream()
-          .sorted(new Comparator<ResponsePostApi>() {
-            @Override
-            public int compare(ResponsePostApi o1, ResponsePostApi o2) {
-              if (o1.getLikeCount() == o2.getLikeCount()) {
-                return 0;
-              } else if (o1.getLikeCount() > o2.getLikeCount()) {
-                return -1;
-              } else {
-                return 1;
-              }
-            }
-          }).collect(Collectors.toList());
       List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-          sortedPageApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+          pageApiNew.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
       return new PostListApi(responseWithAnnounceList, pageApiNew.size());
     }
@@ -634,7 +609,7 @@ public class PostService {
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
       Optional<User> optionalUser = userRepository.findById(id);
-      currentUser = optionalUser.orElseThrow();
+      currentUser = optionalUser.orElseThrow(EntityNotFoundException::new);
     } else {
       throw new EntityNotFoundException("User not authorized");
     }
@@ -674,7 +649,7 @@ public class PostService {
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
       Optional<User> optionalUser = userRepository.findById(id);
-      currentUser = optionalUser.orElseThrow();
+      currentUser = optionalUser.orElseThrow(EntityNotFoundException::new);
     } else {
       throw new EntityNotFoundException("User not authorized");
     }
