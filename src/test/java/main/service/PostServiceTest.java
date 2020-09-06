@@ -124,6 +124,7 @@ class PostServiceTest {
     Mockito.doReturn(Optional.of(post)).when(postRepository).findById(0);
     Mockito.doReturn(post).when(postRepository).getOne(0);
     Mockito.doReturn(httpSession).when(request).getSession();
+    Mockito.doReturn(Optional.of(getUser())).when(userRepository).findById(0);
     initAuthorizedUsers();
     Mockito.doReturn(authorizedUsers).when(authenticationService).getAuthorizedUsers();
     PostByIdApi postByIdApi = postService.findPostById(0);

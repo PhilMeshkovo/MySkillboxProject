@@ -112,7 +112,7 @@ class UserServiceTest {
         .when(userRepository).findByEmail("some@mail.ru");
     JsonNode jsonNode = userService.restore("some@mail.ru");
     Mockito.verify(mailSender, Mockito.times(1))
-        .send("some@mail.ru", "Code", "/login/change-password/123456");
+        .send("some@mail.ru", "Code", "https://philipp-skillbox.herokuapp.com/login/change-password/123456");
     Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
 
