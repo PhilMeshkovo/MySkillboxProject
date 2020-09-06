@@ -1,0 +1,1 @@
+web: java -jar target/philipp-skillbox-1.0.jar
