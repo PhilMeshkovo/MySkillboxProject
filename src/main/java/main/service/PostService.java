@@ -196,13 +196,19 @@ public class PostService {
 
   @Transactional
   public PostByIdApi findPostById(int postId) {
-    Optional<Post> optional = postRepository.findById(postId);
+    Optional<Post> optionalPost = postRepository.findById(postId);
     String sessionId = request.getSession().getId();
-    if (optional.isPresent()) {
+    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+    if (optionalPost.isPresent()) {
       PostByIdApi postByIdApi = new PostByIdApi();
-      Post post = optional.get();
+      Post post = optionalPost.get();
       if (post.getIsActive() == 1 && post.getModerationStatus().equals(ModerationStatus.ACCEPTED) &&
-          post.getTime().isBefore(LocalDateTime.now())) {
+          post.getTime().minusHours(3).isBefore(LocalDateTime.now()) || post.getIsActive() != 1 &&
+          authenticationService.getAuthorizedUsers().containsKey(sessionId)
+          && userRepository.findById(id).get().getIsModerator() == 1
+          || post.getIsActive() != 1
+          && authenticationService.getAuthorizedUsers().containsKey(sessionId) && userRepository
+          .findById(id).get().equals(post.getUser())) {
         PostByIdApi postByIdApi1 = postMapper.postToPostById(post);
         postByIdApi = commentMapper.addCountCommentsAndLikesToPostById(postByIdApi1);
         List<PostComment> commentsByPostId = postCommentRepository
@@ -211,20 +217,16 @@ public class PostService {
         Set<Tag> tags = postRepository.findById(postId).get().getTags();
         List<String> strings = tags.stream().map(t -> t.getName())
             .collect(Collectors.toList());
-
-        if (!authenticationService.getAuthorizedUsers().containsKey(sessionId)
-            || authenticationService.getAuthorizedUsers().containsKey(sessionId)
-            && post.getUser().getId() != authenticationService.getAuthorizedUsers().get(sessionId)
-            &&
-            userRepository.findById(authenticationService.getAuthorizedUsers().get(sessionId)).get()
-                .getIsModerator() != 1) {
+        if (!authenticationService.getAuthorizedUsers().containsKey(sessionId) ||
+            authenticationService.getAuthorizedUsers().containsKey(sessionId)
+                && !userRepository.findById(id).get().equals(post.getUser())
+            || authenticationService.getAuthorizedUsers().containsKey(sessionId) &&
+            userRepository.findById(id).get().getIsModerator() != 1) {
           Post post1 = postRepository.getOne(postId);
           int viewCount = post.getView_count() + 1;
           post1.setView_count(viewCount);
         }
-
         postByIdApi.setTags(strings);
-
       }
       return postByIdApi;
     } else {
@@ -393,7 +395,7 @@ public class PostService {
           localDateTime = LocalDateTime.now().plusHours(3L);
         }
         Post postToUpdate = postRepository.getOne(id);
-        postToUpdate.setTime(localDateTime);
+        postToUpdate.setTime(localDateTime.plusHours(3));
         postToUpdate.setIsActive(addPostDto.getActive());
         postToUpdate.setTitle(addPostDto.getTitle());
         postToUpdate.setText(addPostDto.getText());
@@ -423,15 +425,16 @@ public class PostService {
     return object;
   }
 
-  public JsonNode addCommentToPost(PostCommentDto postCommentDto) throws Exception {
+  public JsonNode addCommentToPost(PostCommentDto postCommentDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     Integer postId = postCommentDto.getPost_id();
     String text = postCommentDto.getText();
     Optional<Post> postById = postRepository.findById(postId);
-    Optional<User> optionalUser = authenticationService.getCurrentUser();
-    if (optionalUser.isPresent()) {
-      User currentUser = optionalUser.get();
+    String sessionId = request.getSession().getId();
+    Integer idUser = authenticationService.getAuthorizedUsers().get(sessionId);
+    Optional<User> currentUser = userRepository.findById(idUser);
+    if (currentUser.isPresent()) {
       if (postById.isPresent() && text.length() > 10 && postCommentDto.getParent_id() != null
           && postCommentRepository.findById(postCommentDto.getParent_id()).isPresent()
           && postCommentRepository.findById(postCommentDto.getParent_id()).get().getPost()
@@ -440,7 +443,7 @@ public class PostService {
         PostComment postComment = PostComment.builder()
             .post(postById.get())
             .parent(parent)
-            .user(currentUser)
+            .user(currentUser.get())
             .time(LocalDateTime.now())
             .text(text)
             .build();
@@ -450,7 +453,7 @@ public class PostService {
       if (postById.isPresent() && text.length() > 9 && postCommentDto.getParent_id() == null) {
         PostComment postComment = PostComment.builder()
             .post(postById.get())
-            .user(currentUser)
+            .user(currentUser.get())
             .time(LocalDateTime.now())
             .text(text)
             .build();
@@ -605,7 +608,7 @@ public class PostService {
     ObjectNode object = mapper.createObjectNode();
     Map<String, Integer> authUsers = authenticationService.getAuthorizedUsers();
     User currentUser;
-    if (request.getSession() != null && authUsers.containsKey(request.getSession().getId())) {
+    if (authUsers.containsKey(request.getSession().getId())) {
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
       Optional<User> optionalUser = userRepository.findById(id);
@@ -645,7 +648,7 @@ public class PostService {
     ObjectNode object = mapper.createObjectNode();
     Map<String, Integer> authUsers = authenticationService.getAuthorizedUsers();
     User currentUser;
-    if (request.getSession() != null && authUsers.containsKey(request.getSession().getId())) {
+    if (authUsers.containsKey(request.getSession().getId())) {
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
       Optional<User> optionalUser = userRepository.findById(id);

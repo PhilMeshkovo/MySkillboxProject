@@ -346,7 +346,9 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode getMyStatistics() throws Exception {
-    Optional<User> currentUser = authenticationService.getCurrentUser();
+    String sessionId = request.getSession().getId();
+    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+    Optional<User> currentUser = userRepository.findById(id);
     if (currentUser.isPresent()) {
       ObjectMapper mapper = new ObjectMapper();
       ObjectNode object = mapper.createObjectNode();
@@ -385,48 +387,18 @@ public class UserService implements UserDetailsService {
 
   public JsonNode getAllStatistics() throws Exception {
     GlobalSettings globalSettings = globalSettingsRepository.findById(3).get();
-    Map<String, Integer> authUsers = authenticationService.getAuthorizedUsers();
-    User currentUser;
-    if (request.getSession() != null && authUsers.containsKey(request.getSession().getId())) {
+    if (globalSettings.getValue().equals("YES")) {
+      return getStatAll();
+    }
+    if (globalSettings.getValue().equals("NO")) {
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-      Optional<User> optionalUser = userRepository.findById(id);
-      currentUser = optionalUser.orElse(null);
-    } else {
-      currentUser = null;
-    }
-    if ((globalSettings.getValue().equals("NO") && currentUser != null
-        && currentUser.getIsModerator() == 1)
-        || globalSettings.getValue().equals("YES")) {
-      ObjectMapper mapper = new ObjectMapper();
-      ObjectNode object = mapper.createObjectNode();
-      List<Post> posts = postRepository.findAll();
-      List<ResponsePostApi> allPosts = posts.stream()
-          .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
-      ;
-      object.put("postsCount", allPosts.size());
-      List<ResponsePostApi> postList = commentMapper
-          .addCommentsCountAndLikesForPosts(allPosts);
-      int likesCount = postList.stream().mapToInt(ResponsePostApi::getLikeCount).sum();
-      object.put("likesCount", likesCount);
-
-      int dislikesCount = postList.stream().mapToInt(ResponsePostApi::getDislikeCount).sum();
-      object.put("dislikesCount", dislikesCount);
-
-      int viewsCount = postList.stream().mapToInt(ResponsePostApi::getViewCount).sum();
-      object.put("viewsCount", viewsCount);
-
-      LocalDateTime firstPublication = postRepository.findFirstPublication();
-
-      if (firstPublication != null) {
-        ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
-        ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
-
-        object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
+      Optional<User> currentUser = userRepository.findById(id);
+      if (currentUser.isPresent() && currentUser.get().getIsModerator() == 1) {
+        return getStatAll();
       } else {
-        object.put("firstPublication", 0);
+        throw new Exception("User is not authorized or user is not moderator");
       }
-      return object;
     } else {
       throw new Exception("Statistics is not public or user is not authorized");
     }
@@ -443,7 +415,7 @@ public class UserService implements UserDetailsService {
     return object;
   }
 
-  public JsonNode getSettings() throws Exception {
+  public JsonNode getSettings() {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
@@ -514,17 +486,6 @@ public class UserService implements UserDetailsService {
     }
   }
 
-  private String booleanToString(boolean value) throws Exception {
-    if (String.valueOf(value).equals("true")) {
-      return "1";
-    }
-    if (String.valueOf(value).equals("false")) {
-      return "0";
-    } else {
-      throw new Exception("impossible value");
-    }
-  }
-
   public static String createCaptchaValue(int size) {
     Random random = new Random();
     int lenght = size + (Math.abs(random.nextInt()) % 2);
@@ -544,4 +505,34 @@ public class UserService implements UserDetailsService {
     return captchaStrBuffer.toString();
   }
 
+  private JsonNode getStatAll() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
+    List<Post> posts = postRepository.findAll();
+    List<ResponsePostApi> allPosts = posts.stream()
+        .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
+    object.put("postsCount", allPosts.size());
+    List<ResponsePostApi> postList = commentMapper
+        .addCommentsCountAndLikesForPosts(allPosts);
+    int likesCount = postList.stream().mapToInt(ResponsePostApi::getLikeCount).sum();
+    object.put("likesCount", likesCount);
+
+    int dislikesCount = postList.stream().mapToInt(ResponsePostApi::getDislikeCount).sum();
+    object.put("dislikesCount", dislikesCount);
+
+    int viewsCount = postList.stream().mapToInt(ResponsePostApi::getViewCount).sum();
+    object.put("viewsCount", viewsCount);
+
+    LocalDateTime firstPublication = postRepository.findFirstPublication();
+
+    if (firstPublication != null) {
+      ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
+      ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+
+      object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
+    } else {
+      object.put("firstPublication", 0);
+    }
+    return object;
+  }
 }

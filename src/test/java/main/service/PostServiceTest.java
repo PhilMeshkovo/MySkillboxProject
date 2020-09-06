@@ -76,6 +76,7 @@ class PostServiceTest {
   void initAuthorizedUsers() {
     authorizedUsers.put("1", 0);
     authorizedUsers.put("2", 0);
+    authorizedUsers.put("3", 0);
   }
 
   @Test
@@ -122,6 +123,9 @@ class PostServiceTest {
     Post post = getPost();
     Mockito.doReturn(Optional.of(post)).when(postRepository).findById(0);
     Mockito.doReturn(post).when(postRepository).getOne(0);
+    Mockito.doReturn(httpSession).when(request).getSession();
+    initAuthorizedUsers();
+    Mockito.doReturn(authorizedUsers).when(authenticationService).getAuthorizedUsers();
     PostByIdApi postByIdApi = postService.findPostById(0);
     Assertions.assertEquals(0, postByIdApi.getId());
     Assertions.assertEquals("hello world again!", postByIdApi.getTitle());

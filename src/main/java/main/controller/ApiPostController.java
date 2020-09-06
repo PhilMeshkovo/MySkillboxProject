@@ -3,7 +3,6 @@ package main.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.text.ParseException;
 import javax.persistence.EntityNotFoundException;
-import javax.servlet.http.HttpServletRequest;
 import main.dto.AddPostDto;
 import main.dto.ListTagsDto;
 import main.dto.PostByIdApi;
@@ -31,9 +30,6 @@ public class ApiPostController {
 
   @Autowired
   PostService postService;
-
-  @Autowired
-  private HttpServletRequest request;
 
   @GetMapping("/post")
   public PostListApi getAllPosts(
@@ -100,8 +96,7 @@ public class ApiPostController {
   public PostListApi getAllMyPosts(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
-      @RequestParam(value = "status", defaultValue = "inactive", required = false) String status)
-      throws Exception {
+      @RequestParam(value = "status", defaultValue = "inactive", required = false) String status) {
     return postService.getAllMyPosts(offset, limit, status);
   }
 
@@ -115,7 +110,7 @@ public class ApiPostController {
 
   @PostMapping("/post")
   public JsonNode addPost(
-      @RequestBody AddPostDto addPostDto) throws Exception {
+      @RequestBody AddPostDto addPostDto) {
     JsonNode object = postService.addPost(addPostDto);
     return object;
   }
@@ -135,7 +130,7 @@ public class ApiPostController {
   }
 
   @PostMapping("/comment")
-  public ResponseEntity<?> addComment(@RequestBody PostCommentDto postCommentDto) throws Exception {
+  public ResponseEntity<?> addComment(@RequestBody PostCommentDto postCommentDto) {
     JsonNode jsonNode = jsonNode = postService.addCommentToPost(postCommentDto);
     if (jsonNode.has("error")) {
       return new ResponseEntity<>(jsonNode, HttpStatus.BAD_REQUEST);
@@ -156,7 +151,7 @@ public class ApiPostController {
 
   @PostMapping("/moderation")
   public ResponseEntity<?> moderationPost(
-      @RequestBody PostModerationDto postModerationDto) throws Exception {
+      @RequestBody PostModerationDto postModerationDto) {
     try {
       boolean answer = postService.moderationPost(postModerationDto);
       return new ResponseEntity<>(answer, HttpStatus.OK);

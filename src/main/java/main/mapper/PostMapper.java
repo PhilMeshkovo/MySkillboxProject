@@ -59,7 +59,7 @@ public class PostMapper {
   public PostByIdApi postToPostById(Post post) {
     PostByIdApi postByIdApi = new PostByIdApi();
     postByIdApi.setId(post.getId());
-    LocalDateTime time = post.getTime();
+    LocalDateTime time = post.getTime().minusHours(3);
     ZonedDateTime timeZoned = time.atZone(ZoneId.systemDefault());
     ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
     postByIdApi.setTimestamp(utcZoned.toInstant().getEpochSecond());
@@ -102,5 +102,4 @@ public class PostMapper {
     response.setViewCount(responsePostApi.getViewCount());
     return response;
   }
-
 }
