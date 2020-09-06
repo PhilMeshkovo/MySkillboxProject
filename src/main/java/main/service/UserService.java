@@ -224,7 +224,7 @@ public class UserService implements UserDetailsService {
     ObjectNode object = mapper.createObjectNode();
     Optional<User> userByEmail = userRepository.findByEmail(email);
     if (userByEmail.isPresent()) {
-      mailSender.send(email, "Code", "/login/change-password/" + userByEmail.get().getCode());
+      mailSender.send(email, "Code", "https://philipp-skillbox.herokuapp.com/login/change-password/" + userByEmail.get().getCode());
       object.put("result", true);
     } else {
       object.put("result", false);
