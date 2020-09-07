@@ -23,7 +23,7 @@ public class PostMapper {
   public ResponsePostApi postToResponsePostApi(Post post) {
     ResponsePostApi responsePostApi = new ResponsePostApi();
     responsePostApi.setId(post.getId());
-    LocalDateTime time = post.getTime();
+    LocalDateTime time = post.getTime().minusHours(3);
     ZonedDateTime timeZoned = time.atZone(ZoneId.systemDefault());
     ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
     responsePostApi.setTimestamp(utcZoned.toInstant().getEpochSecond());

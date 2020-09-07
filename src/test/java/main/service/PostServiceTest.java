@@ -1,7 +1,10 @@
 package main.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,15 +129,18 @@ class PostServiceTest {
 //    Assertions.assertEquals(1, postListApi.getCount());
 //  }
 
-//  @Test
-//  void getAllPostsByDate() throws ParseException {
-//    Post post = getPost();
-//    SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
-//    Date localDate = dateFormatter.parse("1971-01-01");
-//    Mockito.doReturn(List.of(post)).when(postRepository).findAllPostsByTime(0, 10, localDate);
-//    PostListApi postListApi = postService.getAllPostsByDate(0, 10, "1971-01-01");
-//    Assertions.assertEquals(1, postListApi.getCount());
-//  }
+  @Test
+  void getAllPostsByDate() throws ParseException {
+    Post post = getPost();
+    SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+    Date localDate = dateFormatter.parse("1971-01-01");
+    Mockito.doReturn(List.of(post)).when(postRepository).findAllPostsByTime(0, 10, localDate);
+    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
+        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
+    Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
+    PostListApi postListApi = postService.getAllPostsByDate(0, 10, "1971-01-01");
+    Assertions.assertEquals(1, postListApi.getCount());
+  }
 
   @Test
   void findPostById() {
