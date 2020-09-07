@@ -1,4 +1,4 @@
-spring.datasource.url: jdbc:${CLEARDB_DATABASE_URL:mysql://localhost:3306/MyProject?serverTimezone=UTC}
+spring.datasource.url: jdbc:${CLEARDB_BROWN_URL:mysql://localhost:3306/MyProject?serverTimezone=UTC}
 spring.datasource.username: root
 spring.datasource.password: testtest
 spring.jpa.hibernate.ddl-auto: none
@@ -9,9 +9,9 @@ spring:
   liquibase:
     enabled: false
     change-log: classpath:database_changelog.xml
-    url: jdbc:${CLEARDB_DATABASE_URL:mysql://localhost:3306/MyProject?serverTimezone=UTC}
-    user: root
-    password: testtest
+    url: jdbc:${CLEARDB_BROWN_URL:mysql://localhost:3306/MyProject?serverTimezone=UTC}
+    user: ba3eaca57ed753
+    password: 26478c61
 
 spring.mail.host: smtp.yandex.ru
 spring.mail.username: ivanivanov1977.ivashka@yandex.ru
