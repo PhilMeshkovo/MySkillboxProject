@@ -132,16 +132,16 @@ class UserServiceTest {
     Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
 
-  @Test
-  void getAllStatistics() throws Exception {
-    Post post = newPost();
-    GlobalSettings globalSettings = new GlobalSettings();
-    globalSettings.setValue("YES");
-    Mockito.doReturn(Optional.of(globalSettings)).when(globalSettingsRepository).findById(3);
-    Mockito.doReturn(List.of(post)).when(postRepository).findAll();
-    JsonNode jsonNode = userService.getAllStatistics();
-    Assertions.assertEquals(2, jsonNode.get("viewsCount").asInt());
-  }
+//  @Test
+//  void getAllStatistics() throws Exception {
+//    Post post = newPost();
+//    GlobalSettings globalSettings = new GlobalSettings();
+//    globalSettings.setValue("YES");
+//    Mockito.doReturn(Optional.of(globalSettings)).when(globalSettingsRepository).findById(3);
+//    Mockito.doReturn(List.of(post)).when(postRepository).findAll();
+//    JsonNode jsonNode = userService.getAllStatistics();
+//    Assertions.assertEquals(2, jsonNode.get("viewsCount").asInt());
+//  }
 
   @Test
   void logout() {
