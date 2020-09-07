@@ -288,8 +288,8 @@ public class PostService {
   }
 
   public PostListApi getAllPostsToModeration(Integer offset, Integer limit, String status) {
-    List<ResponsePostApi> postApiNew = postRepository
-        .findAllPostsToModeration(offset, limit, status).stream()
+    List<Post> posts = postRepository.findAllPostsToModeration(offset, limit, status);
+    List<ResponsePostApi> postApiNew = posts.stream()
         .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
     List<ResponsePostApi> responsePosts = commentMapper
         .addCommentsCountAndLikesForPosts(postApiNew);

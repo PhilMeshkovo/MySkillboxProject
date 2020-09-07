@@ -372,7 +372,7 @@ public class UserService implements UserDetailsService {
           .findFirstMyPublication(currentUser.get().getId());
 
       if (firstPublication != null) {
-        ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
+        ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault()).minusHours(3);
         ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
 
         object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
@@ -526,7 +526,7 @@ public class UserService implements UserDetailsService {
     LocalDateTime firstPublication = postRepository.findFirstPublication();
 
     if (firstPublication != null) {
-      ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault());
+      ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault()).minusHours(3);
       ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
 
       object.put("firstPublication", utcZoned.toInstant().getEpochSecond());

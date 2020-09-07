@@ -1,10 +1,7 @@
 package main.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,17 +10,24 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import main.dto.AddPostDto;
+import main.dto.CommentsApi;
 import main.dto.PostByIdApi;
 import main.dto.PostListApi;
+import main.dto.ResponsePostApi;
+import main.dto.UserApi;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.GlobalSettings;
 import main.model.Post;
+import main.model.PostComment;
+import main.model.PostVotes;
 import main.model.Tag;
 import main.model.User;
 import main.model.enums.ModerationStatus;
 import main.repository.GlobalSettingsRepository;
+import main.repository.PostCommentRepository;
 import main.repository.PostRepository;
+import main.repository.PostVotesRepository;
 import main.repository.TagRepository;
 import main.repository.UserRepository;
 import org.junit.jupiter.api.Assertions;
@@ -49,6 +53,12 @@ class PostServiceTest {
 
   @MockBean
   PostRepository postRepository;
+
+  @MockBean
+  PostCommentRepository postCommentRepository;
+
+  @MockBean
+  PostVotesRepository postVotesRepository;
 
   @MockBean
   TagRepository tagRepository;
@@ -126,30 +136,34 @@ class PostServiceTest {
 //    Assertions.assertEquals(1, postListApi.getCount());
 //  }
 
-//  @Test
-//  void findPostById() {
-//    Post post = getPost();
-//    Mockito.doReturn(Optional.of(post)).when(postRepository).findById(0);
-//    Mockito.doReturn(post).when(postRepository).getOne(0);
-//    Mockito.doReturn(httpSession).when(request).getSession();
-//    Mockito.doReturn(Optional.of(getUser())).when(userRepository).findById(0);
-//    initAuthorizedUsers();
-//    Mockito.doReturn(authorizedUsers).when(authenticationService).getAuthorizedUsers();
-//    PostByIdApi postByIdApi2 = new PostByIdApi();
-//    Mockito.doReturn(postByIdApi2).when(postMapper).postToPostById(post);
-//    Mockito.doReturn(postByIdApi2).when(commentMapper).addCountCommentsAndLikesToPostById(postByIdApi2);
-//    PostByIdApi postByIdApi = postService.findPostById(0);
-//    Assertions.assertEquals(0, postByIdApi.getId());
-//    Assertions.assertEquals("hello world again!", postByIdApi.getTitle());
-//  }
+  @Test
+  void findPostById() {
+    Post post = getPost();
+    Mockito.doReturn(Optional.of(post)).when(postRepository).findById(0);
+    Mockito.doReturn(post).when(postRepository).getOne(0);
+    Mockito.doReturn(httpSession).when(request).getSession();
+    Mockito.doReturn(Optional.of(getUser())).when(userRepository).findById(0);
+    initAuthorizedUsers();
+    Mockito.doReturn(authorizedUsers).when(authenticationService).getAuthorizedUsers();
+    Mockito.doReturn(getPostBiIdApi()).when(commentMapper).addCountCommentsAndLikesToPostById(getPostBiIdApi());
+    Mockito.doReturn(getPostBiIdApi()).when(postMapper).postToPostById(post);
+    Mockito.doReturn(List.of(new CommentsApi(0,0L,"Hello world", new UserApi()))).when(commentMapper).postCommentListToCommentApi(List.of(getPostComment()));
+    PostByIdApi postByIdApi = postService.findPostById(0);
+    Assertions.assertEquals(0, postByIdApi.getId());
+    Assertions.assertEquals("hello world again!", postByIdApi.getTitle());
+  }
 
-//  @Test
-//  void getAllPostsToModeration() {
-//    Mockito.doReturn(List.of(getPost())).when(postRepository)
-//        .findAllPostsToModeration(0, 10, "NEW");
-//    PostListApi postListApi = postService.getAllPostsToModeration(0, 10, "NEW");
-//    Assertions.assertEquals(1, postListApi.getCount());
-//  }
+  @Test
+  void getAllPostsToModeration() {
+    Post post = getPost();
+    Mockito.doReturn(List.of(post)).when(postRepository)
+        .findAllPostsToModeration(0, 10, "ACCEPTED");
+    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
+        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
+    Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
+    PostListApi postListApi = postService.getAllPostsToModeration(0, 10, "ACCEPTED");
+    Assertions.assertEquals(1, postListApi.getCount());
+  }
 
   @Test
   void addPost() {
@@ -240,5 +254,55 @@ class PostServiceTest {
         .time(LocalDateTime.now())
         .view_count(0)
         .build();
+  }
+
+  private PostComment getPostComment() {
+    PostComment postComment = new PostComment();
+    postComment.setId(0);
+    postComment.setPost(getPost());
+    postComment.setText("It is a good post about java");
+    postComment.setTime(LocalDateTime.now());
+    postComment.setUser(getUser());
+    return postComment;
+  }
+
+  private PostVotes getPostVotes() {
+    PostVotes postVotes = new PostVotes();
+    postVotes.setId(0);
+    postVotes.setPost(getPost());
+    postVotes.setUser(getUser());
+    postVotes.setTime(LocalDateTime.now());
+    postVotes.setValue(1);
+    return postVotes;
+  }
+
+  private ResponsePostApi getResponsePostApi() {
+    ResponsePostApi responsePostApi = new ResponsePostApi();
+    responsePostApi.setId(0);
+    responsePostApi.setCommentCount(0);
+    responsePostApi.setLikeCount(0);
+    responsePostApi.setDislikeCount(0);
+    responsePostApi.setText(getText());
+    responsePostApi.setTitle("Post about spring");
+    responsePostApi.setTimestamp(0L);
+    responsePostApi.setUser(new UserApi());
+    responsePostApi.setViewCount(0);
+    return responsePostApi;
+  }
+
+  private PostByIdApi getPostBiIdApi(){
+    PostByIdApi postByIdApi = new PostByIdApi();
+    postByIdApi.setId(0);
+    postByIdApi.setComments(List.of("Hello world"));
+    postByIdApi.setTags(List.of("Java"));
+    postByIdApi.setText(getText());
+    postByIdApi.setTitle(getPost().getTitle());
+    postByIdApi.setCommentCount(0);
+    postByIdApi.setLikeCount(0);
+    postByIdApi.setDislikeCount(0);
+    postByIdApi.setViewCount(0);
+    postByIdApi.setUser(new UserApi());
+    postByIdApi.setTimestamp(0L);
+    return postByIdApi;
   }
 }
