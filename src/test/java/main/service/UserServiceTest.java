@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Optional;
 import main.dto.LoginDto;
 import main.dto.RegisterForm;
+import main.dto.ResponsePostApi;
+import main.dto.UserApi;
+import main.mapper.CommentMapper;
+import main.mapper.PostMapper;
 import main.model.CaptchaCode;
 import main.model.GlobalSettings;
 import main.model.Post;
@@ -37,6 +41,12 @@ class UserServiceTest {
 
   @MockBean
   UserRepository userRepository;
+
+  @MockBean
+  CommentMapper commentMapper;
+
+  @MockBean
+  PostMapper postMapper;
 
   @MockBean
   AuthenticationService authenticationService;
@@ -132,16 +142,19 @@ class UserServiceTest {
     Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
 
-//  @Test
-//  void getAllStatistics() throws Exception {
-//    Post post = newPost();
-//    GlobalSettings globalSettings = new GlobalSettings();
-//    globalSettings.setValue("YES");
-//    Mockito.doReturn(Optional.of(globalSettings)).when(globalSettingsRepository).findById(3);
-//    Mockito.doReturn(List.of(post)).when(postRepository).findAll();
-//    JsonNode jsonNode = userService.getAllStatistics();
-//    Assertions.assertEquals(2, jsonNode.get("viewsCount").asInt());
-//  }
+  @Test
+  void getAllStatistics() throws Exception {
+    Post post = newPost();
+    GlobalSettings globalSettings = new GlobalSettings();
+    globalSettings.setValue("YES");
+    Mockito.doReturn(Optional.of(globalSettings)).when(globalSettingsRepository).findById(3);
+    Mockito.doReturn(List.of(post)).when(postRepository).findAll();
+    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
+        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
+    Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
+    JsonNode jsonNode = userService.getAllStatistics();
+    Assertions.assertEquals(2, jsonNode.get("viewsCount").asInt());
+  }
 
   @Test
   void logout() {
@@ -175,5 +188,30 @@ class UserServiceTest {
     user.setPassword("123456");
     user.setCode("123456");
     return user;
+  }
+
+  private ResponsePostApi getResponsePostApi() {
+    ResponsePostApi responsePostApi = new ResponsePostApi();
+    responsePostApi.setId(0);
+    responsePostApi.setCommentCount(0);
+    responsePostApi.setLikeCount(0);
+    responsePostApi.setDislikeCount(0);
+    responsePostApi.setText(getText());
+    responsePostApi.setTitle("Post about spring");
+    responsePostApi.setTimestamp(0L);
+    responsePostApi.setUser(new UserApi());
+    responsePostApi.setViewCount(2);
+    return responsePostApi;
+  }
+  private String getText() {
+    return "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+        + "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+        + "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+        + "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+        + "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+        + "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+        + "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+        + "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+        + "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
   }
 }

@@ -14,21 +14,21 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
   @Query(nativeQuery = true,
       value =
-          "SELECT * FROM posts WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time < now()"
+          "SELECT * FROM posts WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time < now() + INTERVAL 3 HOUR"
               + "  ORDER BY posts.time DESC limit :limit offset :offset")
   List<Post> findAllPostsOrderedByTimeDesc(@Param("offset") Integer offset,
       @Param("limit") Integer limit);
 
   @Query(nativeQuery = true,
       value =
-          "SELECT * FROM posts WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time < now()"
+          "SELECT * FROM posts WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time < now() + INTERVAL 3 HOUR"
               + "  ORDER BY posts.time limit :limit offset :offset")
   List<Post> findAllPostsOrderedByTime(@Param("offset") Integer offset,
       @Param("limit") Integer limit);
 
   @Query(nativeQuery = true,
       value =
-          "SELECT * FROM posts WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time < now()"
+          "SELECT * FROM posts WHERE is_active = 1 AND moderation_status = 'ACCEPTED' AND time < now() + INTERVAL 3 HOUR"
               + "   limit :limit offset :offset")
   List<Post> findAllPostsPageable(@Param("offset") Integer offset,
       @Param("limit") Integer limit);
@@ -37,7 +37,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
       nativeQuery = true,
       value =
           "SELECT * FROM posts join post_comments on posts.id = post_comments.post_id where"
-              + " is_active = 1 and moderation_status = 'ACCEPTED' AND posts.time < now()"
+              + " is_active = 1 and moderation_status = 'ACCEPTED' AND posts.time < now() + INTERVAL 3 HOUR"
               + " group by posts.id order by count(post_comments.id) desc limit :limit offset :offset"
   )
   List<Post> findAllPostsSortedByComments(@Param("offset") Integer offset,
@@ -47,7 +47,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
       nativeQuery = true,
       value =
           "SELECT * FROM posts join post_votes on posts.id = post_votes.post_id "
-              + "where  is_active = 1 and moderation_status = 'ACCEPTED' AND posts.time < now() "
+              + "where  is_active = 1 and moderation_status = 'ACCEPTED' AND posts.time < now() + INTERVAL 3 HOUR "
               + "and post_votes.value = 1 group by posts.id order by count(post_votes.id) desc "
               + " limit :limit offset :offset"
   )
@@ -57,7 +57,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
   @Query(nativeQuery = true,
       value =
           "SELECT * FROM posts WHERE is_active = 1 AND "
-              + "moderation_status = 'ACCEPTED' AND time < now() AND (title LIKE %:query%"
+              + "moderation_status = 'ACCEPTED' AND time < now() + INTERVAL 3 HOUR AND (title LIKE %:query%"
               + " OR text LIKE %:query%) limit :limit offset :offset")
   List<Post> findPostByQuery(@Param("offset") Integer offset,
       @Param("limit") Integer limit,
@@ -83,7 +83,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
   @Query(nativeQuery = true,
       value = "SELECT * FROM posts WHERE is_active = 1 AND "
-          + " moderation_status = 'ACCEPTED' AND time < now() AND "
+          + " moderation_status = 'ACCEPTED' AND time < now() + INTERVAL 3 HOUR AND "
           + " time >= :time AND time < :time + INTERVAL 1 DAY "
           + "limit :limit offset :offset")
   List<Post> findAllPostsByTime(@Param("offset") Integer offset,
@@ -95,12 +95,12 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
   @Query(nativeQuery = true,
       value = "SELECT min(time) FROM posts WHERE user_id = :id AND is_active = 1 AND "
-          + "moderation_status = 'ACCEPTED' AND time < now() ")
+          + "moderation_status = 'ACCEPTED' AND time < now()  + INTERVAL 3 HOUR")
   LocalDateTime findFirstMyPublication(@Param("id") Integer id);
 
   @Query(nativeQuery = true,
       value = "SELECT * FROM posts WHERE id IN (:ids) AND is_active = 1 AND"
-          + " moderation_status = 'ACCEPTED' AND time < now() limit :limit offset :offset")
+          + " moderation_status = 'ACCEPTED' AND time < now() + INTERVAL 3 HOUR limit :limit offset :offset")
   List<Post> findByIdIn(@Param("ids") List<Integer> ids, @Param("offset") Integer offset,
       @Param("limit") Integer limit);
 

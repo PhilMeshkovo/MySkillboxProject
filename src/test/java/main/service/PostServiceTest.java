@@ -100,34 +100,43 @@ class PostServiceTest {
     authorizedUsers.put("3", 0);
   }
 
-//  @Test
-//  void getAllPosts() {
-//    Post post = getPost();
-//    Mockito.doReturn(List.of(post)).when(postRepository).findAllPostsOrderedByTimeDesc(0, 10);
-//    PostListApi postListApi = postService.getAllPosts(0, 10, "RECENT");
-//    Assertions.assertEquals(1, postListApi.getCount());
-//  }
+  @Test
+  void getAllPosts() {
+    Post post = getPost();
+    Mockito.doReturn(List.of(post)).when(postRepository).findAllPostsOrderedByTimeDesc(0, 10);
+    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
+        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
+    Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
+    PostListApi postListApi = postService.getAllPosts(0, 10, "RECENT");
+    Assertions.assertEquals(1, postListApi.getCount());
+  }
 
-//  @Test
-//  void getAllPostsByTextAndTitle() {
-//    Post post = getPost();
-//    Mockito.doReturn(List.of(post)).when(postRepository).findPostByQuery(0, 10, "on");
-//    PostListApi postListApi = postService.getAllPostsByTextAndTitle(0, 10, "on");
-//    Assertions.assertEquals(1, postListApi.getCount());
-//  }
+  @Test
+  void getAllPostsByTextAndTitle() {
+    Post post = getPost();
+    Mockito.doReturn(List.of(post)).when(postRepository).findPostByQuery(0, 10, "on");
+    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
+        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
+    Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
+    PostListApi postListApi = postService.getAllPostsByTextAndTitle(0, 10, "on");
+    Assertions.assertEquals(1, postListApi.getCount());
+  }
 
-//  @Test
-//  void getAllPostsByTag() {
-//    Post post = getPost();
-//    Tag tag = new Tag();
-//    tag.setId(1);
-//    tag.setName("java");
-//    tag.setPosts(Set.of(post));
-//    Mockito.doReturn(Optional.of(tag)).when(tagRepository).findTagByQuery("java");
-//    Mockito.doReturn(List.of(post)).when(postRepository).findByIdIn(List.of(0), 0, 10);
-//    PostListApi postListApi = postService.getAllPostsByTag(0, 10, "java");
-//    Assertions.assertEquals(1, postListApi.getCount());
-//  }
+  @Test
+  void getAllPostsByTag() {
+    Post post = getPost();
+    Tag tag = new Tag();
+    tag.setId(1);
+    tag.setName("java");
+    tag.setPosts(Set.of(post));
+    Mockito.doReturn(Optional.of(tag)).when(tagRepository).findTagByQuery("java");
+    Mockito.doReturn(List.of(post)).when(postRepository).findByIdIn(List.of(0), 0, 10);
+    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
+        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
+    Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
+    PostListApi postListApi = postService.getAllPostsByTag(0, 10, "java");
+    Assertions.assertEquals(1, postListApi.getCount());
+  }
 
   @Test
   void getAllPostsByDate() throws ParseException {
