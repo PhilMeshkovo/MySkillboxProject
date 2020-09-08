@@ -24,6 +24,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import main.dto.ChangePasswordDto;
 import main.dto.GlobalSettingsDto;
 import main.dto.LoginDto;
 import main.dto.RegisterForm;
@@ -224,7 +225,8 @@ public class UserService implements UserDetailsService {
     ObjectNode object = mapper.createObjectNode();
     Optional<User> userByEmail = userRepository.findByEmail(email);
     if (userByEmail.isPresent()) {
-      mailSender.send(email, "Code", "https://philipp-skillbox.herokuapp.com/login/change-password/" + userByEmail.get().getCode());
+      mailSender.send(email, "Code", "https://philipp-skillbox.herokuapp.com/login/change-password/"
+              + userByEmail.get().getCode());
       object.put("result", true);
     } else {
       object.put("result", false);
@@ -233,25 +235,24 @@ public class UserService implements UserDetailsService {
   }
 
   @Transactional
-  public JsonNode postNewPassword(String code, String password, String captcha,
-      String captcha_secret) {
+  public JsonNode postNewPassword(ChangePasswordDto changePasswordDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     ObjectNode objectError = mapper.createObjectNode();
-    Optional<User> userByCode = userRepository.findByCode(code);
-    Optional<CaptchaCode> captchaCode = captchaCodeRepository.findByCode(captcha);
-    if (userByCode.isPresent() && captchaCode.isPresent() && password.length() > 5
-        && captchaCode.get().getSecretCode().equals(captcha_secret)) {
+    Optional<User> userByCode = userRepository.findByCode(changePasswordDto.getCode());
+    Optional<CaptchaCode> captchaCode = captchaCodeRepository.findByCode(changePasswordDto.getCaptcha());
+    if (userByCode.isPresent() && captchaCode.isPresent() && changePasswordDto.getPassword().length() > 5
+        && captchaCode.get().getSecretCode().equals(changePasswordDto.getCaptcha_secret())) {
       User user = userRepository.getOne(userByCode.get().getId());
-      user.setPassword(passwordEncoder().encode(password));
+      user.setPassword(passwordEncoder().encode(changePasswordDto.getPassword()));
 
       object.put("result", true);
     } else {
       object.put("result", false);
-      if (password.length() < 6) {
+      if (changePasswordDto.getPassword().length() < 6) {
         objectError.put("password", SHORT_PASSWORD);
       }
-      if (captchaCode.isPresent() && !captchaCode.get().getSecretCode().equals(captcha_secret)
+      if (captchaCode.isPresent() && !captchaCode.get().getSecretCode().equals(changePasswordDto.getCaptcha_secret())
           || captchaCode.isEmpty()) {
         objectError.put("captcha", WRONG_CAPTCHA);
       }
@@ -460,7 +461,7 @@ public class UserService implements UserDetailsService {
   public JsonNode getCaptcha() throws IOException {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    String code = createCaptchaValue(4);
+    String code = createCaptchaValue(3);
     String secretCode = createCaptchaValue(22);
     CaptchaCode captchaCode = CaptchaCode.builder()
         .time(LocalDateTime.now().plusHours(3))

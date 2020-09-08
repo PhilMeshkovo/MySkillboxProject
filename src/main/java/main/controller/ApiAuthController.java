@@ -3,6 +3,7 @@ package main.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import javax.persistence.EntityNotFoundException;
+import main.dto.ChangePasswordDto;
 import main.dto.LoginDto;
 import main.dto.RegisterForm;
 import main.service.UserService;
@@ -56,11 +57,8 @@ public class ApiAuthController {
 
   @PostMapping("/auth/password")
   public ResponseEntity<?> postNewPassword(
-      @RequestParam(value = "code", required = false) String code,
-      @RequestParam(value = "password") String password,
-      @RequestParam(value = "captcha") String captcha,
-      @RequestParam(value = "captcha_secret") String captcha_secret) {
-    JsonNode jsonNode = userService.postNewPassword(code, password, captcha, captcha_secret);
+      @RequestBody ChangePasswordDto changePasswordDto) {
+    JsonNode jsonNode = userService.postNewPassword(changePasswordDto);
     if (jsonNode.has("error")) {
       return new ResponseEntity<>(jsonNode, HttpStatus.BAD_REQUEST);
     } else {

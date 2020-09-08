@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import main.dto.ChangePasswordDto;
 import main.dto.LoginDto;
 import main.dto.RegisterForm;
 import main.dto.ResponsePostApi;
@@ -138,7 +139,8 @@ class UserServiceTest {
         "some@mail.ru", "$2a$10$FLwXXL.MI88B.UCf5zgHbek0Qk3k.oSqhzAUyyMPJFkYWOddpuLqu",
         "123456", "123.jpr", new Role(1)))
         .when(userRepository).getOne(1);
-    JsonNode jsonNode = userService.postNewPassword("123456", "123456", "123456", "123456");
+    ChangePasswordDto changePasswordDto = new ChangePasswordDto("123456", "123456", "123456", "123456");
+    JsonNode jsonNode = userService.postNewPassword(changePasswordDto);
     Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
 
