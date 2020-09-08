@@ -59,9 +59,14 @@ public class ApiGeneralController {
   @GetMapping(value = "/image/{link}", produces = MediaType.IMAGE_JPEG_VALUE)
   public @ResponseBody
   byte[] getImage(
-      @PathVariable String link) throws IOException {
+      @PathVariable String link) {
     before();
-    byte[] image = initService.getImage(link);
+    byte[] image = new byte[0];
+    try {
+      image = initService.getImage(link);
+    } catch (Exception e) {
+      e.getMessage();
+    }
     return image;
   }
 

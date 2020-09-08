@@ -57,7 +57,7 @@ public class InitService {
     return String.valueOf(c);
   }
 
-  public byte[] getImage(String link) throws IOException {
+  public byte[] getImage(String link) throws Exception {
     List<String> files = getAllFiles("src/main/resources/static/avatars/");
     for (String file1 : files) {
       if (file1.endsWith(link)) {
@@ -65,7 +65,7 @@ public class InitService {
         return FileUtils.readFileToByteArray(newFile);
       }
     }
-    return null;
+    throw new Exception("No such photo");
   }
 
   private List getAllFiles(String link) throws IOException {

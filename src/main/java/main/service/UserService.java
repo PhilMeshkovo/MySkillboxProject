@@ -117,7 +117,7 @@ public class UserService implements UserDetailsService {
         user.setEmail(registerFormUser.getE_mail());
         user.setName(registerFormUser.getName());
         user.setRole(new Role(1, "ROLE_USER"));
-        user.setRegTime(LocalDateTime.now());
+        user.setRegTime(LocalDateTime.now().plusHours(3));
         user.setPassword(passwordEncoder().encode(registerFormUser.getPassword()));
         user.setCode(UUID.randomUUID().toString());
         userRepository.save(user);
@@ -304,7 +304,7 @@ public class UserService implements UserDetailsService {
     if (name != null && name.length() > 0 &&
         name.length() < 1000 && email != null &&
         password != null && photo != null &&
-        removePhoto != null) {
+        removePhoto == 0) {
       User userToUpdate = userRepository.getOne(user.getId());
       String fileName = uploadImageWithResize(photo, userToUpdate.getId());
       File file = new File(fileName);
