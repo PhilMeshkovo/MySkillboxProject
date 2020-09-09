@@ -24,12 +24,13 @@ import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import main.dto.ChangePasswordDto;
-import main.dto.GlobalSettingsDto;
-import main.dto.LoginDto;
-import main.dto.RegisterForm;
-import main.dto.ResponsePostApi;
-import main.dto.UserDto;
+import main.config.SecurityConfiguration;
+import main.dto.request.ChangePasswordRequest;
+import main.dto.request.GlobalSettingsRequest;
+import main.dto.request.LoginRequest;
+import main.dto.request.RegisterFormRequest;
+import main.dto.response.ResponsePostApi;
+import main.dto.response.UserDto;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.CaptchaCode;
@@ -43,12 +44,9 @@ import main.repository.PostRepository;
 import main.repository.UserRepository;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -61,33 +59,44 @@ public class UserService implements UserDetailsService {
 
   private static final String WRONG_CAPTCHA = "Код с картинки введён неверно";
 
-  @Autowired
-  UserRepository userRepository;
+  private final UserRepository userRepository;
+
+  private final SecurityConfiguration securityConfiguration;
+
+  private final GlobalSettingsRepository globalSettingsRepository;
+
+  private final CommentMapper commentMapper;
+
+  private final PostMapper postMapper;
+
+  private final CaptchaCodeRepository captchaCodeRepository;
+
+  private final HttpServletRequest request;
+
+  private final MailSender mailSender;
+
+  private final PostRepository postRepository;
+
+  private final AuthenticationService authenticationService;
 
   @Autowired
-  GlobalSettingsRepository globalSettingsRepository;
-
-  @Autowired
-  CommentMapper commentMapper;
-
-  @Autowired
-  PostMapper postMapper;
-
-  @Autowired
-  CaptchaCodeRepository captchaCodeRepository;
-
-  @Autowired
-  HttpServletRequest request;
-
-  @Autowired
-  MailSender mailSender;
-
-  @Autowired
-  PostRepository postRepository;
-
-  @Autowired
-  AuthenticationService authenticationService;
-
+  public UserService(UserRepository userRepository,
+      SecurityConfiguration securityConfiguration,
+      GlobalSettingsRepository globalSettingsRepository, CommentMapper commentMapper,
+      PostMapper postMapper, CaptchaCodeRepository captchaCodeRepository,
+      HttpServletRequest request, MailSender mailSender,
+      PostRepository postRepository, AuthenticationService authenticationService) {
+    this.userRepository = userRepository;
+    this.securityConfiguration = securityConfiguration;
+    this.globalSettingsRepository = globalSettingsRepository;
+    this.commentMapper = commentMapper;
+    this.postMapper = postMapper;
+    this.captchaCodeRepository = captchaCodeRepository;
+    this.request = request;
+    this.mailSender = mailSender;
+    this.postRepository = postRepository;
+    this.authenticationService = authenticationService;
+  }
 
   @Override
   public UserDetails loadUserByUsername(@NonNull String username)
@@ -99,14 +108,10 @@ public class UserService implements UserDetailsService {
         , new ArrayList<>());
   }
 
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
-
-  public JsonNode saveUser(RegisterForm registerFormUser) {
+  public JsonNode saveUser(RegisterFormRequest registerFormUser) {
     Optional<GlobalSettings> globalSettings = globalSettingsRepository.findById(1);
-    if (globalSettings.get().getValue().equals("YES")) {
+    GlobalSettings multiUserMode = globalSettings.orElseThrow();
+    if (multiUserMode.getValue().equals("YES")) {
       ObjectMapper mapper = new ObjectMapper();
       ObjectNode object = mapper.createObjectNode();
       ObjectNode objectError = mapper.createObjectNode();
@@ -119,7 +124,8 @@ public class UserService implements UserDetailsService {
         user.setName(registerFormUser.getName());
         user.setRole(new Role(1, "ROLE_USER"));
         user.setRegTime(LocalDateTime.now().plusHours(3));
-        user.setPassword(passwordEncoder().encode(registerFormUser.getPassword()));
+        user.setPassword(
+            securityConfiguration.bcryptPasswordEncoder().encode(registerFormUser.getPassword()));
         user.setCode(UUID.randomUUID().toString());
         userRepository.save(user);
         object.put("result", true);
@@ -143,11 +149,11 @@ public class UserService implements UserDetailsService {
     }
   }
 
-  public JsonNode login(LoginDto loginDto) {
+  public JsonNode login(LoginRequest loginDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     Optional<User> userByEmail = userRepository.findByEmail(loginDto.getE_mail());
-    if (userByEmail.isPresent() && passwordEncoder()
+    if (userByEmail.isPresent() && securityConfiguration.bcryptPasswordEncoder()
         .matches(loginDto.getPassword(), userByEmail.get().getPassword())) {
       String sessionId = request.getSession().getId();
       User currentUser = userByEmail.get();
@@ -221,12 +227,11 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode restore(String email) {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+    ObjectNode object = createObjectNode();
     Optional<User> userByEmail = userRepository.findByEmail(email);
     if (userByEmail.isPresent()) {
       mailSender.send(email, "Code", "https://philipp-skillbox.herokuapp.com/login/change-password/"
-              + userByEmail.get().getCode());
+          + userByEmail.get().getCode());
       object.put("result", true);
     } else {
       object.put("result", false);
@@ -235,16 +240,19 @@ public class UserService implements UserDetailsService {
   }
 
   @Transactional
-  public JsonNode postNewPassword(ChangePasswordDto changePasswordDto) {
+  public JsonNode postNewPassword(ChangePasswordRequest changePasswordDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     ObjectNode objectError = mapper.createObjectNode();
     Optional<User> userByCode = userRepository.findByCode(changePasswordDto.getCode());
-    Optional<CaptchaCode> captchaCode = captchaCodeRepository.findByCode(changePasswordDto.getCaptcha());
-    if (userByCode.isPresent() && captchaCode.isPresent() && changePasswordDto.getPassword().length() > 5
+    Optional<CaptchaCode> captchaCode = captchaCodeRepository
+        .findByCode(changePasswordDto.getCaptcha());
+    if (userByCode.isPresent() && captchaCode.isPresent()
+        && changePasswordDto.getPassword().length() > 5
         && captchaCode.get().getSecretCode().equals(changePasswordDto.getCaptcha_secret())) {
       User user = userRepository.getOne(userByCode.get().getId());
-      user.setPassword(passwordEncoder().encode(changePasswordDto.getPassword()));
+      user.setPassword(
+          securityConfiguration.bcryptPasswordEncoder().encode(changePasswordDto.getPassword()));
 
       object.put("result", true);
     } else {
@@ -252,7 +260,8 @@ public class UserService implements UserDetailsService {
       if (changePasswordDto.getPassword().length() < 6) {
         objectError.put("password", SHORT_PASSWORD);
       }
-      if (captchaCode.isPresent() && !captchaCode.get().getSecretCode().equals(changePasswordDto.getCaptcha_secret())
+      if (captchaCode.isPresent() && !captchaCode.get().getSecretCode()
+          .equals(changePasswordDto.getCaptcha_secret())
           || captchaCode.isEmpty()) {
         objectError.put("captcha", WRONG_CAPTCHA);
       }
@@ -291,7 +300,7 @@ public class UserService implements UserDetailsService {
         password != null && photo == null &&
         removePhoto == null) {
       User userToUpdate = userRepository.getOne(user.getId());
-      userToUpdate.setPassword(passwordEncoder().encode(password));
+      userToUpdate.setPassword(securityConfiguration.bcryptPasswordEncoder().encode(password));
       object.put("result", true);
     }
     if (name != null && name.length() > 0 &&
@@ -310,7 +319,7 @@ public class UserService implements UserDetailsService {
       String fileName = uploadImageWithResize(photo, userToUpdate.getId());
       File file = new File(fileName);
       userToUpdate.setPhoto("/api/image/" + file.getName());
-      userToUpdate.setPassword(passwordEncoder().encode(password));
+      userToUpdate.setPassword(securityConfiguration.bcryptPasswordEncoder().encode(password));
       object.put("result", true);
     }
     if (userByEmail.isPresent() && !user.getEmail().equals(userByEmail.get().getEmail())
@@ -351,8 +360,7 @@ public class UserService implements UserDetailsService {
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
     Optional<User> currentUser = userRepository.findById(id);
     if (currentUser.isPresent()) {
-      ObjectMapper mapper = new ObjectMapper();
-      ObjectNode object = mapper.createObjectNode();
+      ObjectNode object = createObjectNode();
       List<Post> myPosts = postRepository.findAllMyPosts(0, (int) postRepository.count(),
           "ACCEPTED", currentUser.get().getId());
       List<ResponsePostApi> postList = myPosts.stream()
@@ -406,8 +414,7 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode logout() {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+    ObjectNode object = createObjectNode();
     String sessionId = request.getSession().getId();
     Map<String, Integer> authorizedUsers = authenticationService.getAuthorizedUsers();
     authorizedUsers.remove(sessionId);
@@ -417,8 +424,7 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode getSettings() {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+    ObjectNode object = createObjectNode();
     List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
     for (GlobalSettings globalSetting : globalSettings) {
       object.put(globalSetting.getCode(),
@@ -429,7 +435,7 @@ public class UserService implements UserDetailsService {
 
 
   @Transactional
-  public void putSettings(GlobalSettingsDto globalSettingsDto)
+  public void putSettings(GlobalSettingsRequest globalSettingsDto)
       throws Exception {
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
@@ -459,8 +465,7 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode getCaptcha() throws IOException {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+    ObjectNode object = createObjectNode();
     String code = createCaptchaValue(3);
     String secretCode = createCaptchaValue(22);
     CaptchaCode captchaCode = CaptchaCode.builder()
@@ -489,9 +494,9 @@ public class UserService implements UserDetailsService {
 
   public static String createCaptchaValue(int size) {
     Random random = new Random();
-    int lenght = size + (Math.abs(random.nextInt()) % 2);
+    int length = size + (Math.abs(random.nextInt()) % 2);
     StringBuffer captchaStrBuffer = new StringBuffer();
-    for (int i = 0; i < lenght; i++) {
+    for (int i = 0; i < length; i++) {
       int baseCharacterNumber = Math.abs(random.nextInt()) % 62;
       int characterNumber = 0;
       if (baseCharacterNumber < 26) {
@@ -507,8 +512,7 @@ public class UserService implements UserDetailsService {
   }
 
   private JsonNode getStatAll() {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+    ObjectNode object = createObjectNode();
     List<Post> posts = postRepository.findAll();
     List<ResponsePostApi> allPosts = posts.stream()
         .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
@@ -534,6 +538,12 @@ public class UserService implements UserDetailsService {
     } else {
       object.put("firstPublication", 0);
     }
+    return object;
+  }
+
+  private ObjectNode createObjectNode() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
     return object;
   }
 }

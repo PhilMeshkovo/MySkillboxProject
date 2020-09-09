@@ -3,13 +3,12 @@ package main.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.text.ParseException;
 import javax.persistence.EntityNotFoundException;
-import main.dto.AddPostDto;
-import main.dto.ListTagsDto;
-import main.dto.PostByIdApi;
-import main.dto.PostCommentDto;
-import main.dto.PostLikeDto;
-import main.dto.PostListApi;
-import main.dto.PostModerationDto;
+import main.dto.request.AddPostRequest;
+import main.dto.request.PostCommentRequest;
+import main.dto.request.PostLikeRequest;
+import main.dto.request.PostModerationRequest;
+import main.dto.response.ListTagsResponse;
+import main.dto.response.PostListResponse;
 import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,7 +31,7 @@ public class ApiPostController {
   PostService postService;
 
   @GetMapping("/post")
-  public PostListApi getAllPosts(
+  public PostListResponse getAllPosts(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
       @RequestParam(value = "limit", defaultValue = "20", required = false) Integer limit,
       @RequestParam(value = "mode", defaultValue = "recent", required = false) String mode) {
@@ -45,7 +44,7 @@ public class ApiPostController {
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
       @RequestParam(value = "query", defaultValue = "tagName", required = false) String query) {
     try {
-      PostListApi postListApi = postService.getAllPostsByTextAndTitle(offset, limit, query);
+      PostListResponse postListApi = postService.getAllPostsByTextAndTitle(offset, limit, query);
       return new ResponseEntity<>(postListApi, HttpStatus.OK);
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
@@ -57,8 +56,7 @@ public class ApiPostController {
   @ResponseStatus(HttpStatus.OK)
   public ResponseEntity<?> getPostById(@PathVariable int id) {
     try {
-      PostByIdApi postByIdApi = postService.findPostById(id);
-      return new ResponseEntity<>(postByIdApi, HttpStatus.OK);
+      return new ResponseEntity<>(postService.findPostById(id), HttpStatus.OK);
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
@@ -71,8 +69,8 @@ public class ApiPostController {
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
       @RequestParam(value = "date", defaultValue = "2007-01-01", required = false) String date) {
     try {
-      PostListApi postListApi = postService.getAllPostsByDate(offset, limit, date);
-      return new ResponseEntity<>(postListApi, HttpStatus.OK);
+      PostListResponse postListApi = postService.getAllPostsByDate(offset, limit, date);
+      return ResponseEntity.ok(postListApi);
     } catch (EntityNotFoundException | ParseException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
@@ -85,15 +83,15 @@ public class ApiPostController {
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
       @RequestParam(value = "tag", defaultValue = "tagName", required = false) String tag) {
     try {
-      PostListApi postListApi = postService.getAllPostsByTag(offset, limit, tag);
-      return new ResponseEntity<>(postListApi, HttpStatus.OK);
+      PostListResponse postListApi = postService.getAllPostsByTag(offset, limit, tag);
+      return ResponseEntity.ok(postListApi);
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
   }
 
   @GetMapping("/post/my")
-  public PostListApi getAllMyPosts(
+  public PostListResponse getAllMyPosts(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
       @RequestParam(value = "status", defaultValue = "inactive", required = false) String status) {
@@ -101,7 +99,7 @@ public class ApiPostController {
   }
 
   @GetMapping("/post/moderation")
-  public PostListApi getAllPostsToModeration(
+  public PostListResponse getAllPostsToModeration(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
       @RequestParam(value = "status", defaultValue = "new", required = false) String status) {
@@ -110,7 +108,7 @@ public class ApiPostController {
 
   @PostMapping("/post")
   public JsonNode addPost(
-      @RequestBody AddPostDto addPostDto) {
+      @RequestBody AddPostRequest addPostDto) {
     JsonNode object = postService.addPost(addPostDto);
     return object;
   }
@@ -118,10 +116,9 @@ public class ApiPostController {
   @PutMapping("/post/{id}")
   public ResponseEntity<?> updatePost(
       @PathVariable int id,
-      @RequestBody AddPostDto addPostDto) {
+      @RequestBody AddPostRequest addPostDto) {
     try {
-      JsonNode jsonNode = postService.updatePost(id, addPostDto);
-      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+      return ResponseEntity.ok(postService.updatePost(id, addPostDto));
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     } catch (Exception e) {
@@ -130,20 +127,20 @@ public class ApiPostController {
   }
 
   @PostMapping("/comment")
-  public ResponseEntity<?> addComment(@RequestBody PostCommentDto postCommentDto) {
+  public ResponseEntity<?> addComment(@RequestBody PostCommentRequest postCommentDto) {
     JsonNode jsonNode = jsonNode = postService.addCommentToPost(postCommentDto);
     if (jsonNode.has("error")) {
       return new ResponseEntity<>(jsonNode, HttpStatus.BAD_REQUEST);
     }
-    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    return ResponseEntity.ok(jsonNode);
   }
 
   @GetMapping("/tag")
   public ResponseEntity<?> getTags(@RequestParam(value = "query", defaultValue = "") String query) {
 
     try {
-      ListTagsDto listTagsDto = postService.getTag(query);
-      return new ResponseEntity<>(listTagsDto, HttpStatus.OK);
+      ListTagsResponse listTagsDto = postService.getTag(query);
+      return ResponseEntity.ok(listTagsDto);
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
@@ -151,10 +148,10 @@ public class ApiPostController {
 
   @PostMapping("/moderation")
   public ResponseEntity<?> moderationPost(
-      @RequestBody PostModerationDto postModerationDto) {
+      @RequestBody PostModerationRequest postModerationDto) {
     try {
       boolean answer = postService.moderationPost(postModerationDto);
-      return new ResponseEntity<>(answer, HttpStatus.OK);
+      return ResponseEntity.ok(answer);
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
@@ -169,10 +166,10 @@ public class ApiPostController {
 
   @PostMapping("/post/like")
   public ResponseEntity<?> postLike(
-      @RequestBody PostLikeDto postLikeDto) {
+      @RequestBody PostLikeRequest postLikeDto) {
     try {
       JsonNode jsonNode = postService.postLike(postLikeDto);
-      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+      return ResponseEntity.ok(jsonNode);
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
@@ -180,10 +177,9 @@ public class ApiPostController {
 
   @PostMapping("/post/dislike")
   public ResponseEntity<?> postDislike(
-      @RequestBody PostLikeDto postLikeDto) {
+      @RequestBody PostLikeRequest postLikeDto) {
     try {
-      JsonNode jsonNode = postService.postDislike(postLikeDto);
-      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+      return ResponseEntity.ok(postService.postDislike(postLikeDto));
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }

@@ -6,10 +6,10 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import main.dto.PostByIdApi;
-import main.dto.ResponsePostApi;
-import main.dto.ResponsePostApiToModeration;
-import main.dto.ResponsePostApiWithAnnounce;
+import main.dto.response.PostByIdResponse;
+import main.dto.response.ResponsePostApi;
+import main.dto.response.ResponsePostApiToModeration;
+import main.dto.response.ResponsePostApiWithAnnounce;
 import main.model.Post;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -56,8 +56,8 @@ public class PostMapper {
     return postApiList;
   }
 
-  public PostByIdApi postToPostById(Post post) {
-    PostByIdApi postByIdApi = new PostByIdApi();
+  public PostByIdResponse postToPostById(Post post) {
+    PostByIdResponse postByIdApi = new PostByIdResponse();
     postByIdApi.setId(post.getId());
     LocalDateTime time = post.getTime().minusHours(3);
     ZonedDateTime timeZoned = time.atZone(ZoneId.systemDefault());

@@ -22,16 +22,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
-import main.dto.AddPostDto;
-import main.dto.ListTagsDto;
-import main.dto.PostByIdApi;
-import main.dto.PostCommentDto;
-import main.dto.PostLikeDto;
-import main.dto.PostListApi;
-import main.dto.PostModerationDto;
-import main.dto.ResponsePostApi;
-import main.dto.ResponsePostApiWithAnnounce;
-import main.dto.TagDto;
+import main.dto.request.AddPostRequest;
+import main.dto.request.PostCommentRequest;
+import main.dto.request.PostLikeRequest;
+import main.dto.request.PostModerationRequest;
+import main.dto.response.ListTagsResponse;
+import main.dto.response.PostByIdResponse;
+import main.dto.response.PostListResponse;
+import main.dto.response.ResponsePostApi;
+import main.dto.response.ResponsePostApiWithAnnounce;
+import main.dto.response.TagResponse;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.GlobalSettings;
@@ -84,7 +84,7 @@ public class PostService {
   @Autowired
   AuthenticationService authenticationService;
 
-  public PostListApi getAllPosts(Integer offset, Integer limit, String mode) {
+  public PostListResponse getAllPosts(Integer offset, Integer limit, String mode) {
     List<ResponsePostApi> responsePostApiList;
     if (mode.equalsIgnoreCase("RECENT")) {
       responsePostApiList = postRepository
@@ -95,7 +95,7 @@ public class PostService {
       List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
           pageApiNew.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
-      return new PostListApi(responseWithAnnounceList, pageApiNew.size());
+      return new PostListResponse(responseWithAnnounceList, pageApiNew.size());
     }
     if (mode.equalsIgnoreCase("EARLY")) {
       responsePostApiList = postRepository
@@ -106,7 +106,7 @@ public class PostService {
       List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
           pageApiNew.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
-      return new PostListApi(responseWithAnnounceList, pageApiNew.size());
+      return new PostListResponse(responseWithAnnounceList, pageApiNew.size());
     }
     if (mode.equalsIgnoreCase("POPULAR")) {
       responsePostApiList = postRepository
@@ -118,7 +118,7 @@ public class PostService {
           pageApiNew
               .stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
-      return new PostListApi(responseWithAnnounceList, pageApiNew.size());
+      return new PostListResponse(responseWithAnnounceList, pageApiNew.size());
     }
     if (mode.equalsIgnoreCase("BEST")) {
       responsePostApiList = postRepository
@@ -129,12 +129,12 @@ public class PostService {
       List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
           pageApiNew.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
-      return new PostListApi(responseWithAnnounceList, pageApiNew.size());
+      return new PostListResponse(responseWithAnnounceList, pageApiNew.size());
     }
     throw new EntityNotFoundException("No such mode");
   }
 
-  public PostListApi getAllPostsByTextAndTitle(Integer offset, Integer limit, String query)
+  public PostListResponse getAllPostsByTextAndTitle(Integer offset, Integer limit, String query)
       throws EntityNotFoundException {
     List<Post> postByQuery = postRepository.findPostByQuery(offset, limit, query);
     List<ResponsePostApi> pageApi;
@@ -145,10 +145,10 @@ public class PostService {
     List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
         responsePostApis.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
             collect(Collectors.toList());
-    return new PostListApi(responseWithAnnounceList, responsePostApis.size());
+    return new PostListResponse(responseWithAnnounceList, responsePostApis.size());
   }
 
-  public PostListApi getAllPostsByTag(Integer offset, Integer limit, String tag) {
+  public PostListResponse getAllPostsByTag(Integer offset, Integer limit, String tag) {
     Optional<Tag> tagById = tagRepository.findTagByQuery(tag);
     if (tagById.isPresent()) {
       Set<Post> posts = tagById.get().getPosts();
@@ -164,7 +164,7 @@ public class PostService {
         List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
             responsePostApis.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
                 collect(Collectors.toList());
-        return new PostListApi(responseWithAnnounceList, responsePostApis.size());
+        return new PostListResponse(responseWithAnnounceList, responsePostApis.size());
       } else {
         throw new EntityNotFoundException("No active posts or moderated");
       }
@@ -173,7 +173,7 @@ public class PostService {
     }
   }
 
-  public PostListApi getAllPostsByDate(Integer offset, Integer limit, String date)
+  public PostListResponse getAllPostsByDate(Integer offset, Integer limit, String date)
       throws ParseException {
     SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
     Date localDate = dateFormatter.parse(date);
@@ -188,19 +188,19 @@ public class PostService {
       List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
           responsePostApis.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
-      return new PostListApi(responseWithAnnounceList, responsePostApis.size());
+      return new PostListResponse(responseWithAnnounceList, responsePostApis.size());
     } else {
       throw new EntityNotFoundException("Nothing found");
     }
   }
 
   @Transactional
-  public PostByIdApi findPostById(int postId) {
+  public PostByIdResponse findPostById(int postId) {
     Optional<Post> optionalPost = postRepository.findById(postId);
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
     if (optionalPost.isPresent()) {
-      PostByIdApi postByIdApi = new PostByIdApi();
+      PostByIdResponse postByIdApi = new PostByIdResponse();
       Post post = optionalPost.get();
       if (post.getIsActive() == 1 && post.getModerationStatus().equals(ModerationStatus.ACCEPTED) &&
           post.getTime().minusHours(3).isBefore(LocalDateTime.now()) || post.getIsActive() != 1 &&
@@ -209,7 +209,7 @@ public class PostService {
           || post.getIsActive() != 1
           && authenticationService.getAuthorizedUsers().containsKey(sessionId) && userRepository
           .findById(id).get().equals(post.getUser())) {
-        PostByIdApi postByIdApi1 = postMapper.postToPostById(post);
+        PostByIdResponse postByIdApi1 = postMapper.postToPostById(post);
         postByIdApi = commentMapper.addCountCommentsAndLikesToPostById(postByIdApi1);
         List<PostComment> commentsByPostId = postCommentRepository
             .findCommentsByPostId(post.getId());
@@ -234,7 +234,7 @@ public class PostService {
     }
   }
 
-  public PostListApi getAllMyPosts(Integer offset, Integer limit, String status) {
+  public PostListResponse getAllMyPosts(Integer offset, Integer limit, String status) {
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
     User currentUser = userRepository.findById(id).get();
@@ -249,7 +249,7 @@ public class PostService {
       List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
           listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
-      return new PostListApi(responseWithAnnounceList, listResponseApi.size());
+      return new PostListResponse(responseWithAnnounceList, listResponseApi.size());
     }
     if (status.toUpperCase().equals("PENDING")) {
       listResponse = postRepository.findAllMyPosts(offset, limit, "NEW", currentUser.getId())
@@ -260,7 +260,7 @@ public class PostService {
       List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
           listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
-      return new PostListApi(responseWithAnnounceList, listResponseApi.size());
+      return new PostListResponse(responseWithAnnounceList, listResponseApi.size());
     }
     if (status.toUpperCase().equals("DECLINED")) {
       listResponse = postRepository.findAllMyPosts(offset, limit, "DECLINED", currentUser.getId())
@@ -271,7 +271,7 @@ public class PostService {
       List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
           listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
-      return new PostListApi(responseWithAnnounceList, listResponseApi.size());
+      return new PostListResponse(responseWithAnnounceList, listResponseApi.size());
     }
     if (status.toUpperCase().equals("PUBLISHED")) {
       listResponse = postRepository.findAllMyPosts(offset, limit, "ACCEPTED", currentUser.getId())
@@ -282,12 +282,12 @@ public class PostService {
       List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
           listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
               collect(Collectors.toList());
-      return new PostListApi(responseWithAnnounceList, listResponseApi.size());
+      return new PostListResponse(responseWithAnnounceList, listResponseApi.size());
     }
     return null;
   }
 
-  public PostListApi getAllPostsToModeration(Integer offset, Integer limit, String status) {
+  public PostListResponse getAllPostsToModeration(Integer offset, Integer limit, String status) {
     List<Post> posts = postRepository.findAllPostsToModeration(offset, limit, status);
     List<ResponsePostApi> postApiNew = posts.stream()
         .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
@@ -296,10 +296,10 @@ public class PostService {
     List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
         responsePosts.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
             collect(Collectors.toList());
-    return new PostListApi(responseWithAnnounceList, responsePosts.size());
+    return new PostListResponse(responseWithAnnounceList, responsePosts.size());
   }
 
-  public JsonNode addPost(AddPostDto addPostDto) {
+  public JsonNode addPost(AddPostRequest addPostDto) {
     Optional<GlobalSettings> globalSettings = globalSettingsRepository.findById(2);
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
@@ -372,7 +372,7 @@ public class PostService {
   }
 
   @Transactional
-  public JsonNode updatePost(int id, AddPostDto addPostDto) {
+  public JsonNode updatePost(int id, AddPostRequest addPostDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     String sessionId = request.getSession().getId();
@@ -425,7 +425,7 @@ public class PostService {
     return object;
   }
 
-  public JsonNode addCommentToPost(PostCommentDto postCommentDto) {
+  public JsonNode addCommentToPost(PostCommentRequest postCommentDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     Integer postId = postCommentDto.getPost_id();
@@ -490,13 +490,13 @@ public class PostService {
     }
   }
 
-  public ListTagsDto getTag(String query) {
-    ListTagsDto listTagsDto = new ListTagsDto();
-    List<TagDto> tagDtoList = new ArrayList<>();
+  public ListTagsResponse getTag(String query) {
+    ListTagsResponse listTagsDto = new ListTagsResponse();
+    List<TagResponse> tagDtoList = new ArrayList<>();
     if (query.equals("")) {
       List<Tag> allTags = tagRepository.findAll();
       for (Tag tag : allTags) {
-        TagDto tagDto = TagDto.builder()
+        TagResponse tagDto = TagResponse.builder()
             .name(tag.getName())
             .weight(getWeightOfTag(tag))
             .build();
@@ -510,7 +510,7 @@ public class PostService {
         Optional<Tag> tagByQuery = tagRepository.findTagByQuery(arrayTag);
         if (tagByQuery.isPresent()) {
           double weight = getWeightOfTag(tagByQuery.get());
-          TagDto tagDto = TagDto.builder()
+          TagResponse tagDto = TagResponse.builder()
               .name(tagByQuery.get().getName())
               .weight(weight)
               .build();
@@ -550,7 +550,7 @@ public class PostService {
   }
 
   @Transactional
-  public boolean moderationPost(PostModerationDto postModerationDto) throws Exception {
+  public boolean moderationPost(PostModerationRequest postModerationDto) throws Exception {
     Optional<Post> postById = postRepository.findById(postModerationDto.getPost_id());
     if (postById.isPresent() && postModerationDto.getDecision().equalsIgnoreCase("accept")
         || postById.isPresent() && postModerationDto.getDecision().equalsIgnoreCase("decline")) {
@@ -603,9 +603,8 @@ public class PostService {
   }
 
   @Transactional
-  public JsonNode postLike(PostLikeDto postLikeDto) throws EntityNotFoundException {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+  public JsonNode postLike(PostLikeRequest postLikeDto) throws EntityNotFoundException {
+    ObjectNode object = createObjectNode();
     Map<String, Integer> authUsers = authenticationService.getAuthorizedUsers();
     User currentUser;
     if (authUsers.containsKey(request.getSession().getId())) {
@@ -643,9 +642,8 @@ public class PostService {
   }
 
   @Transactional
-  public JsonNode postDislike(PostLikeDto postLikeDto) throws EntityNotFoundException {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+  public JsonNode postDislike(PostLikeRequest postLikeDto) throws EntityNotFoundException {
+    ObjectNode object = createObjectNode();
     Map<String, Integer> authUsers = authenticationService.getAuthorizedUsers();
     User currentUser;
     if (authUsers.containsKey(request.getSession().getId())) {
@@ -679,6 +677,12 @@ public class PostService {
       postVotes.setValue(-1);
       object.put("result", true);
     }
+    return object;
+  }
+
+  private ObjectNode createObjectNode() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode object = mapper.createObjectNode();
     return object;
   }
 }

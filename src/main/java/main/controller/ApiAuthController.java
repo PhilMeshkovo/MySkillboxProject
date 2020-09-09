@@ -3,9 +3,9 @@ package main.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import javax.persistence.EntityNotFoundException;
-import main.dto.ChangePasswordDto;
-import main.dto.LoginDto;
-import main.dto.RegisterForm;
+import main.dto.request.ChangePasswordRequest;
+import main.dto.request.LoginRequest;
+import main.dto.request.RegisterFormRequest;
 import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,10 +26,10 @@ public class ApiAuthController {
   UserService userService;
 
   @PostMapping("/auth/register")
-  public ResponseEntity<?> addUser(@RequestBody RegisterForm registerForm) {
+  public ResponseEntity<?> addUser(@RequestBody RegisterFormRequest registerForm) {
     try {
       JsonNode jsonNode = userService.saveUser(registerForm);
-      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+      return ResponseEntity.ok(jsonNode);
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
@@ -37,32 +37,31 @@ public class ApiAuthController {
 
   @PostMapping("/auth/login")
   public ResponseEntity<?> login(
-      @RequestBody LoginDto loginDto) {
-    JsonNode object = userService.login(loginDto);
-    return new ResponseEntity<>(object, HttpStatus.OK);
+      @RequestBody LoginRequest loginDto) {
+    return ResponseEntity.ok(userService.login(loginDto));
   }
 
   @GetMapping("/auth/check")
   public ResponseEntity<?> checkUser() {
     JsonNode object = userService.check();
-    return new ResponseEntity<>(object, HttpStatus.OK);
+    return ResponseEntity.ok(object);
   }
 
   @PostMapping("/auth/restore")
   public ResponseEntity<?> restore(
       @RequestBody JsonNode email) {
     JsonNode jsonNode = userService.restore(email.get("email").asText());
-    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    return ResponseEntity.ok(jsonNode);
   }
 
   @PostMapping("/auth/password")
   public ResponseEntity<?> postNewPassword(
-      @RequestBody ChangePasswordDto changePasswordDto) {
+      @RequestBody ChangePasswordRequest changePasswordDto) {
     JsonNode jsonNode = userService.postNewPassword(changePasswordDto);
     if (jsonNode.has("error")) {
       return new ResponseEntity<>(jsonNode, HttpStatus.BAD_REQUEST);
     } else {
-      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+      return ResponseEntity.ok(jsonNode);
     }
   }
 
@@ -76,9 +75,9 @@ public class ApiAuthController {
     try {
       JsonNode jsonNode = userService.postNewProfile(photo, name,
           email, password, removePhoto);
-      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+      return ResponseEntity.ok(jsonNode);
     } catch (Exception e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.OK);
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -86,7 +85,7 @@ public class ApiAuthController {
   public ResponseEntity<?> getMyStatistics() {
     try {
       JsonNode jsonNode = userService.getMyStatistics();
-      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+      return ResponseEntity.ok(jsonNode);
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
@@ -96,7 +95,7 @@ public class ApiAuthController {
   public ResponseEntity<?> getAllStatistics() {
     try {
       JsonNode jsonNode = userService.getAllStatistics();
-      return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+      return ResponseEntity.ok(jsonNode);
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
@@ -105,12 +104,12 @@ public class ApiAuthController {
   @GetMapping("/auth/logout")
   public ResponseEntity<?> logout() {
     JsonNode jsonNode = userService.logout();
-    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    return ResponseEntity.ok(jsonNode);
   }
 
   @GetMapping("/auth/captcha")
   public ResponseEntity<?> getCaptcha() throws IOException {
     JsonNode jsonNode = userService.getCaptcha();
-    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+    return ResponseEntity.ok(jsonNode);
   }
 }

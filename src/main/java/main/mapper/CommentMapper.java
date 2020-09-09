@@ -6,9 +6,9 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import main.dto.CommentsApi;
-import main.dto.PostByIdApi;
-import main.dto.ResponsePostApi;
+import main.dto.response.CommentsApiResponse;
+import main.dto.response.PostByIdResponse;
+import main.dto.response.ResponsePostApi;
 import main.model.PostComment;
 import main.repository.PostCommentRepository;
 import main.repository.PostVotesRepository;
@@ -28,8 +28,8 @@ public class CommentMapper {
   @Autowired
   PostVotesRepository postVotesRepository;
 
-  public CommentsApi postCommentToCommentsApi(PostComment postComment) {
-    CommentsApi commentsApi = new CommentsApi();
+  public CommentsApiResponse postCommentToCommentsApi(PostComment postComment) {
+    CommentsApiResponse commentsApi = new CommentsApiResponse();
     commentsApi.setId(postComment.getId());
     LocalDateTime time = postComment.getTime();
     ZonedDateTime timeZoned = time.atZone(ZoneId.systemDefault());
@@ -40,8 +40,8 @@ public class CommentMapper {
     return commentsApi;
   }
 
-  public List<CommentsApi> postCommentListToCommentApi(List<PostComment> postCommentList) {
-    List<CommentsApi> commentsApiList = new ArrayList<>();
+  public List<CommentsApiResponse> postCommentListToCommentApi(List<PostComment> postCommentList) {
+    List<CommentsApiResponse> commentsApiList = new ArrayList<>();
     for (PostComment postComment : postCommentList) {
       commentsApiList.add(postCommentToCommentsApi(postComment));
     }
@@ -66,7 +66,7 @@ public class CommentMapper {
     return pageApi;
   }
 
-  public PostByIdApi addCountCommentsAndLikesToPostById(PostByIdApi postByIdApi) {
+  public PostByIdResponse addCountCommentsAndLikesToPostById(PostByIdResponse postByIdApi) {
     int commentCount = postCommentRepository.findAll().stream().
         filter(p -> p.getPost().getId() == postByIdApi.getId()).
         collect(Collectors.toList()).size();

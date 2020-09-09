@@ -5,11 +5,11 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import main.dto.ChangePasswordDto;
-import main.dto.LoginDto;
-import main.dto.RegisterForm;
-import main.dto.ResponsePostApi;
-import main.dto.UserApi;
+import main.dto.request.ChangePasswordRequest;
+import main.dto.request.LoginRequest;
+import main.dto.request.RegisterFormRequest;
+import main.dto.response.ResponsePostApi;
+import main.dto.response.UserResponse;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.CaptchaCode;
@@ -80,7 +80,7 @@ class UserServiceTest {
     globalSettings.setValue("YES");
     Mockito.doReturn(Optional.of(globalSettings))
         .when(globalSettingsRepository).findById(1);
-    RegisterForm registerForm = new RegisterForm();
+    RegisterFormRequest registerForm = new RegisterFormRequest();
     registerForm.setE_mail("some@mail.ru");
     registerForm.setCaptcha("123456");
     registerForm.setCaptcha_secret("123456");
@@ -101,7 +101,7 @@ class UserServiceTest {
         "some@mail.ru", "$2a$10$FLwXXL.MI88B.UCf5zgHbek0Qk3k.oSqhzAUyyMPJFkYWOddpuLqu",
         "123456", "123.jpr", new Role(1))))
         .when(userRepository).findByEmail("some@mail.ru");
-    LoginDto loginDto = new LoginDto();
+    LoginRequest loginDto = new LoginRequest();
     loginDto.setE_mail("some@mail.ru");
     loginDto.setPassword("123456");
     JsonNode jsonNode = userService.login(loginDto);
@@ -139,7 +139,7 @@ class UserServiceTest {
         "some@mail.ru", "$2a$10$FLwXXL.MI88B.UCf5zgHbek0Qk3k.oSqhzAUyyMPJFkYWOddpuLqu",
         "123456", "123.jpr", new Role(1)))
         .when(userRepository).getOne(1);
-    ChangePasswordDto changePasswordDto = new ChangePasswordDto("123456", "123456", "123456", "123456");
+    ChangePasswordRequest changePasswordDto = new ChangePasswordRequest("123456", "123456", "123456", "123456");
     JsonNode jsonNode = userService.postNewPassword(changePasswordDto);
     Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
@@ -201,7 +201,7 @@ class UserServiceTest {
     responsePostApi.setText(getText());
     responsePostApi.setTitle("Post about spring");
     responsePostApi.setTimestamp(0L);
-    responsePostApi.setUser(new UserApi());
+    responsePostApi.setUser(new UserResponse());
     responsePostApi.setViewCount(2);
     return responsePostApi;
   }

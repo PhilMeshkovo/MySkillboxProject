@@ -1,6 +1,6 @@
 package main.service;
 
-import main.dto.ResponseApiInit;
+import main.dto.response.ResponseApiInit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

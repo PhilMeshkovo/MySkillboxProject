@@ -1,11 +1,10 @@
 package main.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
-import main.dto.GlobalSettingsDto;
-import main.dto.ResponseApiInit;
+import main.dto.request.GlobalSettingsRequest;
+import main.dto.response.ResponseApiInit;
 import main.service.InitService;
 import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +33,7 @@ public class ApiGeneralController {
   UserService userService;
 
   @Autowired
-  private ObjectMapper mapper;
+  ObjectMapper mapper;
 
   public void before() {
     mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
@@ -47,12 +46,11 @@ public class ApiGeneralController {
 
   @PostMapping("/image")
   @ResponseStatus(HttpStatus.OK)
-  public String upload(@RequestBody MultipartFile image) {
+  public ResponseEntity<?> upload(@RequestBody MultipartFile image) {
     try {
-      String answer = initService.uploadImage(image);
-      return answer;
+      return ResponseEntity.ok(initService.uploadImage(image));
     } catch (IOException e) {
-      return e.getMessage();
+      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -71,14 +69,13 @@ public class ApiGeneralController {
   }
 
   @GetMapping("/settings")
-  public ResponseEntity<?> getSettings() throws Exception {
-    JsonNode jsonNode = userService.getSettings();
-    return new ResponseEntity<>(jsonNode, HttpStatus.OK);
+  public ResponseEntity<?> getSettings() {
+    return ResponseEntity.ok(userService.getSettings());
   }
 
   @PutMapping("/settings")
   public void putSettings(
-      @RequestBody GlobalSettingsDto globalSettingsDto
+      @RequestBody GlobalSettingsRequest globalSettingsDto
   )
       throws Exception {
     userService.putSettings(globalSettingsDto);

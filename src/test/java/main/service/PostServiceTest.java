@@ -12,12 +12,12 @@ import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import main.dto.AddPostDto;
-import main.dto.CommentsApi;
-import main.dto.PostByIdApi;
-import main.dto.PostListApi;
-import main.dto.ResponsePostApi;
-import main.dto.UserApi;
+import main.dto.request.AddPostRequest;
+import main.dto.response.CommentsApiResponse;
+import main.dto.response.PostByIdResponse;
+import main.dto.response.PostListResponse;
+import main.dto.response.ResponsePostApi;
+import main.dto.response.UserResponse;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.GlobalSettings;
@@ -107,7 +107,7 @@ class PostServiceTest {
     Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
         .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
-    PostListApi postListApi = postService.getAllPosts(0, 10, "RECENT");
+    PostListResponse postListApi = postService.getAllPosts(0, 10, "RECENT");
     Assertions.assertEquals(1, postListApi.getCount());
   }
 
@@ -118,7 +118,7 @@ class PostServiceTest {
     Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
         .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
-    PostListApi postListApi = postService.getAllPostsByTextAndTitle(0, 10, "on");
+    PostListResponse postListApi = postService.getAllPostsByTextAndTitle(0, 10, "on");
     Assertions.assertEquals(1, postListApi.getCount());
   }
 
@@ -134,7 +134,7 @@ class PostServiceTest {
     Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
         .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
-    PostListApi postListApi = postService.getAllPostsByTag(0, 10, "java");
+    PostListResponse postListApi = postService.getAllPostsByTag(0, 10, "java");
     Assertions.assertEquals(1, postListApi.getCount());
   }
 
@@ -147,7 +147,7 @@ class PostServiceTest {
     Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
         .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
-    PostListApi postListApi = postService.getAllPostsByDate(0, 10, "1971-01-01");
+    PostListResponse postListApi = postService.getAllPostsByDate(0, 10, "1971-01-01");
     Assertions.assertEquals(1, postListApi.getCount());
   }
 
@@ -162,8 +162,8 @@ class PostServiceTest {
     Mockito.doReturn(authorizedUsers).when(authenticationService).getAuthorizedUsers();
     Mockito.doReturn(getPostBiIdApi()).when(commentMapper).addCountCommentsAndLikesToPostById(getPostBiIdApi());
     Mockito.doReturn(getPostBiIdApi()).when(postMapper).postToPostById(post);
-    Mockito.doReturn(List.of(new CommentsApi(0,0L,"Hello world", new UserApi()))).when(commentMapper).postCommentListToCommentApi(List.of(getPostComment()));
-    PostByIdApi postByIdApi = postService.findPostById(0);
+    Mockito.doReturn(List.of(new CommentsApiResponse(0,0L,"Hello world", new UserResponse()))).when(commentMapper).postCommentListToCommentApi(List.of(getPostComment()));
+    PostByIdResponse postByIdApi = postService.findPostById(0);
     Assertions.assertEquals(0, postByIdApi.getId());
     Assertions.assertEquals("hello world again!", postByIdApi.getTitle());
   }
@@ -176,14 +176,14 @@ class PostServiceTest {
     Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
         .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
-    PostListApi postListApi = postService.getAllPostsToModeration(0, 10, "ACCEPTED");
+    PostListResponse postListApi = postService.getAllPostsToModeration(0, 10, "ACCEPTED");
     Assertions.assertEquals(1, postListApi.getCount());
   }
 
   @Test
   void addPost() {
     Post post = getPost();
-    AddPostDto addPostDto = new AddPostDto();
+    AddPostRequest addPostDto = new AddPostRequest();
     addPostDto.setTitle(post.getTitle());
     addPostDto.setTimestamp(0L);
     addPostDto.setText(getText());
@@ -205,7 +205,7 @@ class PostServiceTest {
   void updatePost() {
     User user = getUser();
     Post post = getPost();
-    AddPostDto addPostDto = new AddPostDto();
+    AddPostRequest addPostDto = new AddPostRequest();
     addPostDto.setActive(1);
     addPostDto.setText(getText());
     addPostDto.setTitle("DDDDDDDDDDDDDDDDDDDDDD");
@@ -300,13 +300,13 @@ class PostServiceTest {
     responsePostApi.setText(getText());
     responsePostApi.setTitle("Post about spring");
     responsePostApi.setTimestamp(0L);
-    responsePostApi.setUser(new UserApi());
+    responsePostApi.setUser(new UserResponse());
     responsePostApi.setViewCount(0);
     return responsePostApi;
   }
 
-  private PostByIdApi getPostBiIdApi(){
-    PostByIdApi postByIdApi = new PostByIdApi();
+  private PostByIdResponse getPostBiIdApi(){
+    PostByIdResponse postByIdApi = new PostByIdResponse();
     postByIdApi.setId(0);
     postByIdApi.setComments(List.of("Hello world"));
     postByIdApi.setTags(List.of("Java"));
@@ -316,7 +316,7 @@ class PostServiceTest {
     postByIdApi.setLikeCount(0);
     postByIdApi.setDislikeCount(0);
     postByIdApi.setViewCount(0);
-    postByIdApi.setUser(new UserApi());
+    postByIdApi.setUser(new UserResponse());
     postByIdApi.setTimestamp(0L);
     return postByIdApi;
   }

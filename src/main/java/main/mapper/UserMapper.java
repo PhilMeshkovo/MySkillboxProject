@@ -1,22 +1,22 @@
 package main.mapper;
 
-import main.dto.UserApi;
-import main.dto.UserApiWithPhoto;
+import main.dto.response.UserResponse;
+import main.dto.response.UserApiWithPhoto;
 import main.model.User;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserMapper {
 
-  public UserApi userToUserApi(User user) {
-    UserApi userApi = new UserApi();
+  public UserResponse userToUserApi(User user) {
+    UserResponse userApi = new UserResponse();
     userApi.setId(user.getId());
     userApi.setName(user.getName());
     return userApi;
   }
 
-  public UserApi userToUserApiWithEmailName(User user) {
-    UserApi userApi = new UserApi();
+  public UserResponse userToUserApiWithEmailName(User user) {
+    UserResponse userApi = new UserResponse();
     userApi.setId(user.getId());
     userApi.setName(user.getEmail());
     return userApi;
@@ -31,7 +31,7 @@ public class UserMapper {
     return userApi;
   }
 
-  public User userApiToUser(UserApi userApi) {
+  public User userApiToUser(UserResponse userApi) {
     User user = new User();
     user.setId(userApi.getId());
     user.setName(userApi.getName());

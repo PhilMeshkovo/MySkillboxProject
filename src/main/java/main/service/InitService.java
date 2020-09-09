@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
-import main.dto.ResponseApiInit;
+import main.dto.response.ResponseApiInit;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
