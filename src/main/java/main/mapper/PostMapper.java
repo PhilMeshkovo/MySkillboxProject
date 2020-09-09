@@ -30,7 +30,7 @@ public class PostMapper {
     responsePostApi.setUser(userMapper.userToUserApi(post.getUser()));
     responsePostApi.setTitle(post.getTitle());
     responsePostApi.setText(post.getText());
-    responsePostApi.setViewCount(post.getView_count());
+    responsePostApi.setViewCount(post.getViewCount());
     return responsePostApi;
   }
 
@@ -44,7 +44,7 @@ public class PostMapper {
     responsePostApi.setUser(userMapper.userToUserApiWithEmailName(post.getUser()));
     responsePostApi.setTitle(post.getTitle());
     responsePostApi.setText(post.getText());
-    responsePostApi.setViewCount(post.getView_count());
+    responsePostApi.setViewCount(post.getViewCount());
     return responsePostApi;
   }
 
@@ -66,7 +66,7 @@ public class PostMapper {
     postByIdApi.setUser(userMapper.userToUserApi(post.getUser()));
     postByIdApi.setTitle(post.getTitle());
     postByIdApi.setText(post.getText());
-    postByIdApi.setViewCount(post.getView_count());
+    postByIdApi.setViewCount(post.getViewCount());
 
     return postByIdApi;
   }

@@ -23,14 +23,11 @@ import main.mapper.PostMapper;
 import main.model.GlobalSettings;
 import main.model.Post;
 import main.model.PostComment;
-import main.model.PostVotes;
 import main.model.Tag;
 import main.model.User;
 import main.model.enums.ModerationStatus;
 import main.repository.GlobalSettingsRepository;
-import main.repository.PostCommentRepository;
 import main.repository.PostRepository;
-import main.repository.PostVotesRepository;
 import main.repository.TagRepository;
 import main.repository.UserRepository;
 import org.junit.jupiter.api.Assertions;
@@ -56,12 +53,6 @@ class PostServiceTest {
 
   @MockBean
   PostRepository postRepository;
-
-  @MockBean
-  PostCommentRepository postCommentRepository;
-
-  @MockBean
-  PostVotesRepository postVotesRepository;
 
   @MockBean
   TagRepository tagRepository;
@@ -160,9 +151,11 @@ class PostServiceTest {
     Mockito.doReturn(Optional.of(getUser())).when(userRepository).findById(0);
     initAuthorizedUsers();
     Mockito.doReturn(authorizedUsers).when(authenticationService).getAuthorizedUsers();
-    Mockito.doReturn(getPostBiIdApi()).when(commentMapper).addCountCommentsAndLikesToPostById(getPostBiIdApi());
+    Mockito.doReturn(getPostBiIdApi()).when(commentMapper)
+        .addCountCommentsAndLikesToPostById(getPostBiIdApi());
     Mockito.doReturn(getPostBiIdApi()).when(postMapper).postToPostById(post);
-    Mockito.doReturn(List.of(new CommentsApiResponse(0,0L,"Hello world", new UserResponse()))).when(commentMapper).postCommentListToCommentApi(List.of(getPostComment()));
+    Mockito.doReturn(List.of(new CommentsApiResponse(0, 0L, "Hello world", new UserResponse())))
+        .when(commentMapper).postCommentListToCommentApi(List.of(getPostComment()));
     PostByIdResponse postByIdApi = postService.findPostById(0);
     Assertions.assertEquals(0, postByIdApi.getId());
     Assertions.assertEquals("hello world again!", postByIdApi.getTitle());
@@ -267,7 +260,7 @@ class PostServiceTest {
         .moderator(getUser())
         .text(getText())
         .time(LocalDateTime.now())
-        .view_count(0)
+        .viewCount(0)
         .build();
   }
 
@@ -279,16 +272,6 @@ class PostServiceTest {
     postComment.setTime(LocalDateTime.now());
     postComment.setUser(getUser());
     return postComment;
-  }
-
-  private PostVotes getPostVotes() {
-    PostVotes postVotes = new PostVotes();
-    postVotes.setId(0);
-    postVotes.setPost(getPost());
-    postVotes.setUser(getUser());
-    postVotes.setTime(LocalDateTime.now());
-    postVotes.setValue(1);
-    return postVotes;
   }
 
   private ResponsePostApi getResponsePostApi() {
@@ -305,7 +288,7 @@ class PostServiceTest {
     return responsePostApi;
   }
 
-  private PostByIdResponse getPostBiIdApi(){
+  private PostByIdResponse getPostBiIdApi() {
     PostByIdResponse postByIdApi = new PostByIdResponse();
     postByIdApi.setId(0);
     postByIdApi.setComments(List.of("Hello world"));

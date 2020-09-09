@@ -17,7 +17,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -31,7 +33,7 @@ import main.model.enums.ModerationStatus;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode(exclude = "posts")
+//@EqualsAndHashCode(exclude = "posts")
 public class Post {
 
   @Id
@@ -51,6 +53,13 @@ public class Post {
   @Getter
   @Setter
   private ModerationStatus moderationStatus;
+
+  @JsonIgnore
+  @OneToMany(fetch = FetchType.EAGER,mappedBy = "post")
+  @Getter
+  @Setter
+  @Transient
+  private Set<PostComment> postComments = new HashSet<>();
 
   @JsonIgnore
   @ManyToOne(cascade = CascadeType.ALL)
@@ -88,8 +97,8 @@ public class Post {
   @Setter
   private String text;
 
-  @Column(nullable = false)
+  @Column(name = "view_count",nullable = false)
   @Getter
   @Setter
-  private int view_count;
+  private int viewCount;
 }

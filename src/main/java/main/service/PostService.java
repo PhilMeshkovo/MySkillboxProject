@@ -197,102 +197,77 @@ public class PostService {
   @Transactional
   public PostByIdResponse findPostById(int postId) {
     Optional<Post> optionalPost = postRepository.findById(postId);
+    Post post = optionalPost.orElseThrow(EntityNotFoundException::new);
+
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-    if (optionalPost.isPresent()) {
-      PostByIdResponse postByIdApi = new PostByIdResponse();
-      Post post = optionalPost.get();
-      if (post.getIsActive() == 1 && post.getModerationStatus().equals(ModerationStatus.ACCEPTED) &&
-          post.getTime().minusHours(3).isBefore(LocalDateTime.now()) || post.getIsActive() != 1 &&
-          authenticationService.getAuthorizedUsers().containsKey(sessionId)
-          && userRepository.findById(id).get().getIsModerator() == 1
-          || post.getIsActive() != 1
-          && authenticationService.getAuthorizedUsers().containsKey(sessionId) && userRepository
-          .findById(id).get().equals(post.getUser())) {
-        PostByIdResponse postByIdApi1 = postMapper.postToPostById(post);
-        postByIdApi = commentMapper.addCountCommentsAndLikesToPostById(postByIdApi1);
-        List<PostComment> commentsByPostId = postCommentRepository
-            .findCommentsByPostId(post.getId());
-        postByIdApi.setComments(commentMapper.postCommentListToCommentApi(commentsByPostId));
-        Set<Tag> tags = postRepository.findById(postId).get().getTags();
-        List<String> strings = tags.stream().map(t -> t.getName())
-            .collect(Collectors.toList());
-        if (!authenticationService.getAuthorizedUsers().containsKey(sessionId) ||
-            authenticationService.getAuthorizedUsers().containsKey(sessionId)
-                && !userRepository.findById(id).get().equals(post.getUser())
-            || authenticationService.getAuthorizedUsers().containsKey(sessionId) &&
-            userRepository.findById(id).get().getIsModerator() != 1) {
-          Post post1 = postRepository.getOne(postId);
-          int viewCount = post.getView_count() + 1;
-          post1.setView_count(viewCount);
-        }
-        postByIdApi.setTags(strings);
-      }
-      return postByIdApi;
-    } else {
-      throw new EntityNotFoundException("Nothing found");
+
+    User currentUser = null;
+    if (id != null) {
+      Optional<User> optionalUser = userRepository.findById(id);
+      currentUser = optionalUser.orElseThrow(EntityNotFoundException::new);
     }
+
+    PostByIdResponse postByIdApi = new PostByIdResponse();
+
+    if (post.getIsActive() == 1 && post.getModerationStatus() == ModerationStatus.ACCEPTED &&
+        post.getTime().minusHours(3).isBefore(LocalDateTime.now()) || post.getIsActive() != 1 &&
+        authenticationService.getAuthorizedUsers().containsKey(sessionId)
+        && currentUser.getIsModerator() == 1
+        || post.getIsActive() != 1
+        && authenticationService.getAuthorizedUsers().containsKey(sessionId) && currentUser
+        .equals(post.getUser())) {
+      PostByIdResponse postByIdApi1 = postMapper.postToPostById(post);
+      postByIdApi = commentMapper.addCountCommentsAndLikesToPostById(postByIdApi1);
+      List<PostComment> commentsByPostId = postCommentRepository
+          .findCommentsByPostId(post.getId());
+      postByIdApi.setComments(commentMapper.postCommentListToCommentApi(commentsByPostId));
+      Set<Tag> tags = post.getTags();
+      List<String> strings = tags.stream().map(Tag::getName)
+          .collect(Collectors.toList());
+      if (!authenticationService.getAuthorizedUsers().containsKey(sessionId) ||
+          authenticationService.getAuthorizedUsers().containsKey(sessionId)
+              && !currentUser.equals(post.getUser())
+          || authenticationService.getAuthorizedUsers().containsKey(sessionId) &&
+          currentUser.getIsModerator() != 1) {
+        Post post1 = postRepository.getOne(postId);
+        int viewCount = post.getViewCount() + 1;
+        post1.setViewCount(viewCount);
+      }
+      postByIdApi.setTags(strings);
+    }
+    return postByIdApi;
   }
 
   public PostListResponse getAllMyPosts(Integer offset, Integer limit, String status) {
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-    User currentUser = userRepository.findById(id).get();
-    List<ResponsePostApi> listResponse;
-    List<ResponsePostApi> listResponseApi;
+    User currentUser = userRepository.findById(id).orElseThrow();
+
+    List<Post> posts = new ArrayList<>();
     if (status.toUpperCase().equals("INACTIVE")) {
-      listResponse = postRepository.findAllMyPostsInactive(offset, limit, currentUser.getId())
-          .stream()
-          .map(p -> postMapper.postToResponsePostApi(p))
-          .collect(Collectors.toList());
-      listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
-      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-          listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
-              collect(Collectors.toList());
-      return new PostListResponse(responseWithAnnounceList, listResponseApi.size());
+      posts = postRepository.findAllMyPostsInactive(offset, limit, currentUser.getId());
+    } else if (status.toUpperCase().equals("PENDING")) {
+      posts = postRepository.findAllMyPosts(offset, limit, "NEW", currentUser.getId());
+    } else if (status.toUpperCase().equals("DECLINED")) {
+      posts = postRepository.findAllMyPosts(offset, limit, "DECLINED", currentUser.getId());
+    } else if (status.toUpperCase().equals("PUBLISHED")) {
+      posts = postRepository.findAllMyPosts(offset, limit, "ACCEPTED", currentUser.getId());
     }
-    if (status.toUpperCase().equals("PENDING")) {
-      listResponse = postRepository.findAllMyPosts(offset, limit, "NEW", currentUser.getId())
-          .stream()
-          .map(p -> postMapper.postToResponsePostApi(p))
-          .collect(Collectors.toList());
-      listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
-      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-          listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
-              collect(Collectors.toList());
-      return new PostListResponse(responseWithAnnounceList, listResponseApi.size());
-    }
-    if (status.toUpperCase().equals("DECLINED")) {
-      listResponse = postRepository.findAllMyPosts(offset, limit, "DECLINED", currentUser.getId())
-          .stream()
-          .map(p -> postMapper.postToResponsePostApi(p))
-          .collect(Collectors.toList());
-      listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
-      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-          listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
-              collect(Collectors.toList());
-      return new PostListResponse(responseWithAnnounceList, listResponseApi.size());
-    }
-    if (status.toUpperCase().equals("PUBLISHED")) {
-      listResponse = postRepository.findAllMyPosts(offset, limit, "ACCEPTED", currentUser.getId())
-          .stream()
-          .map(p -> postMapper.postToResponsePostApi(p))
-          .collect(Collectors.toList());
-      listResponseApi = commentMapper.addCommentsCountAndLikesForPosts(listResponse);
-      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-          listResponseApi.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
-              collect(Collectors.toList());
-      return new PostListResponse(responseWithAnnounceList, listResponseApi.size());
-    }
-    return null;
+
+   return mapToPostListResponse(posts);
   }
 
   public PostListResponse getAllPostsToModeration(Integer offset, Integer limit, String status) {
     List<Post> posts = postRepository.findAllPostsToModeration(offset, limit, status);
-    List<ResponsePostApi> postApiNew = posts.stream()
+    return mapToPostListResponse(posts);
+  }
+
+  private PostListResponse mapToPostListResponse(List<Post> posts){
+    List<ResponsePostApi> listResponse = posts.stream()
         .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
     List<ResponsePostApi> responsePosts = commentMapper
-        .addCommentsCountAndLikesForPosts(postApiNew);
+        .addCommentsCountAndLikesForPosts(listResponse);
     List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
         responsePosts.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
             collect(Collectors.toList());
@@ -306,11 +281,11 @@ public class PostService {
     if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-      User currentUser = userRepository.findById(id).get();
+      User currentUser = userRepository.findById(id).orElseThrow();
       Set<Tag> setTags = new HashSet<>();
       if (addPostDto.getTags() != null) {
         setTags = Arrays.stream(addPostDto.getTags())
-            .map(t -> tagRepository.findTagByQuery(t).get())
+            .map(t -> tagRepository.findTagByQuery(t).orElseThrow())
             .collect(Collectors.toSet());
       }
       LocalDateTime localDateTime = LocalDateTime
@@ -320,8 +295,9 @@ public class PostService {
         localDateTime = LocalDateTime.now().plusHours(3L);
       }
       Post post = new Post();
-      if ((globalSettings.get().getValue().equals("NO") && addPostDto.getActive() == 1) ||
-          (globalSettings.get().getValue().equals("YES") && currentUser.getIsModerator() == 1
+      if ((globalSettings.orElseThrow().getValue().equals("NO") && addPostDto.getActive() == 1) ||
+          (globalSettings.orElseThrow().getValue().equals("YES")
+              && currentUser.getIsModerator() == 1
               && addPostDto.getActive() == 1)) {
         post = Post.builder()
             .user(currentUser)
@@ -332,7 +308,7 @@ public class PostService {
             .moderator(currentUser)
             .text(addPostDto.getText())
             .time(localDateTime.plusHours(3L))
-            .view_count(0)
+            .viewCount(0)
             .build();
       }
       if (globalSettings.get().getValue().equals("YES") && currentUser.getIsModerator() != 1) {
@@ -345,7 +321,7 @@ public class PostService {
             .moderator(currentUser)
             .text(addPostDto.getText())
             .time(localDateTime.plusHours(3L))
-            .view_count(0)
+            .viewCount(0)
             .build();
       }
       postRepository.save(post);
@@ -377,7 +353,7 @@ public class PostService {
     ObjectNode object = mapper.createObjectNode();
     String sessionId = request.getSession().getId();
     Integer idUser = authenticationService.getAuthorizedUsers().get(sessionId);
-    User currentUser = userRepository.findById(idUser).get();
+    User currentUser = userRepository.findById(idUser).orElseThrow();
     if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
       Optional<Post> postById = postRepository.findById(id);
       if (postById.isPresent() && postById.get().getUser()
@@ -385,7 +361,7 @@ public class PostService {
         Set<Tag> setTags = new HashSet<>();
         if (addPostDto.getTags() != null) {
           setTags = Arrays.stream(addPostDto.getTags())
-              .map(t -> tagRepository.findTagByQuery(t).get())
+              .map(t -> tagRepository.findTagByQuery(t).orElseThrow())
               .collect(Collectors.toSet());
         }
         LocalDateTime localDateTime = LocalDateTime
@@ -563,7 +539,7 @@ public class PostService {
       }
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-      User currentUser = userRepository.findById(id).get();
+      User currentUser = userRepository.findById(id).orElseThrow();
       postToModeration.setModerator(currentUser);
       return true;
     } else {

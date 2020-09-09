@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import main.dto.request.ChangePasswordRequest;
 import main.dto.request.LoginRequest;
 import main.dto.request.RegisterFormRequest;
@@ -15,6 +16,7 @@ import main.mapper.PostMapper;
 import main.model.CaptchaCode;
 import main.model.GlobalSettings;
 import main.model.Post;
+import main.model.PostComment;
 import main.model.Role;
 import main.model.User;
 import main.model.enums.ModerationStatus;
@@ -48,9 +50,6 @@ class UserServiceTest {
 
   @MockBean
   PostMapper postMapper;
-
-  @MockBean
-  AuthenticationService authenticationService;
 
   @MockBean
   PostRepository postRepository;
@@ -174,7 +173,7 @@ class UserServiceTest {
   }
 
   private Post newPost() {
-    return new Post(1, 1, ModerationStatus.NEW, new User(1, 1, LocalDateTime.now(), "vanya",
+    return new Post(1, 1, ModerationStatus.NEW, Set.of(new PostComment()),new User(1, 1, LocalDateTime.now(), "vanya",
         "some@mail.ru", "123456", "123456", "123.jpr", new Role(1)),
         new User(1, 1, LocalDateTime.now(), "vanya",
             "some@mail.ru", "123456", "123456", "123.jpr", new Role(1)),

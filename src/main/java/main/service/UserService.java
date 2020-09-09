@@ -181,7 +181,7 @@ public class UserService implements UserDetailsService {
     String sessionId = request.getSession().getId();
     if (authenticationService.getAuthorizedUsers().containsKey(sessionId)) {
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-      User user = userRepository.findById(id).get();
+      User user = userRepository.findById(id).orElseThrow();
       UserDto userDto;
       if (user.getIsModerator() == 1) {
         int allPosts = (int) postRepository.count();
@@ -275,7 +275,7 @@ public class UserService implements UserDetailsService {
     ObjectNode objectError = mapper.createObjectNode();
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-    User user = userRepository.findById(id).get();
+    User user = userRepository.findById(id).orElseThrow();
     Optional<User> userByEmail = userRepository.findByEmail(email);
     if (userByEmail.isEmpty() && name != null
         && name.length() > 0 &&
@@ -387,7 +387,7 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode getAllStatistics() throws Exception {
-    GlobalSettings globalSettings = globalSettingsRepository.findById(3).get();
+    GlobalSettings globalSettings = globalSettingsRepository.findById(3).orElseThrow();
     if (globalSettings.getValue().equals("YES")) {
       return getStatAll();
     }
@@ -431,7 +431,7 @@ public class UserService implements UserDetailsService {
       throws Exception {
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-    User currentUser = userRepository.findById(id).get();
+    User currentUser = userRepository.findById(id).orElseThrow();
     if (currentUser.getIsModerator() == 1) {
       GlobalSettings globalSettingsMultiUser = globalSettingsRepository.getOne(1);
       if (globalSettingsDto.isMULTIUSER_MODE()) {
