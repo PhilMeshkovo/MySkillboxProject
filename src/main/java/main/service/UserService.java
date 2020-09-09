@@ -59,44 +59,36 @@ public class UserService implements UserDetailsService {
 
   private static final String WRONG_CAPTCHA = "Код с картинки введён неверно";
 
-  private final UserRepository userRepository;
-
-  private final SecurityConfiguration securityConfiguration;
-
-  private final GlobalSettingsRepository globalSettingsRepository;
-
-  private final CommentMapper commentMapper;
-
-  private final PostMapper postMapper;
-
-  private final CaptchaCodeRepository captchaCodeRepository;
-
-  private final HttpServletRequest request;
-
-  private final MailSender mailSender;
-
-  private final PostRepository postRepository;
-
-  private final AuthenticationService authenticationService;
+  @Autowired
+  UserRepository userRepository;
 
   @Autowired
-  public UserService(UserRepository userRepository,
-      SecurityConfiguration securityConfiguration,
-      GlobalSettingsRepository globalSettingsRepository, CommentMapper commentMapper,
-      PostMapper postMapper, CaptchaCodeRepository captchaCodeRepository,
-      HttpServletRequest request, MailSender mailSender,
-      PostRepository postRepository, AuthenticationService authenticationService) {
-    this.userRepository = userRepository;
-    this.securityConfiguration = securityConfiguration;
-    this.globalSettingsRepository = globalSettingsRepository;
-    this.commentMapper = commentMapper;
-    this.postMapper = postMapper;
-    this.captchaCodeRepository = captchaCodeRepository;
-    this.request = request;
-    this.mailSender = mailSender;
-    this.postRepository = postRepository;
-    this.authenticationService = authenticationService;
-  }
+  SecurityConfiguration securityConfiguration;
+
+  @Autowired
+  GlobalSettingsRepository globalSettingsRepository;
+
+  @Autowired
+  CommentMapper commentMapper;
+
+  @Autowired
+  PostMapper postMapper;
+
+  @Autowired
+  CaptchaCodeRepository captchaCodeRepository;
+
+  @Autowired
+  HttpServletRequest request;
+
+  @Autowired
+  MailSender mailSender;
+
+  @Autowired
+  PostRepository postRepository;
+
+  @Autowired
+  AuthenticationService authenticationService;
+
 
   @Override
   public UserDetails loadUserByUsername(@NonNull String username)
