@@ -31,6 +31,7 @@ import main.dto.response.PostByIdResponse;
 import main.dto.response.PostListResponse;
 import main.dto.response.ResponsePostApi;
 import main.dto.response.ResponsePostApiWithAnnounce;
+import main.dto.response.ResultResponse;
 import main.dto.response.TagResponse;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
@@ -85,67 +86,27 @@ public class PostService {
   AuthenticationService authenticationService;
 
   public PostListResponse getAllPosts(Integer offset, Integer limit, String mode) {
-    List<ResponsePostApi> responsePostApiList;
+    List<Post> posts = new ArrayList<>();
     if (mode.equalsIgnoreCase("RECENT")) {
-      responsePostApiList = postRepository
-          .findAllPostsOrderedByTimeDesc(offset, limit).stream()
-          .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
-      List<ResponsePostApi> pageApiNew = commentMapper
-          .addCommentsCountAndLikesForPosts(responsePostApiList);
-      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-          pageApiNew.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
-              collect(Collectors.toList());
-      return new PostListResponse(responseWithAnnounceList, pageApiNew.size());
+      posts = postRepository
+          .findAllPostsOrderedByTimeDesc(offset, limit);
+    } else if (mode.equalsIgnoreCase("EARLY")) {
+      posts = postRepository
+          .findAllPostsOrderedByTime(offset, limit);
+    } else if (mode.equalsIgnoreCase("POPULAR")) {
+      posts = postRepository
+          .findAllPostsSortedByComments(offset, limit);
+    } else if (mode.equalsIgnoreCase("BEST")) {
+      posts = postRepository
+          .findAllPostsSortedByLikes(offset, limit);
     }
-    if (mode.equalsIgnoreCase("EARLY")) {
-      responsePostApiList = postRepository
-          .findAllPostsOrderedByTime(offset, limit).stream()
-          .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
-      List<ResponsePostApi> pageApiNew = commentMapper
-          .addCommentsCountAndLikesForPosts(responsePostApiList);
-      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-          pageApiNew.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
-              collect(Collectors.toList());
-      return new PostListResponse(responseWithAnnounceList, pageApiNew.size());
-    }
-    if (mode.equalsIgnoreCase("POPULAR")) {
-      responsePostApiList = postRepository
-          .findAllPostsSortedByComments(offset, limit).stream()
-          .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
-      List<ResponsePostApi> pageApiNew = commentMapper
-          .addCommentsCountAndLikesForPosts(responsePostApiList);
-      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-          pageApiNew
-              .stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
-              collect(Collectors.toList());
-      return new PostListResponse(responseWithAnnounceList, pageApiNew.size());
-    }
-    if (mode.equalsIgnoreCase("BEST")) {
-      responsePostApiList = postRepository
-          .findAllPostsSortedByLikes(offset, limit).stream()
-          .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
-      List<ResponsePostApi> pageApiNew = commentMapper
-          .addCommentsCountAndLikesForPosts(responsePostApiList);
-      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-          pageApiNew.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
-              collect(Collectors.toList());
-      return new PostListResponse(responseWithAnnounceList, pageApiNew.size());
-    }
-    throw new EntityNotFoundException("No such mode");
+    return mapToPostListResponse(posts);
   }
 
   public PostListResponse getAllPostsByTextAndTitle(Integer offset, Integer limit, String query)
       throws EntityNotFoundException {
-    List<Post> postByQuery = postRepository.findPostByQuery(offset, limit, query);
-    List<ResponsePostApi> pageApi;
-    pageApi = postByQuery.stream().map(p -> postMapper.postToResponsePostApi(p)).
-        collect(Collectors.toList());
-    List<ResponsePostApi> responsePostApis = commentMapper
-        .addCommentsCountAndLikesForPosts(pageApi);
-    List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-        responsePostApis.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
-            collect(Collectors.toList());
-    return new PostListResponse(responseWithAnnounceList, responsePostApis.size());
+    List<Post> posts = postRepository.findPostByQuery(offset, limit, query);
+    return mapToPostListResponse(posts);
   }
 
   public PostListResponse getAllPostsByTag(Integer offset, Integer limit, String tag) {
@@ -155,19 +116,7 @@ public class PostService {
       List<Integer> idList = posts.stream().map(p -> p.getId()).collect(Collectors.toList());
       List<Post> postListWithPagination = postRepository
           .findByIdIn(idList, offset, limit);
-      List<ResponsePostApi> pageApi = postListWithPagination.stream()
-          .map(p -> postMapper.postToResponsePostApi(p)).
-              collect(Collectors.toList());
-      if (pageApi.size() > 0) {
-        List<ResponsePostApi> responsePostApis = commentMapper
-            .addCommentsCountAndLikesForPosts(pageApi);
-        List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-            responsePostApis.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
-                collect(Collectors.toList());
-        return new PostListResponse(responseWithAnnounceList, responsePostApis.size());
-      } else {
-        throw new EntityNotFoundException("No active posts or moderated");
-      }
+      return mapToPostListResponse(postListWithPagination);
     } else {
       throw new EntityNotFoundException("Nothing found");
     }
@@ -177,18 +126,10 @@ public class PostService {
       throws ParseException {
     SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
     Date localDate = dateFormatter.parse(date);
-    List<Post> datePosts = postRepository
+    List<Post> posts = postRepository
         .findAllPostsByTime(offset, limit, localDate);
-    if (datePosts.size() > 0) {
-      List<ResponsePostApi> pageApi = datePosts.stream()
-          .map(p -> postMapper.postToResponsePostApi(p))
-          .collect(Collectors.toList());
-      List<ResponsePostApi> responsePostApis = commentMapper
-          .addCommentsCountAndLikesForPosts(pageApi);
-      List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-          responsePostApis.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
-              collect(Collectors.toList());
-      return new PostListResponse(responseWithAnnounceList, responsePostApis.size());
+    if (posts.size() > 0) {
+      return mapToPostListResponse(posts);
     } else {
       throw new EntityNotFoundException("Nothing found");
     }
@@ -255,7 +196,7 @@ public class PostService {
       posts = postRepository.findAllMyPosts(offset, limit, "ACCEPTED", currentUser.getId());
     }
 
-   return mapToPostListResponse(posts);
+    return mapToPostListResponse(posts);
   }
 
   public PostListResponse getAllPostsToModeration(Integer offset, Integer limit, String status) {
@@ -263,7 +204,7 @@ public class PostService {
     return mapToPostListResponse(posts);
   }
 
-  private PostListResponse mapToPostListResponse(List<Post> posts){
+  private PostListResponse mapToPostListResponse(List<Post> posts) {
     List<ResponsePostApi> listResponse = posts.stream()
         .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
     List<ResponsePostApi> responsePosts = commentMapper
@@ -332,17 +273,17 @@ public class PostService {
       object.put("result", false);
       ObjectNode objectError = mapper.createObjectNode();
       objectError.put("title", "Заголовок не установлен или короче 10 символов");
-      object.put("error", objectError);
+      object.put("errors", objectError);
       if (addPostDto.getText().length() < 500) {
         objectError.put("text", "Текст публикации слишком кроткий");
-        object.put("error", objectError);
+        object.put("errors", objectError);
       }
     }
     if (addPostDto.getText().length() < 500 && addPostDto.getTitle().length() >= 10) {
       object.put("result", false);
       ObjectNode objectError = mapper.createObjectNode();
       objectError.put("text", "Текст публикации слишком кроткий");
-      object.put("error", objectError);
+      object.put("errors", objectError);
     }
     return object;
   }
@@ -503,18 +444,18 @@ public class PostService {
   private Double getWeightOfTag(Tag tag) {
     double countActivePosts = postRepository.findAll().stream()
         .filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
-            .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now()))
+            == ModerationStatus.ACCEPTED && p.getTime().isBefore(LocalDateTime.now()))
         .count();
     double countPostsWithThisTag = tag.getPosts().stream()
         .filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
-            .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now()))
+            == ModerationStatus.ACCEPTED && p.getTime().isBefore(LocalDateTime.now()))
         .count();
     List<Tag> allTags = tagRepository.findAll();
     double maxPostsTag = 0.0;
     for (Tag tags : allTags) {
       double activePosts = tags.getPosts().stream()
           .filter(p -> p.getIsActive() == 1 && p.getModerationStatus()
-              .equals(ModerationStatus.ACCEPTED) && p.getTime().isBefore(LocalDateTime.now()))
+              == ModerationStatus.ACCEPTED && p.getTime().isBefore(LocalDateTime.now()))
           .count();
       if (activePosts > maxPostsTag) {
         maxPostsTag = activePosts;
@@ -526,7 +467,8 @@ public class PostService {
   }
 
   @Transactional
-  public boolean moderationPost(PostModerationRequest postModerationDto) throws Exception {
+  public ResultResponse moderationPost(PostModerationRequest postModerationDto) {
+    ResultResponse resultResponse = new ResultResponse();
     Optional<Post> postById = postRepository.findById(postModerationDto.getPost_id());
     if (postById.isPresent() && postModerationDto.getDecision().equalsIgnoreCase("accept")
         || postById.isPresent() && postModerationDto.getDecision().equalsIgnoreCase("decline")) {
@@ -541,10 +483,9 @@ public class PostService {
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
       User currentUser = userRepository.findById(id).orElseThrow();
       postToModeration.setModerator(currentUser);
-      return true;
-    } else {
-      throw new Exception("post does not exist or decision is impossible");
+      resultResponse.resultSuccess();
     }
+    return resultResponse;
   }
 
   public JsonNode getAllPostsInYear(String year) {
@@ -579,8 +520,8 @@ public class PostService {
   }
 
   @Transactional
-  public JsonNode postLike(PostLikeRequest postLikeDto) throws EntityNotFoundException {
-    ObjectNode object = createObjectNode();
+  public ResultResponse postLike(PostLikeRequest postLikeDto) throws EntityNotFoundException {
+    ResultResponse resultResponse = new ResultResponse();
     Map<String, Integer> authUsers = authenticationService.getAuthorizedUsers();
     User currentUser;
     if (authUsers.containsKey(request.getSession().getId())) {
@@ -594,10 +535,6 @@ public class PostService {
     Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
     Optional<PostVotes> postVotesOptional = postVotesRepository
         .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
-    if (post.isEmpty()
-        || postVotesOptional.isPresent() && postVotesOptional.get().getValue() == 1) {
-      object.put("result", false);
-    }
     if (post.isPresent() && postVotesOptional.isEmpty()) {
       PostVotes postVotes = PostVotes.builder()
           .time(LocalDateTime.now())
@@ -606,20 +543,20 @@ public class PostService {
           .user(currentUser)
           .build();
       postVotesRepository.save(postVotes);
-      object.put("result", true);
+      resultResponse.resultSuccess();
     }
     if (post.isPresent() && postVotesOptional.isPresent()
         && postVotesOptional.get().getValue() == -1) {
       PostVotes postVotes = postVotesRepository.getOne(postVotesOptional.get().getId());
       postVotes.setValue(1);
-      object.put("result", true);
+      resultResponse.resultSuccess();
     }
-    return object;
+    return resultResponse;
   }
 
   @Transactional
-  public JsonNode postDislike(PostLikeRequest postLikeDto) throws EntityNotFoundException {
-    ObjectNode object = createObjectNode();
+  public ResultResponse postDislike(PostLikeRequest postLikeDto) throws EntityNotFoundException {
+    ResultResponse resultResponse = new ResultResponse();
     Map<String, Integer> authUsers = authenticationService.getAuthorizedUsers();
     User currentUser;
     if (authUsers.containsKey(request.getSession().getId())) {
@@ -633,10 +570,6 @@ public class PostService {
     Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
     Optional<PostVotes> postVotesOptional = postVotesRepository
         .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
-    if (post.isEmpty()
-        || postVotesOptional.isPresent() && postVotesOptional.get().getValue() == -1) {
-      object.put("result", false);
-    }
     if (post.isPresent() && postVotesOptional.isEmpty()) {
       PostVotes postVotes = PostVotes.builder()
           .time(LocalDateTime.now())
@@ -645,20 +578,14 @@ public class PostService {
           .user(currentUser)
           .build();
       postVotesRepository.save(postVotes);
-      object.put("result", true);
+      resultResponse.resultSuccess();
     }
     if (post.isPresent() && postVotesOptional.isPresent()
         && postVotesOptional.get().getValue() == 1) {
       PostVotes postVotes = postVotesRepository.getOne(postVotesOptional.get().getId());
       postVotes.setValue(-1);
-      object.put("result", true);
+      resultResponse.resultSuccess();
     }
-    return object;
-  }
-
-  private ObjectNode createObjectNode() {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
-    return object;
+    return resultResponse;
   }
 }

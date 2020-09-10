@@ -28,8 +28,7 @@ public class ApiAuthController {
   @PostMapping("/auth/register")
   public ResponseEntity<?> addUser(@RequestBody RegisterFormRequest registerForm) {
     try {
-      JsonNode jsonNode = userService.saveUser(registerForm);
-      return ResponseEntity.ok(jsonNode);
+      return ResponseEntity.ok(userService.saveUser(registerForm));
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
@@ -50,8 +49,7 @@ public class ApiAuthController {
   @PostMapping("/auth/restore")
   public ResponseEntity<?> restore(
       @RequestBody JsonNode email) {
-    JsonNode jsonNode = userService.restore(email.get("email").asText());
-    return ResponseEntity.ok(jsonNode);
+    return ResponseEntity.ok(userService.restore(email.get("email").asText()));
   }
 
   @PostMapping("/auth/password")
@@ -103,8 +101,7 @@ public class ApiAuthController {
 
   @GetMapping("/auth/logout")
   public ResponseEntity<?> logout() {
-    JsonNode jsonNode = userService.logout();
-    return ResponseEntity.ok(jsonNode);
+    return ResponseEntity.ok(userService.logout());
   }
 
   @GetMapping("/auth/captcha")

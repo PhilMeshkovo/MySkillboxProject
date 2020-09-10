@@ -31,20 +31,7 @@ public class PostMapper {
     responsePostApi.setTitle(post.getTitle());
     responsePostApi.setText(post.getText());
     responsePostApi.setViewCount(post.getViewCount());
-    return responsePostApi;
-  }
-
-  public ResponsePostApi postToResponsePostApiWithEmailName(Post post) {
-    ResponsePostApi responsePostApi = new ResponsePostApi();
-    responsePostApi.setId(post.getId());
-    LocalDateTime time = post.getTime();
-    ZonedDateTime timeZoned = time.atZone(ZoneId.systemDefault());
-    ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
-    responsePostApi.setTimestamp(utcZoned.toInstant().getEpochSecond());
-    responsePostApi.setUser(userMapper.userToUserApiWithEmailName(post.getUser()));
-    responsePostApi.setTitle(post.getTitle());
-    responsePostApi.setText(post.getText());
-    responsePostApi.setViewCount(post.getViewCount());
+    responsePostApi.setCommentCount(post.getPostComments().size());
     return responsePostApi;
   }
 

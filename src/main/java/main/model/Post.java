@@ -19,10 +19,8 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -55,10 +53,9 @@ public class Post {
   private ModerationStatus moderationStatus;
 
   @JsonIgnore
-  @OneToMany(fetch = FetchType.EAGER,mappedBy = "post")
+  @OneToMany(mappedBy = "post", fetch = FetchType.EAGER)
   @Getter
   @Setter
-  @Transient
   private Set<PostComment> postComments = new HashSet<>();
 
   @JsonIgnore
@@ -97,7 +94,7 @@ public class Post {
   @Setter
   private String text;
 
-  @Column(name = "view_count",nullable = false)
+  @Column(name = "view_count", nullable = false)
   @Getter
   @Setter
   private int viewCount;

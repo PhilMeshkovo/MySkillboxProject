@@ -10,6 +10,7 @@ import main.dto.request.ChangePasswordRequest;
 import main.dto.request.LoginRequest;
 import main.dto.request.RegisterFormRequest;
 import main.dto.response.ResponsePostApi;
+import main.dto.response.ResultResponse;
 import main.dto.response.UserResponse;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
@@ -120,10 +121,11 @@ class UserServiceTest {
         "some@mail.ru", "$2a$10$FLwXXL.MI88B.UCf5zgHbek0Qk3k.oSqhzAUyyMPJFkYWOddpuLqu",
         "123456", "123.jpr", new Role(1))))
         .when(userRepository).findByEmail("some@mail.ru");
-    JsonNode jsonNode = userService.restore("some@mail.ru");
+    ResultResponse resultResponse = userService.restore("some@mail.ru");
     Mockito.verify(mailSender, Mockito.times(1))
-        .send("some@mail.ru", "Code", "https://philipp-skillbox.herokuapp.com/login/change-password/123456");
-    Assertions.assertTrue(jsonNode.get("result").asBoolean());
+        .send("some@mail.ru", "Code",
+            "https://philipp-skillbox.herokuapp.com/login/change-password/123456");
+    Assertions.assertTrue(resultResponse.isResult());
   }
 
   @Test
@@ -138,7 +140,8 @@ class UserServiceTest {
         "some@mail.ru", "$2a$10$FLwXXL.MI88B.UCf5zgHbek0Qk3k.oSqhzAUyyMPJFkYWOddpuLqu",
         "123456", "123.jpr", new Role(1)))
         .when(userRepository).getOne(1);
-    ChangePasswordRequest changePasswordDto = new ChangePasswordRequest("123456", "123456", "123456", "123456");
+    ChangePasswordRequest changePasswordDto = new ChangePasswordRequest("123456", "123456",
+        "123456", "123456");
     JsonNode jsonNode = userService.postNewPassword(changePasswordDto);
     Assertions.assertTrue(jsonNode.get("result").asBoolean());
   }
@@ -159,8 +162,8 @@ class UserServiceTest {
 
   @Test
   void logout() {
-    JsonNode jsonNode = userService.logout();
-    Assertions.assertTrue(jsonNode.get("result").asBoolean());
+    ResultResponse resultResponse = userService.logout();
+    Assertions.assertTrue(resultResponse.isResult());
   }
 
 
@@ -173,8 +176,9 @@ class UserServiceTest {
   }
 
   private Post newPost() {
-    return new Post(1, 1, ModerationStatus.NEW, Set.of(new PostComment()),new User(1, 1, LocalDateTime.now(), "vanya",
-        "some@mail.ru", "123456", "123456", "123.jpr", new Role(1)),
+    return new Post(1, 1, ModerationStatus.NEW, Set.of(new PostComment()),
+        new User(1, 1, LocalDateTime.now(), "vanya",
+            "some@mail.ru", "123456", "123456", "123.jpr", new Role(1)),
         new User(1, 1, LocalDateTime.now(), "vanya",
             "some@mail.ru", "123456", "123456", "123.jpr", new Role(1)),
         null, LocalDateTime.now(), "Hello World", "SSSSSSSSSSSSSSSSS", 2);
@@ -204,6 +208,7 @@ class UserServiceTest {
     responsePostApi.setViewCount(2);
     return responsePostApi;
   }
+
   private String getText() {
     return "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
         + "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"

@@ -10,7 +10,6 @@ import main.dto.response.CommentsApiResponse;
 import main.dto.response.PostByIdResponse;
 import main.dto.response.ResponsePostApi;
 import main.model.PostComment;
-import main.repository.PostCommentRepository;
 import main.repository.PostVotesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,9 +20,6 @@ public class CommentMapper {
 
   @Autowired
   UserMapper userMapper;
-
-  @Autowired
-  PostCommentRepository postCommentRepository;
 
   @Autowired
   PostVotesRepository postVotesRepository;
@@ -50,10 +46,6 @@ public class CommentMapper {
 
   public Page<ResponsePostApi> addCommentsCountAndLikes(Page<ResponsePostApi> pageApi) {
     for (ResponsePostApi responsePostApi : pageApi) {
-      int countComments = postCommentRepository.findAll().stream()
-          .filter(p -> p.getPost().getId() == responsePostApi.getId()).
-              collect(Collectors.toList()).size();
-      responsePostApi.setCommentCount(countComments);
       int countLikes = postVotesRepository.findAll().stream()
           .filter(p -> p.getValue() == 1 && p.getPost().getId() == responsePostApi.getId()).
               collect(Collectors.toList()).size();
@@ -67,10 +59,6 @@ public class CommentMapper {
   }
 
   public PostByIdResponse addCountCommentsAndLikesToPostById(PostByIdResponse postByIdApi) {
-    int commentCount = postCommentRepository.findAll().stream().
-        filter(p -> p.getPost().getId() == postByIdApi.getId()).
-        collect(Collectors.toList()).size();
-    postByIdApi.setCommentCount(commentCount);
     int countLikes = postVotesRepository.findAll().stream()
         .filter(p -> p.getValue() == 1 && p.getPost().getId() == postByIdApi.getId()).
             collect(Collectors.toList()).size();
@@ -85,10 +73,6 @@ public class CommentMapper {
 
   public List<ResponsePostApi> addCommentsCountAndLikesForPosts(List<ResponsePostApi> pageApi) {
     for (ResponsePostApi responsePostApi : pageApi) {
-      int countComments = postCommentRepository.findAll().stream()
-          .filter(p -> p.getPost().getId() == responsePostApi.getId()).
-              collect(Collectors.toList()).size();
-      responsePostApi.setCommentCount(countComments);
       int countLikes = postVotesRepository.findAll().stream()
           .filter(p -> p.getValue() == 1 && p.getPost().getId() == responsePostApi.getId()).
               collect(Collectors.toList()).size();

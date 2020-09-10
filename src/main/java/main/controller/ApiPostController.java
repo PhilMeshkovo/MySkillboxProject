@@ -45,7 +45,7 @@ public class ApiPostController {
       @RequestParam(value = "query", defaultValue = "tagName", required = false) String query) {
     try {
       PostListResponse postListApi = postService.getAllPostsByTextAndTitle(offset, limit, query);
-      return new ResponseEntity<>(postListApi, HttpStatus.OK);
+      return ResponseEntity.ok(postListApi);
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
@@ -56,7 +56,7 @@ public class ApiPostController {
   @ResponseStatus(HttpStatus.OK)
   public ResponseEntity<?> getPostById(@PathVariable int id) {
     try {
-      return new ResponseEntity<>(postService.findPostById(id), HttpStatus.OK);
+      return ResponseEntity.ok(postService.findPostById(id));
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
@@ -150,8 +150,7 @@ public class ApiPostController {
   public ResponseEntity<?> moderationPost(
       @RequestBody PostModerationRequest postModerationDto) {
     try {
-      boolean answer = postService.moderationPost(postModerationDto);
-      return ResponseEntity.ok(answer);
+      return ResponseEntity.ok(postService.moderationPost(postModerationDto));
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
@@ -168,8 +167,7 @@ public class ApiPostController {
   public ResponseEntity<?> postLike(
       @RequestBody PostLikeRequest postLikeDto) {
     try {
-      JsonNode jsonNode = postService.postLike(postLikeDto);
-      return ResponseEntity.ok(jsonNode);
+      return ResponseEntity.ok(postService.postLike(postLikeDto));
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }

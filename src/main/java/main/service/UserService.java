@@ -30,6 +30,7 @@ import main.dto.request.GlobalSettingsRequest;
 import main.dto.request.LoginRequest;
 import main.dto.request.RegisterFormRequest;
 import main.dto.response.ResponsePostApi;
+import main.dto.response.ResultResponse;
 import main.dto.response.UserDto;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
@@ -218,17 +219,15 @@ public class UserService implements UserDetailsService {
     return object;
   }
 
-  public JsonNode restore(String email) {
-    ObjectNode object = createObjectNode();
+  public ResultResponse restore(String email) {
+    ResultResponse resultResponse = new ResultResponse();
     Optional<User> userByEmail = userRepository.findByEmail(email);
     if (userByEmail.isPresent()) {
       mailSender.send(email, "Code", "https://philipp-skillbox.herokuapp.com/login/change-password/"
           + userByEmail.get().getCode());
-      object.put("result", true);
-    } else {
-      object.put("result", false);
+      resultResponse.resultSuccess();
     }
-    return object;
+    return resultResponse;
   }
 
   @Transactional
@@ -405,14 +404,14 @@ public class UserService implements UserDetailsService {
     }
   }
 
-  public JsonNode logout() {
-    ObjectNode object = createObjectNode();
+  public ResultResponse logout() {
+    ResultResponse resultResponse = new ResultResponse();
     String sessionId = request.getSession().getId();
     Map<String, Integer> authorizedUsers = authenticationService.getAuthorizedUsers();
     authorizedUsers.remove(sessionId);
     authenticationService.setAuthorizedUsers(authorizedUsers);
-    object.put("result", true);
-    return object;
+    resultResponse.resultSuccess();
+    return resultResponse;
   }
 
   public JsonNode getSettings() {
