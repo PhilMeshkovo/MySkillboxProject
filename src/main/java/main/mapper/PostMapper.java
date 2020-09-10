@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import main.dto.response.PostByIdResponse;
 import main.dto.response.ResponsePostApi;
 import main.dto.response.ResponsePostApiToModeration;
@@ -32,6 +33,12 @@ public class PostMapper {
     responsePostApi.setText(post.getText());
     responsePostApi.setViewCount(post.getViewCount());
     responsePostApi.setCommentCount(post.getPostComments().size());
+    int likes = post.getPostVotes().stream().filter(p -> p.getValue() == 1)
+        .collect(Collectors.toSet()).size();
+    int dislikes = post.getPostVotes().stream().filter(p -> p.getValue() == -1)
+        .collect(Collectors.toSet()).size();
+    responsePostApi.setLikeCount(likes);
+    responsePostApi.setDislikeCount(dislikes);
     return responsePostApi;
   }
 
@@ -54,7 +61,7 @@ public class PostMapper {
     postByIdApi.setTitle(post.getTitle());
     postByIdApi.setText(post.getText());
     postByIdApi.setViewCount(post.getViewCount());
-
+    postByIdApi.setCommentCount(post.getPostComments().size());
     return postByIdApi;
   }
 
@@ -65,7 +72,6 @@ public class PostMapper {
     postApiToModeration.setUser(userMapper.userToUserApi(post.getUser()));
     postApiToModeration.setTitle(post.getTitle());
     postApiToModeration.setAnnounce(post.getText());
-
     return postApiToModeration;
   }
 

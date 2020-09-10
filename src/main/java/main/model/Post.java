@@ -59,6 +59,12 @@ public class Post {
   private Set<PostComment> postComments = new HashSet<>();
 
   @JsonIgnore
+  @OneToMany(mappedBy = "post", fetch = FetchType.EAGER)
+  @Getter
+  @Setter
+  private Set<PostVotes> postVotes = new HashSet<>();
+
+  @JsonIgnore
   @ManyToOne(cascade = CascadeType.ALL)
   @Getter
   @Setter

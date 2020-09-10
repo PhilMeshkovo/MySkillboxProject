@@ -158,8 +158,7 @@ public class PostService {
         || post.getIsActive() != 1
         && authenticationService.getAuthorizedUsers().containsKey(sessionId) && currentUser
         .equals(post.getUser())) {
-      PostByIdResponse postByIdApi1 = postMapper.postToPostById(post);
-      postByIdApi = commentMapper.addCountCommentsAndLikesToPostById(postByIdApi1);
+      postByIdApi = postMapper.postToPostById(post);
       List<PostComment> commentsByPostId = postCommentRepository
           .findCommentsByPostId(post.getId());
       postByIdApi.setComments(commentMapper.postCommentListToCommentApi(commentsByPostId));
@@ -207,12 +206,10 @@ public class PostService {
   private PostListResponse mapToPostListResponse(List<Post> posts) {
     List<ResponsePostApi> listResponse = posts.stream()
         .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
-    List<ResponsePostApi> responsePosts = commentMapper
-        .addCommentsCountAndLikesForPosts(listResponse);
     List<ResponsePostApiWithAnnounce> responseWithAnnounceList =
-        responsePosts.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
+        listResponse.stream().map(p -> postMapper.responsePostApiToResponseWithAnnounce(p)).
             collect(Collectors.toList());
-    return new PostListResponse(responseWithAnnounceList, responsePosts.size());
+    return new PostListResponse(responseWithAnnounceList, listResponse.size());
   }
 
   public JsonNode addPost(AddPostRequest addPostDto) {
@@ -382,23 +379,23 @@ public class PostService {
         object.put("result", false);
         ObjectNode objectError = mapper.createObjectNode();
         objectError.put("parent", "No parent comment on this post");
-        object.put("error", objectError);
+        object.put("errors", objectError);
       }
       if (postById.isEmpty()) {
         object.put("result", false);
         ObjectNode objectError = mapper.createObjectNode();
         objectError.put("post", "Post not exist");
-        object.put("error", objectError);
+        object.put("errors", objectError);
         if (text.length() < 10) {
           objectError.put("text", "Comment text too short");
-          object.put("error", objectError);
+          object.put("errors", objectError);
         }
       }
       if (postById.isPresent() && text.length() < 10) {
         object.put("result", false);
         ObjectNode objectError = mapper.createObjectNode();
         objectError.put("text", "Comment text too short");
-        object.put("error", objectError);
+        object.put("errors", objectError);
       }
 
       return object;
@@ -537,7 +534,7 @@ public class PostService {
         .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
     if (post.isPresent() && postVotesOptional.isEmpty()) {
       PostVotes postVotes = PostVotes.builder()
-          .time(LocalDateTime.now())
+          .time(LocalDateTime.now().plusHours(3))
           .value(1)
           .post(post.get())
           .user(currentUser)
@@ -572,7 +569,7 @@ public class PostService {
         .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
     if (post.isPresent() && postVotesOptional.isEmpty()) {
       PostVotes postVotes = PostVotes.builder()
-          .time(LocalDateTime.now())
+          .time(LocalDateTime.now().plusHours(3))
           .value(-1)
           .post(post.get())
           .user(currentUser)

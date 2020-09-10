@@ -95,8 +95,6 @@ class PostServiceTest {
   void getAllPosts() {
     Post post = getPost();
     Mockito.doReturn(List.of(post)).when(postRepository).findAllPostsOrderedByTimeDesc(0, 10);
-    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
-        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
     PostListResponse postListApi = postService.getAllPosts(0, 10, "RECENT");
     Assertions.assertEquals(1, postListApi.getCount());
@@ -106,8 +104,6 @@ class PostServiceTest {
   void getAllPostsByTextAndTitle() {
     Post post = getPost();
     Mockito.doReturn(List.of(post)).when(postRepository).findPostByQuery(0, 10, "on");
-    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
-        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
     PostListResponse postListApi = postService.getAllPostsByTextAndTitle(0, 10, "on");
     Assertions.assertEquals(1, postListApi.getCount());
@@ -122,8 +118,6 @@ class PostServiceTest {
     tag.setPosts(Set.of(post));
     Mockito.doReturn(Optional.of(tag)).when(tagRepository).findTagByQuery("java");
     Mockito.doReturn(List.of(post)).when(postRepository).findByIdIn(List.of(0), 0, 10);
-    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
-        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
     PostListResponse postListApi = postService.getAllPostsByTag(0, 10, "java");
     Assertions.assertEquals(1, postListApi.getCount());
@@ -135,8 +129,6 @@ class PostServiceTest {
     SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
     Date localDate = dateFormatter.parse("1971-01-01");
     Mockito.doReturn(List.of(post)).when(postRepository).findAllPostsByTime(0, 10, localDate);
-    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
-        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
     PostListResponse postListApi = postService.getAllPostsByDate(0, 10, "1971-01-01");
     Assertions.assertEquals(1, postListApi.getCount());
@@ -151,8 +143,6 @@ class PostServiceTest {
     Mockito.doReturn(Optional.of(getUser())).when(userRepository).findById(0);
     initAuthorizedUsers();
     Mockito.doReturn(authorizedUsers).when(authenticationService).getAuthorizedUsers();
-    Mockito.doReturn(getPostBiIdApi()).when(commentMapper)
-        .addCountCommentsAndLikesToPostById(getPostBiIdApi());
     Mockito.doReturn(getPostBiIdApi()).when(postMapper).postToPostById(post);
     Mockito.doReturn(List.of(new CommentsApiResponse(0, 0L, "Hello world", new UserResponse())))
         .when(commentMapper).postCommentListToCommentApi(List.of(getPostComment()));
@@ -166,8 +156,6 @@ class PostServiceTest {
     Post post = getPost();
     Mockito.doReturn(List.of(post)).when(postRepository)
         .findAllPostsToModeration(0, 10, "ACCEPTED");
-    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
-        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
     PostListResponse postListApi = postService.getAllPostsToModeration(0, 10, "ACCEPTED");
     Assertions.assertEquals(1, postListApi.getCount());

@@ -29,10 +29,11 @@ import main.dto.request.ChangePasswordRequest;
 import main.dto.request.GlobalSettingsRequest;
 import main.dto.request.LoginRequest;
 import main.dto.request.RegisterFormRequest;
+import main.dto.response.Errors;
 import main.dto.response.ResponsePostApi;
 import main.dto.response.ResultResponse;
+import main.dto.response.ResultResponseWithErrors;
 import main.dto.response.UserDto;
-import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.CaptchaCode;
 import main.model.GlobalSettings;
@@ -70,9 +71,6 @@ public class UserService implements UserDetailsService {
   GlobalSettingsRepository globalSettingsRepository;
 
   @Autowired
-  CommentMapper commentMapper;
-
-  @Autowired
   PostMapper postMapper;
 
   @Autowired
@@ -101,13 +99,12 @@ public class UserService implements UserDetailsService {
         , new ArrayList<>());
   }
 
-  public JsonNode saveUser(RegisterFormRequest registerFormUser) {
+  public ResultResponseWithErrors saveUser(RegisterFormRequest registerFormUser) {
     Optional<GlobalSettings> globalSettings = globalSettingsRepository.findById(1);
     GlobalSettings multiUserMode = globalSettings.orElseThrow();
     if (multiUserMode.getValue().equals("YES")) {
-      ObjectMapper mapper = new ObjectMapper();
-      ObjectNode object = mapper.createObjectNode();
-      ObjectNode objectError = mapper.createObjectNode();
+      ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
+      Errors errors = new Errors();
       Optional<User> byEmail = userRepository.findByEmail(registerFormUser.getE_mail());
       if (byEmail.isEmpty() && registerFormUser.getPassword().length() > 5
           && registerFormUser.getName().length() > 0
@@ -121,22 +118,20 @@ public class UserService implements UserDetailsService {
             securityConfiguration.bcryptPasswordEncoder().encode(registerFormUser.getPassword()));
         user.setCode(UUID.randomUUID().toString());
         userRepository.save(user);
-        object.put("result", true);
+        resultResponseWithErrors.resultSuccess();
       } else {
-        object.put("result", false);
         if (byEmail.isPresent()) {
-          objectError.put("email", "Этот e-mail уже зарегистрирован");
+          errors.setEmail("Этот e-mail уже зарегистрирован");
         }
         if (registerFormUser.getPassword().length() < 6) {
-          objectError.put("password", SHORT_PASSWORD);
+          errors.setPassword(SHORT_PASSWORD);
         }
         if (registerFormUser.getName().length() < 1 || registerFormUser.getName().length() > 1000) {
-          objectError.put("name", "Имя указано неверно");
+          errors.setName("Имя указано неверно");
         }
-        object.put("errors", objectError);
+        resultResponseWithErrors.setErrors(errors);
       }
-
-      return object;
+      return resultResponseWithErrors;
     } else {
       throw new EntityNotFoundException("MULTIUSER MODE OFF");
     }
@@ -508,15 +503,13 @@ public class UserService implements UserDetailsService {
     List<ResponsePostApi> allPosts = posts.stream()
         .map(p -> postMapper.postToResponsePostApi(p)).collect(Collectors.toList());
     object.put("postsCount", allPosts.size());
-    List<ResponsePostApi> postList = commentMapper
-        .addCommentsCountAndLikesForPosts(allPosts);
-    int likesCount = postList.stream().mapToInt(ResponsePostApi::getLikeCount).sum();
+    int likesCount = allPosts.stream().mapToInt(ResponsePostApi::getLikeCount).sum();
     object.put("likesCount", likesCount);
 
-    int dislikesCount = postList.stream().mapToInt(ResponsePostApi::getDislikeCount).sum();
+    int dislikesCount = allPosts.stream().mapToInt(ResponsePostApi::getDislikeCount).sum();
     object.put("dislikesCount", dislikesCount);
 
-    int viewsCount = postList.stream().mapToInt(ResponsePostApi::getViewCount).sum();
+    int viewsCount = allPosts.stream().mapToInt(ResponsePostApi::getViewCount).sum();
     object.put("viewsCount", viewsCount);
 
     LocalDateTime firstPublication = postRepository.findFirstPublication();

@@ -11,13 +11,14 @@ import main.dto.request.LoginRequest;
 import main.dto.request.RegisterFormRequest;
 import main.dto.response.ResponsePostApi;
 import main.dto.response.ResultResponse;
+import main.dto.response.ResultResponseWithErrors;
 import main.dto.response.UserResponse;
-import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
 import main.model.CaptchaCode;
 import main.model.GlobalSettings;
 import main.model.Post;
 import main.model.PostComment;
+import main.model.PostVotes;
 import main.model.Role;
 import main.model.User;
 import main.model.enums.ModerationStatus;
@@ -45,9 +46,6 @@ class UserServiceTest {
 
   @MockBean
   UserRepository userRepository;
-
-  @MockBean
-  CommentMapper commentMapper;
 
   @MockBean
   PostMapper postMapper;
@@ -89,10 +87,10 @@ class UserServiceTest {
     Mockito.doReturn(Optional.of(getUser()))
         .when(userRepository).findByEmail("some@mail.ru");
     Mockito.doReturn(getUser()).when(userRepository).save(getUser());
-    JsonNode jsonNode = userService.saveUser(registerForm);
-    Assertions.assertFalse(jsonNode.get("result").asBoolean());
+    ResultResponseWithErrors resultResponseWithErrors = userService.saveUser(registerForm);
+    Assertions.assertFalse(resultResponseWithErrors.isResult());
     Assertions.assertEquals("Пароль короче 6-ти символов",
-        jsonNode.get("errors").get("password").asText());
+        resultResponseWithErrors.getErrors().getPassword());
   }
 
   @Test
@@ -153,8 +151,6 @@ class UserServiceTest {
     globalSettings.setValue("YES");
     Mockito.doReturn(Optional.of(globalSettings)).when(globalSettingsRepository).findById(3);
     Mockito.doReturn(List.of(post)).when(postRepository).findAll();
-    Mockito.doReturn(List.of(getResponsePostApi())).when(commentMapper)
-        .addCommentsCountAndLikesForPosts(List.of(getResponsePostApi()));
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
     JsonNode jsonNode = userService.getAllStatistics();
     Assertions.assertEquals(2, jsonNode.get("viewsCount").asInt());
@@ -176,7 +172,7 @@ class UserServiceTest {
   }
 
   private Post newPost() {
-    return new Post(1, 1, ModerationStatus.NEW, Set.of(new PostComment()),
+    return new Post(1, 1, ModerationStatus.NEW, Set.of(new PostComment()), Set.of(new PostVotes()),
         new User(1, 1, LocalDateTime.now(), "vanya",
             "some@mail.ru", "123456", "123456", "123.jpr", new Role(1)),
         new User(1, 1, LocalDateTime.now(), "vanya",

@@ -10,9 +10,9 @@ import main.dto.response.CommentsApiResponse;
 import main.dto.response.PostByIdResponse;
 import main.dto.response.ResponsePostApi;
 import main.model.PostComment;
+import main.model.PostVotes;
 import main.repository.PostVotesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,9 +20,6 @@ public class CommentMapper {
 
   @Autowired
   UserMapper userMapper;
-
-  @Autowired
-  PostVotesRepository postVotesRepository;
 
   public CommentsApiResponse postCommentToCommentsApi(PostComment postComment) {
     CommentsApiResponse commentsApi = new CommentsApiResponse();
@@ -42,46 +39,5 @@ public class CommentMapper {
       commentsApiList.add(postCommentToCommentsApi(postComment));
     }
     return commentsApiList;
-  }
-
-  public Page<ResponsePostApi> addCommentsCountAndLikes(Page<ResponsePostApi> pageApi) {
-    for (ResponsePostApi responsePostApi : pageApi) {
-      int countLikes = postVotesRepository.findAll().stream()
-          .filter(p -> p.getValue() == 1 && p.getPost().getId() == responsePostApi.getId()).
-              collect(Collectors.toList()).size();
-      responsePostApi.setLikeCount(countLikes);
-      int countDislikes = postVotesRepository.findAll().stream()
-          .filter(p -> p.getValue() == -1 && p.getPost().getId() == responsePostApi.getId()).
-              collect(Collectors.toList()).size();
-      responsePostApi.setDislikeCount(countDislikes);
-    }
-    return pageApi;
-  }
-
-  public PostByIdResponse addCountCommentsAndLikesToPostById(PostByIdResponse postByIdApi) {
-    int countLikes = postVotesRepository.findAll().stream()
-        .filter(p -> p.getValue() == 1 && p.getPost().getId() == postByIdApi.getId()).
-            collect(Collectors.toList()).size();
-    postByIdApi.setLikeCount(countLikes);
-    int countDislikes = postVotesRepository.findAll().stream()
-        .filter(p -> p.getValue() == -1 && p.getPost().getId() == postByIdApi.getId()).
-            collect(Collectors.toList()).size();
-    postByIdApi.setDislikeCount(countDislikes);
-
-    return postByIdApi;
-  }
-
-  public List<ResponsePostApi> addCommentsCountAndLikesForPosts(List<ResponsePostApi> pageApi) {
-    for (ResponsePostApi responsePostApi : pageApi) {
-      int countLikes = postVotesRepository.findAll().stream()
-          .filter(p -> p.getValue() == 1 && p.getPost().getId() == responsePostApi.getId()).
-              collect(Collectors.toList()).size();
-      responsePostApi.setLikeCount(countLikes);
-      int countDislikes = postVotesRepository.findAll().stream()
-          .filter(p -> p.getValue() == -1 && p.getPost().getId() == responsePostApi.getId()).
-              collect(Collectors.toList()).size();
-      responsePostApi.setDislikeCount(countDislikes);
-    }
-    return pageApi;
   }
 }
