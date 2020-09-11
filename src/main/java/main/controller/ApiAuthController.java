@@ -6,6 +6,7 @@ import javax.persistence.EntityNotFoundException;
 import main.dto.request.ChangePasswordRequest;
 import main.dto.request.LoginRequest;
 import main.dto.request.RegisterFormRequest;
+import main.dto.response.ResultResponseWithErrors;
 import main.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -42,8 +43,7 @@ public class ApiAuthController {
 
   @GetMapping("/auth/check")
   public ResponseEntity<?> checkUser() {
-    JsonNode object = userService.check();
-    return ResponseEntity.ok(object);
+    return ResponseEntity.ok(userService.check());
   }
 
   @PostMapping("/auth/restore")
@@ -55,12 +55,8 @@ public class ApiAuthController {
   @PostMapping("/auth/password")
   public ResponseEntity<?> postNewPassword(
       @RequestBody ChangePasswordRequest changePasswordDto) {
-    JsonNode jsonNode = userService.postNewPassword(changePasswordDto);
-    if (jsonNode.has("error")) {
-      return new ResponseEntity<>(jsonNode, HttpStatus.BAD_REQUEST);
-    } else {
-      return ResponseEntity.ok(jsonNode);
-    }
+    return ResponseEntity.ok(userService.postNewPassword(changePasswordDto));
+
   }
 
   @PostMapping(path = "/profile/my", consumes = {"multipart/form-data"})
@@ -71,9 +67,9 @@ public class ApiAuthController {
       @RequestParam(value = "removePhoto", required = false) Integer removePhoto,
       @RequestParam(value = "name", required = false) String name) {
     try {
-      JsonNode jsonNode = userService.postNewProfile(photo, name,
+      ResultResponseWithErrors response = userService.postNewProfile(photo, name,
           email, password, removePhoto);
-      return ResponseEntity.ok(jsonNode);
+      return ResponseEntity.ok(response);
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }

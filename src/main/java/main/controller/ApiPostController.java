@@ -9,6 +9,7 @@ import main.dto.request.PostLikeRequest;
 import main.dto.request.PostModerationRequest;
 import main.dto.response.ListTagsResponse;
 import main.dto.response.PostListResponse;
+import main.dto.response.ResultResponseWithErrors;
 import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -107,10 +108,10 @@ public class ApiPostController {
   }
 
   @PostMapping("/post")
-  public JsonNode addPost(
+  public ResultResponseWithErrors addPost(
       @RequestBody AddPostRequest addPostDto) {
-    JsonNode object = postService.addPost(addPostDto);
-    return object;
+    return postService.addPost(addPostDto);
+
   }
 
   @PutMapping("/post/{id}")

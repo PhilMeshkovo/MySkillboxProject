@@ -26,12 +26,14 @@ import main.dto.request.AddPostRequest;
 import main.dto.request.PostCommentRequest;
 import main.dto.request.PostLikeRequest;
 import main.dto.request.PostModerationRequest;
+import main.dto.response.Errors;
 import main.dto.response.ListTagsResponse;
 import main.dto.response.PostByIdResponse;
 import main.dto.response.PostListResponse;
 import main.dto.response.ResponsePostApi;
 import main.dto.response.ResponsePostApiWithAnnounce;
 import main.dto.response.ResultResponse;
+import main.dto.response.ResultResponseWithErrors;
 import main.dto.response.TagResponse;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
@@ -212,10 +214,10 @@ public class PostService {
     return new PostListResponse(responseWithAnnounceList, listResponse.size());
   }
 
-  public JsonNode addPost(AddPostRequest addPostDto) {
+  public ResultResponseWithErrors addPost(AddPostRequest addPostDto) {
     Optional<GlobalSettings> globalSettings = globalSettingsRepository.findById(2);
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+    ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
+    Errors errors = new Errors();
     if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
@@ -264,38 +266,34 @@ public class PostService {
       }
       postRepository.save(post);
 
-      object.put("result", true);
-    }
-    if (addPostDto.getTitle().length() < 10) {
-      object.put("result", false);
-      ObjectNode objectError = mapper.createObjectNode();
-      objectError.put("title", "Заголовок не установлен или короче 10 символов");
-      object.put("errors", objectError);
-      if (addPostDto.getText().length() < 500) {
-        objectError.put("text", "Текст публикации слишком кроткий");
-        object.put("errors", objectError);
+      resultResponseWithErrors.resultSuccess();
+    } else {
+      if (addPostDto.getTitle().length() < 10) {
+        errors.setTitle("Заголовок не установлен или короче 10 символов");
       }
+      if (addPostDto.getText().length() < 500) {
+        errors.setText("Текст публикации слишком кроткий");
+      }
+      resultResponseWithErrors.setErrors(errors);
     }
-    if (addPostDto.getText().length() < 500 && addPostDto.getTitle().length() >= 10) {
-      object.put("result", false);
-      ObjectNode objectError = mapper.createObjectNode();
-      objectError.put("text", "Текст публикации слишком кроткий");
-      object.put("errors", objectError);
-    }
-    return object;
+    return resultResponseWithErrors;
   }
 
   @Transactional
-  public JsonNode updatePost(int id, AddPostRequest addPostDto) {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+  public ResultResponseWithErrors updatePost(int id, AddPostRequest addPostDto) {
+    ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
+    Errors errors = new Errors();
+
     String sessionId = request.getSession().getId();
     Integer idUser = authenticationService.getAuthorizedUsers().get(sessionId);
+
+    Optional<Post> postById = postRepository.findById(id);
     User currentUser = userRepository.findById(idUser).orElseThrow();
-    if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
-      Optional<Post> postById = postRepository.findById(id);
-      if (postById.isPresent() && postById.get().getUser()
-          .equals(currentUser)) {
+
+    if (postById.isPresent() && postById.get().getUser()
+        .equals(currentUser)) {
+      if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
+
         Set<Tag> setTags = new HashSet<>();
         if (addPostDto.getTags() != null) {
           setTags = Arrays.stream(addPostDto.getTags())
@@ -315,28 +313,20 @@ public class PostService {
         postToUpdate.setText(addPostDto.getText());
         postToUpdate.setTags(setTags);
 
-        object.put("result", true);
+        resultResponseWithErrors.resultSuccess();
       } else {
-        throw new EntityNotFoundException("post does not exist or it is not yours");
+        if (addPostDto.getTitle().length() < 10) {
+          errors.setTitle("Заголовок не установлен или короче 10 символов");
+        }
+        if (addPostDto.getText().length() < 500) {
+          errors.setText("Текст публикации слишком кроткий");
+        }
+        resultResponseWithErrors.setErrors(errors);
       }
+      return resultResponseWithErrors;
+    } else {
+      throw new EntityNotFoundException("post does not exist or it is not yours");
     }
-    if (addPostDto.getTitle().length() < 10) {
-      object.put("result", false);
-      ObjectNode objectError = mapper.createObjectNode();
-      objectError.put("title", "Заголовок не установлен или короче 10 символов");
-      object.put("error", objectError);
-      if (addPostDto.getText().length() < 500) {
-        objectError.put("text", "Текст публикации слишком кроткий");
-        object.put("error", objectError);
-      }
-    }
-    if (addPostDto.getText().length() < 500 && addPostDto.getTitle().length() >= 10) {
-      object.put("result", false);
-      ObjectNode objectError = mapper.createObjectNode();
-      objectError.put("text", "Текст публикации слишком кроткий");
-      object.put("error", objectError);
-    }
-    return object;
   }
 
   public JsonNode addCommentToPost(PostCommentRequest postCommentDto) {

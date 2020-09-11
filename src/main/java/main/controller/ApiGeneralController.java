@@ -50,7 +50,7 @@ public class ApiGeneralController {
     try {
       return ResponseEntity.ok(initService.uploadImage(image));
     } catch (IOException e) {
-      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+      return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
   }
 

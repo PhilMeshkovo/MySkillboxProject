@@ -5,13 +5,8 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import main.dto.response.CommentsApiResponse;
-import main.dto.response.PostByIdResponse;
-import main.dto.response.ResponsePostApi;
 import main.model.PostComment;
-import main.model.PostVotes;
-import main.repository.PostVotesRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

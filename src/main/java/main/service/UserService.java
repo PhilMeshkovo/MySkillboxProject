@@ -33,6 +33,7 @@ import main.dto.response.Errors;
 import main.dto.response.ResponsePostApi;
 import main.dto.response.ResultResponse;
 import main.dto.response.ResultResponseWithErrors;
+import main.dto.response.ResultResponseWithUserDto;
 import main.dto.response.UserDto;
 import main.mapper.PostMapper;
 import main.model.CaptchaCode;
@@ -137,9 +138,9 @@ public class UserService implements UserDetailsService {
     }
   }
 
-  public JsonNode login(LoginRequest loginDto) {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+  public ResultResponseWithUserDto login(LoginRequest loginDto) {
+    ResultResponseWithUserDto resultResponseWithUserDto = new ResultResponseWithUserDto();
+
     Optional<User> userByEmail = userRepository.findByEmail(loginDto.getE_mail());
     if (userByEmail.isPresent() && securityConfiguration.bcryptPasswordEncoder()
         .matches(loginDto.getPassword(), userByEmail.get().getPassword())) {
@@ -160,20 +161,14 @@ public class UserService implements UserDetailsService {
           .moderationCount(moderationCount)
           .settings(true)
           .build();
-
-      ObjectNode objectUser = mapper.valueToTree(userDto);
-
-      object.put("result", true);
-      object.put("user", objectUser);
-    } else {
-      object.put("result", false);
+      resultResponseWithUserDto.resultSuccess();
+      resultResponseWithUserDto.setUser(userDto);
     }
-    return object;
+    return resultResponseWithUserDto;
   }
 
-  public JsonNode check() {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+  public ResultResponseWithUserDto check() {
+    ResultResponseWithUserDto resultResponseWithUserDto = new ResultResponseWithUserDto();
     String sessionId = request.getSession().getId();
     if (authenticationService.getAuthorizedUsers().containsKey(sessionId)) {
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
@@ -203,15 +198,10 @@ public class UserService implements UserDetailsService {
             .settings(true)
             .build();
       }
-
-      ObjectNode objectUser = mapper.valueToTree(userDto);
-
-      object.put("result", true);
-      object.put("user", objectUser);
-    } else {
-      object.put("result", false);
+      resultResponseWithUserDto.resultSuccess();
+      resultResponseWithUserDto.setUser(userDto);
     }
-    return object;
+    return resultResponseWithUserDto;
   }
 
   public ResultResponse restore(String email) {
@@ -226,10 +216,10 @@ public class UserService implements UserDetailsService {
   }
 
   @Transactional
-  public JsonNode postNewPassword(ChangePasswordRequest changePasswordDto) {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
-    ObjectNode objectError = mapper.createObjectNode();
+  public ResultResponseWithErrors postNewPassword(ChangePasswordRequest changePasswordDto) {
+    ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
+    Errors errors = new Errors();
+
     Optional<User> userByCode = userRepository.findByCode(changePasswordDto.getCode());
     Optional<CaptchaCode> captchaCode = captchaCodeRepository
         .findByCode(changePasswordDto.getCaptcha());
@@ -240,33 +230,32 @@ public class UserService implements UserDetailsService {
       user.setPassword(
           securityConfiguration.bcryptPasswordEncoder().encode(changePasswordDto.getPassword()));
 
-      object.put("result", true);
+      resultResponseWithErrors.resultSuccess();
     } else {
-      object.put("result", false);
       if (changePasswordDto.getPassword().length() < 6) {
-        objectError.put("password", SHORT_PASSWORD);
+        errors.setPassword(SHORT_PASSWORD);
       }
       if (captchaCode.isPresent() && !captchaCode.get().getSecretCode()
           .equals(changePasswordDto.getCaptcha_secret())
           || captchaCode.isEmpty()) {
-        objectError.put("captcha", WRONG_CAPTCHA);
+        errors.setCaptcha(WRONG_CAPTCHA);
       }
       if (userByCode.isEmpty()) {
-        objectError.put("code", "Ссылка для восстановления пароля устарела."
+        errors.setCode("Ссылка для восстановления пароля устарела."
             + "     <a href=     \"/auth/restore\">Запросить ссылку снова</a>");
       }
-      object.put("errors", objectError);
+      resultResponseWithErrors.setErrors(errors);
     }
-    return object;
+    return resultResponseWithErrors;
   }
 
   @Transactional
-  public JsonNode postNewProfile(MultipartFile photo, String name, String email,
+  public ResultResponseWithErrors postNewProfile(MultipartFile photo, String name, String email,
       String password, Integer removePhoto)
       throws Exception {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
-    ObjectNode objectError = mapper.createObjectNode();
+    ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
+    Errors errors = new Errors();
+
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
     User user = userRepository.findById(id).orElseThrow();
@@ -279,7 +268,8 @@ public class UserService implements UserDetailsService {
       User userToUpdate = userRepository.getOne(user.getId());
       userToUpdate.setName(name);
       userToUpdate.setEmail(email);
-      object.put("result", true);
+
+      resultResponseWithErrors.resultSuccess();
     }
     if (name != null && name.length() > 0 &&
         name.length() < 1000 && email != null &&
@@ -287,7 +277,8 @@ public class UserService implements UserDetailsService {
         removePhoto == null) {
       User userToUpdate = userRepository.getOne(user.getId());
       userToUpdate.setPassword(securityConfiguration.bcryptPasswordEncoder().encode(password));
-      object.put("result", true);
+
+      resultResponseWithErrors.resultSuccess();
     }
     if (name != null && name.length() > 0 &&
         name.length() < 1000 && email != null &&
@@ -295,7 +286,8 @@ public class UserService implements UserDetailsService {
         removePhoto == 1) {
       User userToUpdate = userRepository.getOne(user.getId());
       userToUpdate.setPhoto(null);
-      object.put("result", true);
+
+      resultResponseWithErrors.resultSuccess();
     }
     if (name != null && name.length() > 0 &&
         name.length() < 1000 && email != null &&
@@ -306,25 +298,22 @@ public class UserService implements UserDetailsService {
       File file = new File(fileName);
       userToUpdate.setPhoto("/api/image/" + file.getName());
       userToUpdate.setPassword(securityConfiguration.bcryptPasswordEncoder().encode(password));
-      object.put("result", true);
-    }
-    if (userByEmail.isPresent() && !user.getEmail().equals(userByEmail.get().getEmail())
-        || name.length() < 1
-        || name.length() > 1000 || password.length() < 6) {
-      object.put("result", false);
+
+      resultResponseWithErrors.resultSuccess();
+    } else {
       if (userByEmail.isPresent() && !user.getEmail().equals(userByEmail.get().getEmail())) {
-        objectError.put("email", "Этот e-mail уже зарегистрирован");
+        errors.setEmail("Этот e-mail уже зарегистрирован");
       }
       if (name.length() < 1
           || name.length() > 1000) {
-        objectError.put("name", "Имя указано неверно");
+        errors.setName("Имя указано неверно");
       }
       if (password.length() < 6) {
-        objectError.put("password", "Пароль короче 6-ти символов");
+        errors.setPassword("Пароль короче 6-ти символов");
       }
-      object.put("errors", objectError);
+      resultResponseWithErrors.setErrors(errors);
     }
-    return object;
+    return resultResponseWithErrors;
   }
 
   private String uploadImageWithResize(MultipartFile image, int userId) throws IOException {

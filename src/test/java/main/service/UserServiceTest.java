@@ -12,6 +12,7 @@ import main.dto.request.RegisterFormRequest;
 import main.dto.response.ResponsePostApi;
 import main.dto.response.ResultResponse;
 import main.dto.response.ResultResponseWithErrors;
+import main.dto.response.ResultResponseWithUserDto;
 import main.dto.response.UserResponse;
 import main.mapper.PostMapper;
 import main.model.CaptchaCode;
@@ -102,15 +103,15 @@ class UserServiceTest {
     LoginRequest loginDto = new LoginRequest();
     loginDto.setE_mail("some@mail.ru");
     loginDto.setPassword("123456");
-    JsonNode jsonNode = userService.login(loginDto);
-    Assertions.assertTrue(jsonNode.get("result").asBoolean());
-    Assertions.assertTrue(jsonNode.get("user").get("settings").asBoolean());
+    ResultResponseWithUserDto response = userService.login(loginDto);
+    Assertions.assertTrue(response.isResult());
+    Assertions.assertTrue(response.getUser().isSettings());
   }
 
   @Test
   void check() {
-    JsonNode jsonNode = userService.check();
-    Assertions.assertFalse(jsonNode.get("result").asBoolean());
+    ResultResponseWithUserDto response = userService.check();
+    Assertions.assertFalse(response.isResult());
   }
 
   @Test
@@ -140,8 +141,8 @@ class UserServiceTest {
         .when(userRepository).getOne(1);
     ChangePasswordRequest changePasswordDto = new ChangePasswordRequest("123456", "123456",
         "123456", "123456");
-    JsonNode jsonNode = userService.postNewPassword(changePasswordDto);
-    Assertions.assertTrue(jsonNode.get("result").asBoolean());
+    ResultResponseWithErrors response = userService.postNewPassword(changePasswordDto);
+    Assertions.assertTrue(response.isResult());
   }
 
   @Test

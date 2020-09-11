@@ -17,6 +17,7 @@ import main.dto.response.CommentsApiResponse;
 import main.dto.response.PostByIdResponse;
 import main.dto.response.PostListResponse;
 import main.dto.response.ResponsePostApi;
+import main.dto.response.ResultResponseWithErrors;
 import main.dto.response.UserResponse;
 import main.mapper.CommentMapper;
 import main.mapper.PostMapper;
@@ -178,8 +179,8 @@ class PostServiceTest {
     Mockito.doReturn(authorizedUsers).when(authenticationService).getAuthorizedUsers();
     Mockito.doReturn(Optional.of(getUser())).when(userRepository).findById(0);
     Mockito.doReturn(post).when(postRepository).save(post);
-    JsonNode jsonNode = postService.addPost(addPostDto);
-    Assertions.assertTrue(jsonNode.get("result").asBoolean());
+    ResultResponseWithErrors resultResponseWithErrors = postService.addPost(addPostDto);
+    Assertions.assertTrue(resultResponseWithErrors.isResult());
   }
 
   @Test
@@ -199,8 +200,8 @@ class PostServiceTest {
         .when(userRepository).findById(0);
     Mockito.doReturn(Optional.of(post)).when(postRepository).findById(0);
     Mockito.doReturn(post).when(postRepository).getOne(0);
-    JsonNode jsonNode = postService.updatePost(0, addPostDto);
-    Assertions.assertTrue(jsonNode.get("result").asBoolean());
+    ResultResponseWithErrors resultResponseWithErrors = postService.updatePost(0, addPostDto);
+    Assertions.assertTrue(resultResponseWithErrors.isResult());
   }
 
   @Test
