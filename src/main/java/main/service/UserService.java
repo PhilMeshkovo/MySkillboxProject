@@ -343,13 +343,13 @@ public class UserService implements UserDetailsService {
           .collect(Collectors.toList());
       object.put("postsCount", myPosts.size());
 
-      int likesCount = postList.stream().mapToInt(p -> p.getLikeCount()).sum();
+      int likesCount = postList.stream().mapToInt(ResponsePostApi::getLikeCount).sum();
       object.put("likesCount", likesCount);
 
-      int dislikesCount = postList.stream().mapToInt(p -> p.getDislikeCount()).sum();
+      int dislikesCount = postList.stream().mapToInt(ResponsePostApi::getDislikeCount).sum();
       object.put("dislikesCount", dislikesCount);
 
-      int viewsCount = postList.stream().mapToInt(p -> p.getViewCount()).sum();
+      int viewsCount = postList.stream().mapToInt(ResponsePostApi::getViewCount).sum();
       object.put("viewsCount", viewsCount);
 
       LocalDateTime firstPublication = postRepository

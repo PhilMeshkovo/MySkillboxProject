@@ -47,7 +47,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .and()
         .authorizeRequests().antMatchers(HttpMethod.GET, "/api/post/{id}").permitAll()
         .anyRequest().authenticated()
-        .and().formLogin();
+        .and().formLogin().disable();
   }
 
   @Bean

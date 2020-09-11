@@ -115,7 +115,7 @@ public class PostService {
     Optional<Tag> tagById = tagRepository.findTagByQuery(tag);
     if (tagById.isPresent()) {
       Set<Post> posts = tagById.get().getPosts();
-      List<Integer> idList = posts.stream().map(p -> p.getId()).collect(Collectors.toList());
+      List<Integer> idList = posts.stream().map(Post::getId).collect(Collectors.toList());
       List<Post> postListWithPagination = postRepository
           .findByIdIn(idList, offset, limit);
       return mapToPostListResponse(postListWithPagination);
@@ -338,12 +338,14 @@ public class PostService {
     String sessionId = request.getSession().getId();
     Integer idUser = authenticationService.getAuthorizedUsers().get(sessionId);
     Optional<User> currentUser = userRepository.findById(idUser);
+    Optional<PostComment> optionalPostComment = postCommentRepository
+        .findById(postCommentDto.getParentId());
     if (currentUser.isPresent()) {
       if (postById.isPresent() && text.length() > 10 && postCommentDto.getParentId() != null
-          && postCommentRepository.findById(postCommentDto.getParentId()).isPresent()
-          && postCommentRepository.findById(postCommentDto.getParentId()).get().getPost()
+          && optionalPostComment.isPresent()
+          && optionalPostComment.get().getPost()
           .equals(postById.get())) {
-        PostComment parent = postCommentRepository.findById(postCommentDto.getParentId()).get();
+        PostComment parent = optionalPostComment.get();
         PostComment postComment = PostComment.builder()
             .post(postById.get())
             .parent(parent)
@@ -364,8 +366,8 @@ public class PostService {
         PostComment savedPostComment = postCommentRepository.save(postComment);
         object.put("id", savedPostComment.getId());
       }
-      if (postCommentDto.getParentId() != null && postById.isPresent() && !postCommentRepository
-          .findById(postCommentDto.getParentId()).get().getPost().equals(postById.get())) {
+      if (postCommentDto.getParentId() != null && postById.isPresent() && !optionalPostComment.get()
+          .getPost().equals(postById.get())) {
         object.put("result", false);
         ObjectNode objectError = mapper.createObjectNode();
         objectError.put("parent", "No parent comment on this post");
