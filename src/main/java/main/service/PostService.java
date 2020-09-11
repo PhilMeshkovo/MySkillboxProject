@@ -332,18 +332,18 @@ public class PostService {
   public JsonNode addCommentToPost(PostCommentRequest postCommentDto) {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
-    Integer postId = postCommentDto.getPost_id();
+    Integer postId = postCommentDto.getPostId();
     String text = postCommentDto.getText();
     Optional<Post> postById = postRepository.findById(postId);
     String sessionId = request.getSession().getId();
     Integer idUser = authenticationService.getAuthorizedUsers().get(sessionId);
     Optional<User> currentUser = userRepository.findById(idUser);
     if (currentUser.isPresent()) {
-      if (postById.isPresent() && text.length() > 10 && postCommentDto.getParent_id() != null
-          && postCommentRepository.findById(postCommentDto.getParent_id()).isPresent()
-          && postCommentRepository.findById(postCommentDto.getParent_id()).get().getPost()
+      if (postById.isPresent() && text.length() > 10 && postCommentDto.getParentId() != null
+          && postCommentRepository.findById(postCommentDto.getParentId()).isPresent()
+          && postCommentRepository.findById(postCommentDto.getParentId()).get().getPost()
           .equals(postById.get())) {
-        PostComment parent = postCommentRepository.findById(postCommentDto.getParent_id()).get();
+        PostComment parent = postCommentRepository.findById(postCommentDto.getParentId()).get();
         PostComment postComment = PostComment.builder()
             .post(postById.get())
             .parent(parent)
@@ -354,7 +354,7 @@ public class PostService {
         PostComment savedPostComment = postCommentRepository.save(postComment);
         object.put("id", savedPostComment.getId());
       }
-      if (postById.isPresent() && text.length() > 9 && postCommentDto.getParent_id() == null) {
+      if (postById.isPresent() && text.length() > 9 && postCommentDto.getParentId() == null) {
         PostComment postComment = PostComment.builder()
             .post(postById.get())
             .user(currentUser.get())
@@ -364,8 +364,8 @@ public class PostService {
         PostComment savedPostComment = postCommentRepository.save(postComment);
         object.put("id", savedPostComment.getId());
       }
-      if (postCommentDto.getParent_id() != null && postById.isPresent() && !postCommentRepository
-          .findById(postCommentDto.getParent_id()).get().getPost().equals(postById.get())) {
+      if (postCommentDto.getParentId() != null && postById.isPresent() && !postCommentRepository
+          .findById(postCommentDto.getParentId()).get().getPost().equals(postById.get())) {
         object.put("result", false);
         ObjectNode objectError = mapper.createObjectNode();
         objectError.put("parent", "No parent comment on this post");
@@ -456,10 +456,10 @@ public class PostService {
   @Transactional
   public ResultResponse moderationPost(PostModerationRequest postModerationDto) {
     ResultResponse resultResponse = new ResultResponse();
-    Optional<Post> postById = postRepository.findById(postModerationDto.getPost_id());
+    Optional<Post> postById = postRepository.findById(postModerationDto.getPostId());
     if (postById.isPresent() && postModerationDto.getDecision().equalsIgnoreCase("accept")
         || postById.isPresent() && postModerationDto.getDecision().equalsIgnoreCase("decline")) {
-      Post postToModeration = postRepository.getOne(postModerationDto.getPost_id());
+      Post postToModeration = postRepository.getOne(postModerationDto.getPostId());
       if (postModerationDto.getDecision().equalsIgnoreCase("accept")) {
         postToModeration.setModerationStatus(ModerationStatus.ACCEPTED);
       }
@@ -519,9 +519,9 @@ public class PostService {
     } else {
       throw new EntityNotFoundException("User not authorized");
     }
-    Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
+    Optional<Post> post = postRepository.findById(postLikeDto.getPostId());
     Optional<PostVotes> postVotesOptional = postVotesRepository
-        .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
+        .findByPostIdAndUserId(postLikeDto.getPostId(), currentUser.getId());
     if (post.isPresent() && postVotesOptional.isEmpty()) {
       PostVotes postVotes = PostVotes.builder()
           .time(LocalDateTime.now().plusHours(3))
@@ -554,9 +554,9 @@ public class PostService {
     } else {
       throw new EntityNotFoundException("User not authorized");
     }
-    Optional<Post> post = postRepository.findById(postLikeDto.getPost_id());
+    Optional<Post> post = postRepository.findById(postLikeDto.getPostId());
     Optional<PostVotes> postVotesOptional = postVotesRepository
-        .findByPostIdAndUserId(postLikeDto.getPost_id(), currentUser.getId());
+        .findByPostIdAndUserId(postLikeDto.getPostId(), currentUser.getId());
     if (post.isPresent() && postVotesOptional.isEmpty()) {
       PostVotes postVotes = PostVotes.builder()
           .time(LocalDateTime.now().plusHours(3))

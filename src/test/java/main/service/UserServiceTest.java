@@ -80,9 +80,9 @@ class UserServiceTest {
     Mockito.doReturn(Optional.of(globalSettings))
         .when(globalSettingsRepository).findById(1);
     RegisterFormRequest registerForm = new RegisterFormRequest();
-    registerForm.setE_mail("some@mail.ru");
+    registerForm.setEmail("some@mail.ru");
     registerForm.setCaptcha("123456");
-    registerForm.setCaptcha_secret("123456");
+    registerForm.setCaptchaSecret("123456");
     registerForm.setName("vanya");
     registerForm.setPassword("12345");
     Mockito.doReturn(Optional.of(getUser()))
@@ -101,7 +101,7 @@ class UserServiceTest {
         "123456", "123.jpr", new Role(1))))
         .when(userRepository).findByEmail("some@mail.ru");
     LoginRequest loginDto = new LoginRequest();
-    loginDto.setE_mail("some@mail.ru");
+    loginDto.setEmail("some@mail.ru");
     loginDto.setPassword("123456");
     ResultResponseWithUserDto response = userService.login(loginDto);
     Assertions.assertTrue(response.isResult());

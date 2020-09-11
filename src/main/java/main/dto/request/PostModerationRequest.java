@@ -1,10 +1,12 @@
 package main.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
 public class PostModerationRequest {
 
-  private Integer post_id;
+  @JsonProperty("post_id")
+  private Integer postId;
   private String decision;
 }

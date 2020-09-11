@@ -68,7 +68,7 @@ public class InitService {
     throw new Exception("No such photo");
   }
 
-  private List getAllFiles(String link) throws IOException {
+  private List<String> getAllFiles(String link) throws IOException {
     List<String> files = Files.walk(Paths.get(link))
         .filter(Files::isRegularFile)
         .map(Path::toString)

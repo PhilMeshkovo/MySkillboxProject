@@ -1,9 +1,11 @@
 package main.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
 public class PostLikeRequest {
 
-  private Integer post_id;
+  @JsonProperty("post_id")
+  private Integer postId;
 }

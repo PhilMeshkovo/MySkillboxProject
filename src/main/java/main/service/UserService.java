@@ -106,12 +106,12 @@ public class UserService implements UserDetailsService {
     if (multiUserMode.getValue().equals("YES")) {
       ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
       Errors errors = new Errors();
-      Optional<User> byEmail = userRepository.findByEmail(registerFormUser.getE_mail());
+      Optional<User> byEmail = userRepository.findByEmail(registerFormUser.getEmail());
       if (byEmail.isEmpty() && registerFormUser.getPassword().length() > 5
           && registerFormUser.getName().length() > 0
           && registerFormUser.getName().length() < 1000) {
         User user = new User();
-        user.setEmail(registerFormUser.getE_mail());
+        user.setEmail(registerFormUser.getEmail());
         user.setName(registerFormUser.getName());
         user.setRole(new Role(1, "ROLE_USER"));
         user.setRegTime(LocalDateTime.now().plusHours(3));
@@ -141,7 +141,7 @@ public class UserService implements UserDetailsService {
   public ResultResponseWithUserDto login(LoginRequest loginDto) {
     ResultResponseWithUserDto resultResponseWithUserDto = new ResultResponseWithUserDto();
 
-    Optional<User> userByEmail = userRepository.findByEmail(loginDto.getE_mail());
+    Optional<User> userByEmail = userRepository.findByEmail(loginDto.getEmail());
     if (userByEmail.isPresent() && securityConfiguration.bcryptPasswordEncoder()
         .matches(loginDto.getPassword(), userByEmail.get().getPassword())) {
       String sessionId = request.getSession().getId();
