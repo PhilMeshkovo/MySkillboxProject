@@ -129,11 +129,7 @@ public class ApiPostController {
 
   @PostMapping("/comment")
   public ResponseEntity<?> addComment(@RequestBody PostCommentRequest postCommentDto) {
-    JsonNode jsonNode = jsonNode = postService.addCommentToPost(postCommentDto);
-    if (jsonNode.has("error")) {
-      return new ResponseEntity<>(jsonNode, HttpStatus.BAD_REQUEST);
-    }
-    return ResponseEntity.ok(jsonNode);
+    return postService.addCommentToPost(postCommentDto);
   }
 
   @GetMapping("/tag")

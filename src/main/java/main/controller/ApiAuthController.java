@@ -5,6 +5,8 @@ import java.io.IOException;
 import javax.persistence.EntityNotFoundException;
 import main.dto.request.ChangePasswordRequest;
 import main.dto.request.LoginRequest;
+import main.dto.request.PostProfileRequest;
+import main.dto.request.PostProfileRequestWithPhoto;
 import main.dto.request.RegisterFormRequest;
 import main.dto.response.ResultResponseWithErrors;
 import main.service.UserService;
@@ -12,12 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api")
@@ -60,15 +61,23 @@ public class ApiAuthController {
   }
 
   @PostMapping(path = "/profile/my", consumes = {"multipart/form-data"})
-  public ResponseEntity<?> postNewProfile(
-      @RequestParam(value = "photo", required = false) MultipartFile photo,
-      @RequestParam(value = "email", required = false) String email,
-      @RequestParam(value = "password", required = false) String password,
-      @RequestParam(value = "removePhoto", required = false) Integer removePhoto,
-      @RequestParam(value = "name", required = false) String name) {
+  public ResponseEntity<?> postNewProfileWithPhoto(
+      @ModelAttribute PostProfileRequestWithPhoto request
+  ) {
     try {
-      ResultResponseWithErrors response = userService.postNewProfile(photo, name,
-          email, password, removePhoto);
+      ResultResponseWithErrors response = userService.postNewProfileWithPhoto(request);
+      return ResponseEntity.ok(response);
+    } catch (Exception e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @PostMapping(path = "/profile/my", consumes = {"application/json"})
+  public ResponseEntity<?> postNewProfile(
+      @RequestBody PostProfileRequest request
+  ) {
+    try {
+      ResultResponseWithErrors response = userService.postNewProfile(request);
       return ResponseEntity.ok(response);
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);

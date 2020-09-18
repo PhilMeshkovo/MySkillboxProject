@@ -48,7 +48,8 @@ public class InitService {
     Random random = new Random();
     File filePath = new File(dir + "/" + random.nextInt(100000) + ".jpg");
     ImageIO.write(bufferedImage, "jpg", filePath);
-    return filePath.toString();
+    String[] path = filePath.toString().split("static");
+    return path[1];
   }
 
   private String randomLetter() {

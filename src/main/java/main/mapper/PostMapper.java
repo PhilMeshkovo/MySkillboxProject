@@ -62,6 +62,9 @@ public class PostMapper {
     postByIdApi.setText(post.getText());
     postByIdApi.setViewCount(post.getViewCount());
     postByIdApi.setCommentCount(post.getPostComments().size());
+    if (post.getIsActive() == 1){
+      postByIdApi.setActive(true);
+    }
     return postByIdApi;
   }
 

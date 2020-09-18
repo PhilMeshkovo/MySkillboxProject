@@ -8,6 +8,7 @@ import lombok.Data;
 public class Errors {
 
   private String name;
+  private String user;
   private String email;
   private String photo;
   private String title;

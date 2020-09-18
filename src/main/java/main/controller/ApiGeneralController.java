@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,12 +44,11 @@ public class ApiGeneralController {
   }
 
   @PostMapping("/image")
-  @ResponseStatus(HttpStatus.OK)
   public ResponseEntity<?> upload(@RequestBody MultipartFile image) {
     try {
       return ResponseEntity.ok(initService.uploadImage(image));
     } catch (IOException e) {
-      return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
 

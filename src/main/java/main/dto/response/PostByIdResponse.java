@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PostByIdResponse extends ResponsePostApi {
 
+  private boolean active;
   private List comments;
   private List<String> tags;
 }

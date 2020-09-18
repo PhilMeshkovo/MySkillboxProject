@@ -28,6 +28,8 @@ import main.config.SecurityConfiguration;
 import main.dto.request.ChangePasswordRequest;
 import main.dto.request.GlobalSettingsRequest;
 import main.dto.request.LoginRequest;
+import main.dto.request.PostProfileRequest;
+import main.dto.request.PostProfileRequestWithPhoto;
 import main.dto.request.RegisterFormRequest;
 import main.dto.response.Errors;
 import main.dto.response.ResponsePostApi;
@@ -250,8 +252,8 @@ public class UserService implements UserDetailsService {
   }
 
   @Transactional
-  public ResultResponseWithErrors postNewProfile(MultipartFile photo, String name, String email,
-      String password, Integer removePhoto)
+  public ResultResponseWithErrors postNewProfileWithPhoto(
+      PostProfileRequestWithPhoto postProfileRequest)
       throws Exception {
     ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
     Errors errors = new Errors();
@@ -259,56 +261,74 @@ public class UserService implements UserDetailsService {
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
     User user = userRepository.findById(id).orElseThrow();
-    Optional<User> userByEmail = userRepository.findByEmail(email);
-    if (userByEmail.isEmpty() && name != null
-        && name.length() > 0 &&
-        name.length() < 1000 && email != null &&
-        password == null && photo == null &&
-        removePhoto == null) {
+    Optional<User> userByEmail = userRepository.findByEmail(postProfileRequest.getEmail());
+    if (userByEmail.isPresent() && postProfileRequest.getName().length() > 0 &&
+        postProfileRequest.getName().length() < 1000 &&
+        postProfileRequest.getPassword() != null && postProfileRequest.getPhoto() != null
+        && postProfileRequest.getRemovePhoto() == 0) {
       User userToUpdate = userRepository.getOne(user.getId());
-      userToUpdate.setName(name);
-      userToUpdate.setEmail(email);
-
-      resultResponseWithErrors.resultSuccess();
-    }
-    if (name != null && name.length() > 0 &&
-        name.length() < 1000 && email != null &&
-        password != null && photo == null &&
-        removePhoto == null) {
-      User userToUpdate = userRepository.getOne(user.getId());
-      userToUpdate.setPassword(securityConfiguration.bcryptPasswordEncoder().encode(password));
-
-      resultResponseWithErrors.resultSuccess();
-    }
-    if (name != null && name.length() > 0 &&
-        name.length() < 1000 && email != null &&
-        password == null && photo != null &&
-        removePhoto == 1) {
-      User userToUpdate = userRepository.getOne(user.getId());
-      userToUpdate.setPhoto(null);
-
-      resultResponseWithErrors.resultSuccess();
-    }
-    if (name != null && name.length() > 0 &&
-        name.length() < 1000 && email != null &&
-        password != null && photo != null &&
-        removePhoto == 0) {
-      User userToUpdate = userRepository.getOne(user.getId());
-      String fileName = uploadImageWithResize(photo, userToUpdate.getId());
+      userToUpdate.setPassword(
+          securityConfiguration.bcryptPasswordEncoder().encode(postProfileRequest.getPassword()));
+      String fileName = uploadImageWithResize(postProfileRequest.getPhoto(), userToUpdate.getId());
       File file = new File(fileName);
       userToUpdate.setPhoto("/api/image/" + file.getName());
-      userToUpdate.setPassword(securityConfiguration.bcryptPasswordEncoder().encode(password));
 
       resultResponseWithErrors.resultSuccess();
     } else {
       if (userByEmail.isPresent() && !user.getEmail().equals(userByEmail.get().getEmail())) {
         errors.setEmail("Этот e-mail уже зарегистрирован");
       }
-      if (name.length() < 1
-          || name.length() > 1000) {
+      if (postProfileRequest.getName().length() < 1
+          || postProfileRequest.getName().length() > 1000) {
         errors.setName("Имя указано неверно");
       }
-      if (password.length() < 6) {
+      if (postProfileRequest.getName().length() < 6) {
+        errors.setPassword("Пароль короче 6-ти символов");
+      }
+      resultResponseWithErrors.setErrors(errors);
+    }
+    return resultResponseWithErrors;
+  }
+
+  @Transactional
+  public ResultResponseWithErrors postNewProfile(PostProfileRequest profileRequest) {
+    ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
+    Errors errors = new Errors();
+
+    String sessionId = request.getSession().getId();
+    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+    User user = userRepository.findById(id).orElseThrow();
+    Optional<User> userByEmail = userRepository.findByEmail(profileRequest.getEmail());
+
+    if (profileRequest.getPassword() == null && profileRequest.getPhoto() == null &&
+        profileRequest.getRemovePhoto() == null && profileRequest.getName() != null &&
+        profileRequest.getName().length() > 0 && profileRequest.getName().length() < 1000) {
+      User userToUpdate = userRepository.getOne(user.getId());
+      userToUpdate.setName(profileRequest.getName());
+      resultResponseWithErrors.resultSuccess();
+    } else if (profileRequest.getPassword() != null && profileRequest.getPhoto() == null &&
+        profileRequest.getRemovePhoto() == null && profileRequest.getName() != null &&
+        profileRequest.getName().length() > 0 && profileRequest.getName().length() < 1000 &&
+        profileRequest.getPassword().length() > 5) {
+      User userToUpdate = userRepository.getOne(user.getId());
+      userToUpdate.setPassword(
+          securityConfiguration.bcryptPasswordEncoder().encode(profileRequest.getPassword()));
+      resultResponseWithErrors.resultSuccess();
+    } else if (profileRequest.getPassword() == null && profileRequest.getPhoto().equals("") &&
+        profileRequest.getRemovePhoto() == 1 && profileRequest.getName() != null &&
+        profileRequest.getName().length() > 0 && profileRequest.getName().length() < 1000) {
+      User userToUpdate = userRepository.getOne(user.getId());
+      userToUpdate.setPhoto(null);
+      resultResponseWithErrors.resultSuccess();
+    } else {
+      if (userByEmail.isPresent() && !user.getEmail().equals(userByEmail.get().getEmail())) {
+        errors.setEmail("Этот e-mail уже зарегистрирован");
+      }
+      if (profileRequest.getName().length() < 1
+          || profileRequest.getName().length() > 1000) {
+        errors.setName("Имя указано неверно");
+      }
+      if (profileRequest.getName().length() < 6) {
         errors.setPassword("Пароль короче 6-ти символов");
       }
       resultResponseWithErrors.setErrors(errors);
@@ -519,4 +539,5 @@ public class UserService implements UserDetailsService {
     ObjectNode object = mapper.createObjectNode();
     return object;
   }
+
 }

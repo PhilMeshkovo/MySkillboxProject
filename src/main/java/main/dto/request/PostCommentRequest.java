@@ -20,4 +20,8 @@ public class PostCommentRequest {
     this.postId = postId;
     this.text = text;
   }
+
+  public boolean isParentExist(){
+    return parentId != null;
+  }
 }

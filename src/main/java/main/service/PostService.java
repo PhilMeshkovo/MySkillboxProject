@@ -51,6 +51,8 @@ import main.repository.PostVotesRepository;
 import main.repository.TagRepository;
 import main.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -153,13 +155,15 @@ public class PostService {
 
     PostByIdResponse postByIdApi = new PostByIdResponse();
 
-    if (post.getIsActive() == 1 && post.getModerationStatus() == ModerationStatus.ACCEPTED &&
-        post.getTime().minusHours(3).isBefore(LocalDateTime.now()) || post.getIsActive() != 1 &&
+    if ((post.getIsActive() == 1 &&
+        post.getModerationStatus() == ModerationStatus.ACCEPTED &&
+        post.getTime().minusHours(3).isBefore(LocalDateTime.now()))
+        || (post.getIsActive() == 1 && post.getModerationStatus() == ModerationStatus.NEW &&
         authenticationService.getAuthorizedUsers().containsKey(sessionId)
-        && currentUser.getIsModerator() == 1
-        || post.getIsActive() != 1
+        && currentUser.getIsModerator() == 1)
+        || (post.getIsActive() == 1 && post.getModerationStatus() == ModerationStatus.NEW
         && authenticationService.getAuthorizedUsers().containsKey(sessionId) && currentUser
-        .equals(post.getUser())) {
+        .equals(post.getUser()))) {
       postByIdApi = postMapper.postToPostById(post);
       List<PostComment> commentsByPostId = postCommentRepository
           .findCommentsByPostId(post.getId());
@@ -222,12 +226,6 @@ public class PostService {
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
       User currentUser = userRepository.findById(id).orElseThrow();
-      Set<Tag> setTags = new HashSet<>();
-      if (addPostDto.getTags() != null) {
-        setTags = Arrays.stream(addPostDto.getTags())
-            .map(t -> tagRepository.findTagByQuery(t).orElseThrow())
-            .collect(Collectors.toSet());
-      }
       LocalDateTime localDateTime = LocalDateTime
           .ofInstant(Instant.ofEpochSecond(addPostDto.getTimestamp()),
               ZoneId.systemDefault());
@@ -235,37 +233,40 @@ public class PostService {
         localDateTime = LocalDateTime.now().plusHours(3L);
       }
       Post post = new Post();
+      post.setUser(currentUser);
+      post.setTitle(addPostDto.getTitle());
+      post.setIsActive(addPostDto.getActive());
+      post.setModerator(currentUser);
+      post.setText(addPostDto.getText());
+      post.setTime(localDateTime.plusHours(3L));
+      post.setViewCount(0);
       if ((globalSettings.orElseThrow().getValue().equals("NO") && addPostDto.getActive() == 1) ||
           (globalSettings.orElseThrow().getValue().equals("YES")
               && currentUser.getIsModerator() == 1
               && addPostDto.getActive() == 1)) {
-        post = Post.builder()
-            .user(currentUser)
-            .moderationStatus(ModerationStatus.ACCEPTED)
-            .title(addPostDto.getTitle())
-            .isActive(addPostDto.getActive())
-            .tags(setTags)
-            .moderator(currentUser)
-            .text(addPostDto.getText())
-            .time(localDateTime.plusHours(3L))
-            .viewCount(0)
-            .build();
+        post.setModerationStatus((ModerationStatus.ACCEPTED));
       }
+
       if (globalSettings.get().getValue().equals("YES") && currentUser.getIsModerator() != 1) {
-        post = Post.builder()
-            .user(currentUser)
-            .moderationStatus(ModerationStatus.NEW)
-            .title(addPostDto.getTitle())
-            .isActive(addPostDto.getActive())
-            .tags(setTags)
-            .moderator(currentUser)
-            .text(addPostDto.getText())
-            .time(localDateTime.plusHours(3L))
-            .viewCount(0)
-            .build();
+        post.setModerationStatus((ModerationStatus.NEW));
+      }
+      Set<Tag> setTags;
+      if (addPostDto.getTags() != null) {
+        String[] arrayTags = addPostDto.getTags();
+        List<String> tagNames = tagRepository.findAll().stream().map(t -> t.getName()).collect(Collectors.toList());
+        for (String arrayTag : arrayTags) {
+           if (!tagNames.contains(arrayTag)){
+            Tag tag = new Tag();
+            tag.setName(arrayTag);
+            tagRepository.save(tag);
+          }
+        }
+        setTags = Arrays.stream(arrayTags)
+            .map(t -> tagRepository.findTagByQuery(t)).flatMap(Optional::stream)
+            .collect(Collectors.toSet());
+        post.setTags(setTags);
       }
       postRepository.save(post);
-
       resultResponseWithErrors.resultSuccess();
     } else {
       if (addPostDto.getTitle().length() < 10) {
@@ -329,75 +330,51 @@ public class PostService {
     }
   }
 
-  public JsonNode addCommentToPost(PostCommentRequest postCommentDto) {
-    ObjectMapper mapper = new ObjectMapper();
-    ObjectNode object = mapper.createObjectNode();
+  public ResponseEntity addCommentToPost(PostCommentRequest postCommentDto) {
+    ResultResponseWithErrors response = new ResultResponseWithErrors();
+    Errors errors = new Errors();
     Integer postId = postCommentDto.getPostId();
     String text = postCommentDto.getText();
     Optional<Post> postById = postRepository.findById(postId);
     String sessionId = request.getSession().getId();
     Integer idUser = authenticationService.getAuthorizedUsers().get(sessionId);
     Optional<User> currentUser = userRepository.findById(idUser);
-    Optional<PostComment> optionalPostComment = postCommentRepository
-        .findById(postCommentDto.getParentId());
-    if (currentUser.isPresent()) {
-      if (postById.isPresent() && text.length() > 10 && postCommentDto.getParentId() != null
-          && optionalPostComment.isPresent()
-          && optionalPostComment.get().getPost()
-          .equals(postById.get())) {
-        PostComment parent = optionalPostComment.get();
-        PostComment postComment = PostComment.builder()
-            .post(postById.get())
-            .parent(parent)
-            .user(currentUser.get())
-            .time(LocalDateTime.now())
-            .text(text)
-            .build();
-        PostComment savedPostComment = postCommentRepository.save(postComment);
-        object.put("id", savedPostComment.getId());
-      }
-      if (postById.isPresent() && text.length() > 9 && postCommentDto.getParentId() == null) {
-        PostComment postComment = PostComment.builder()
-            .post(postById.get())
-            .user(currentUser.get())
-            .time(LocalDateTime.now())
-            .text(text)
-            .build();
-        PostComment savedPostComment = postCommentRepository.save(postComment);
-        object.put("id", savedPostComment.getId());
-      }
-      if (postCommentDto.getParentId() != null && postById.isPresent() && !optionalPostComment.get()
-          .getPost().equals(postById.get())) {
-        object.put("result", false);
-        ObjectNode objectError = mapper.createObjectNode();
-        objectError.put("parent", "No parent comment on this post");
-        object.put("errors", objectError);
-      }
-      if (postById.isEmpty()) {
-        object.put("result", false);
-        ObjectNode objectError = mapper.createObjectNode();
-        objectError.put("post", "Post not exist");
-        object.put("errors", objectError);
-        if (text.length() < 10) {
-          objectError.put("text", "Comment text too short");
-          object.put("errors", objectError);
+    if (currentUser.isPresent() && postById.isPresent() && text.length() > 9) {
+      PostComment postComment = new PostComment();
+      postComment.setPost(postById.get());
+      postComment.setUser(currentUser.get());
+      postComment.setTime(LocalDateTime.now());
+      postComment.setText(text);
+      if (postCommentDto.getParentId() != null) {
+        Optional<PostComment> optionalParent = postCommentRepository
+            .findById(postCommentDto.getParentId());
+        if (optionalParent.isPresent()) {
+          postComment.setParent(postComment.getParent());
         }
       }
-      if (postById.isPresent() && text.length() < 10) {
-        object.put("result", false);
-        ObjectNode objectError = mapper.createObjectNode();
-        objectError.put("text", "Comment text too short");
-        object.put("errors", objectError);
-      }
-
-      return object;
+      PostComment savedPostComment = postCommentRepository.save(postComment);
+      ObjectMapper mapper = new ObjectMapper();
+      ObjectNode object = mapper.createObjectNode();
+      object.put("id", savedPostComment.getId());
+      return new ResponseEntity<>(object, HttpStatus.OK);
     } else {
-      throw new EntityNotFoundException("User not authorized");
+      response.setResult(false);
+      if (postById.isEmpty()) {
+        errors.setPost("Post not exist");
+      }
+      if (text.length() < 10) {
+        errors.setText("Comment text too short");
+      }
+      if (currentUser.isEmpty()) {
+        errors.setUser("No such user");
+      }
+      response.setErrors(errors);
     }
+      return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
   }
 
   public ListTagsResponse getTag(String query) {
-    ListTagsResponse listTagsDto = new ListTagsResponse();
+    ListTagsResponse listTagsResponse = new ListTagsResponse();
     List<TagResponse> tagDtoList = new ArrayList<>();
     if (query.equals("")) {
       List<Tag> allTags = tagRepository.findAll();
@@ -408,8 +385,8 @@ public class PostService {
             .build();
         tagDtoList.add(tagDto);
       }
-      listTagsDto.setTags(tagDtoList);
-      return listTagsDto;
+      listTagsResponse.setTags(tagDtoList);
+      return listTagsResponse;
     } else {
       String[] arrayTags = query.split(",");
       for (String arrayTag : arrayTags) {
@@ -425,8 +402,8 @@ public class PostService {
           throw new EntityNotFoundException("tag '" + arrayTag + "' - does not exist");
         }
       }
-      listTagsDto.setTags(tagDtoList);
-      return listTagsDto;
+      listTagsResponse.setTags(tagDtoList);
+      return listTagsResponse;
     }
   }
 
@@ -451,8 +428,7 @@ public class PostService {
       }
     }
     double coefficient = countActivePosts / maxPostsTag;
-    double weight = (countPostsWithThisTag / countActivePosts) * coefficient;
-    return weight;
+    return  (countPostsWithThisTag / countActivePosts) * coefficient;
   }
 
   @Transactional
