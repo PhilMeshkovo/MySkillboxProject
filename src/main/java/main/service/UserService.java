@@ -49,6 +49,7 @@ import main.repository.PostRepository;
 import main.repository.UserRepository;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -59,6 +60,15 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @Slf4j
 public class UserService implements UserDetailsService {
+
+  @Value("${user.password.minLength}")
+  private int minPassword;
+
+  @Value("${user.name.maxLength}")
+  private int maxName;
+
+  @Value("${user.name.minLength}")
+  private int minName;
 
   private static final String SHORT_PASSWORD = "Пароль короче 6-ти символов";
 
@@ -109,9 +119,9 @@ public class UserService implements UserDetailsService {
       ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
       Errors errors = new Errors();
       Optional<User> byEmail = userRepository.findByEmail(registerFormUser.getEmail());
-      if (byEmail.isEmpty() && registerFormUser.getPassword().length() > 5
-          && registerFormUser.getName().length() > 0
-          && registerFormUser.getName().length() < 1000) {
+      if (byEmail.isEmpty() && registerFormUser.getPassword().length() >= minPassword
+          && registerFormUser.getName().length() >= minName
+          && registerFormUser.getName().length() < maxName) {
         User user = new User();
         user.setEmail(registerFormUser.getEmail());
         user.setName(registerFormUser.getName());
@@ -126,10 +136,11 @@ public class UserService implements UserDetailsService {
         if (byEmail.isPresent()) {
           errors.setEmail("Этот e-mail уже зарегистрирован");
         }
-        if (registerFormUser.getPassword().length() < 6) {
+        if (registerFormUser.getPassword().length() < minPassword) {
           errors.setPassword(SHORT_PASSWORD);
         }
-        if (registerFormUser.getName().length() < 1 || registerFormUser.getName().length() > 1000) {
+        if (registerFormUser.getName().length() < minName
+            || registerFormUser.getName().length() > maxName) {
           errors.setName("Имя указано неверно");
         }
         resultResponseWithErrors.setErrors(errors);
@@ -226,7 +237,7 @@ public class UserService implements UserDetailsService {
     Optional<CaptchaCode> captchaCode = captchaCodeRepository
         .findByCode(changePasswordDto.getCaptcha());
     if (userByCode.isPresent() && captchaCode.isPresent()
-        && changePasswordDto.getPassword().length() > 5
+        && changePasswordDto.getPassword().length() >= minPassword
         && captchaCode.get().getSecretCode().equals(changePasswordDto.getCaptcha_secret())) {
       User user = userRepository.getOne(userByCode.get().getId());
       user.setPassword(
@@ -234,7 +245,7 @@ public class UserService implements UserDetailsService {
 
       resultResponseWithErrors.resultSuccess();
     } else {
-      if (changePasswordDto.getPassword().length() < 6) {
+      if (changePasswordDto.getPassword().length() < minPassword) {
         errors.setPassword(SHORT_PASSWORD);
       }
       if (captchaCode.isPresent() && !captchaCode.get().getSecretCode()
@@ -263,7 +274,7 @@ public class UserService implements UserDetailsService {
     User user = userRepository.findById(id).orElseThrow();
     Optional<User> userByEmail = userRepository.findByEmail(postProfileRequest.getEmail());
     if (userByEmail.isPresent() && postProfileRequest.getName().length() > 0 &&
-        postProfileRequest.getName().length() < 1000 &&
+        postProfileRequest.getName().length() < maxName &&
         postProfileRequest.getPassword() != null && postProfileRequest.getPhoto() != null
         && postProfileRequest.getRemovePhoto() == 0) {
       User userToUpdate = userRepository.getOne(user.getId());
@@ -278,11 +289,11 @@ public class UserService implements UserDetailsService {
       if (userByEmail.isPresent() && !user.getEmail().equals(userByEmail.get().getEmail())) {
         errors.setEmail("Этот e-mail уже зарегистрирован");
       }
-      if (postProfileRequest.getName().length() < 1
-          || postProfileRequest.getName().length() > 1000) {
+      if (postProfileRequest.getName().length() < minName
+          || postProfileRequest.getName().length() > maxName) {
         errors.setName("Имя указано неверно");
       }
-      if (postProfileRequest.getName().length() < 6) {
+      if (postProfileRequest.getName().length() < minPassword) {
         errors.setPassword("Пароль короче 6-ти символов");
       }
       resultResponseWithErrors.setErrors(errors);
@@ -302,21 +313,21 @@ public class UserService implements UserDetailsService {
 
     if (profileRequest.getPassword() == null && profileRequest.getPhoto() == null &&
         profileRequest.getRemovePhoto() == null && profileRequest.getName() != null &&
-        profileRequest.getName().length() > 0 && profileRequest.getName().length() < 1000) {
+        profileRequest.getName().length() > 0 && profileRequest.getName().length() < maxName) {
       User userToUpdate = userRepository.getOne(user.getId());
       userToUpdate.setName(profileRequest.getName());
       resultResponseWithErrors.resultSuccess();
     } else if (profileRequest.getPassword() != null && profileRequest.getPhoto() == null &&
         profileRequest.getRemovePhoto() == null && profileRequest.getName() != null &&
-        profileRequest.getName().length() > 0 && profileRequest.getName().length() < 1000 &&
-        profileRequest.getPassword().length() > 5) {
+        profileRequest.getName().length() >= minName && profileRequest.getName().length() < maxName &&
+        profileRequest.getPassword().length() >= minPassword) {
       User userToUpdate = userRepository.getOne(user.getId());
       userToUpdate.setPassword(
           securityConfiguration.bcryptPasswordEncoder().encode(profileRequest.getPassword()));
       resultResponseWithErrors.resultSuccess();
     } else if (profileRequest.getPassword() == null && profileRequest.getPhoto().equals("") &&
         profileRequest.getRemovePhoto() == 1 && profileRequest.getName() != null &&
-        profileRequest.getName().length() > 0 && profileRequest.getName().length() < 1000) {
+        profileRequest.getName().length() > 0 && profileRequest.getName().length() < maxName) {
       User userToUpdate = userRepository.getOne(user.getId());
       userToUpdate.setPhoto(null);
       resultResponseWithErrors.resultSuccess();
@@ -325,10 +336,10 @@ public class UserService implements UserDetailsService {
         errors.setEmail("Этот e-mail уже зарегистрирован");
       }
       if (profileRequest.getName().length() < 1
-          || profileRequest.getName().length() > 1000) {
+          || profileRequest.getName().length() > maxName) {
         errors.setName("Имя указано неверно");
       }
-      if (profileRequest.getName().length() < 6) {
+      if (profileRequest.getPassword().length() < minPassword) {
         errors.setPassword("Пароль короче 6-ти символов");
       }
       resultResponseWithErrors.setErrors(errors);

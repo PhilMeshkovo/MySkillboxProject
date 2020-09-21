@@ -19,3 +19,9 @@ spring.mail.password: '03081977'
 spring.mail.port: 465
 spring.mail.protocol: smtps
 mail.debug: true
+
+post.text.minLength: 50
+post.title.minLength: 3
+user.password.minLength: 6
+user.name.maxLength: 1000
+user.name.minLength: 1

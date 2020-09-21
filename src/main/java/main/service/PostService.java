@@ -51,6 +51,7 @@ import main.repository.PostVotesRepository;
 import main.repository.TagRepository;
 import main.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -58,6 +59,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PostService {
+
+  @Value("${post.text.minLength}")
+  private int textMin;
+
+  @Value("${post.title.minLength}")
+  private int titleMin;
+
+
 
   @Autowired
   PostRepository postRepository;
@@ -222,7 +231,7 @@ public class PostService {
     Optional<GlobalSettings> globalSettings = globalSettingsRepository.findById(2);
     ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
     Errors errors = new Errors();
-    if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
+    if (addPostDto.getTitle().length() >= titleMin && addPostDto.getText().length() >= textMin) {
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
       User currentUser = userRepository.findById(id).orElseThrow();
@@ -269,10 +278,10 @@ public class PostService {
       postRepository.save(post);
       resultResponseWithErrors.resultSuccess();
     } else {
-      if (addPostDto.getTitle().length() < 10) {
-        errors.setTitle("Заголовок не установлен или короче 10 символов");
+      if (addPostDto.getTitle().length() < titleMin) {
+        errors.setTitle("Заголовок не установлен или слишком кроткий");
       }
-      if (addPostDto.getText().length() < 500) {
+      if (addPostDto.getText().length() < textMin) {
         errors.setText("Текст публикации слишком кроткий");
       }
       resultResponseWithErrors.setErrors(errors);
@@ -293,7 +302,7 @@ public class PostService {
 
     if (postById.isPresent() && postById.get().getUser()
         .equals(currentUser)) {
-      if (addPostDto.getTitle().length() >= 10 && addPostDto.getText().length() >= 500) {
+      if (addPostDto.getTitle().length() >= titleMin && addPostDto.getText().length() >= textMin) {
 
         Set<Tag> setTags = new HashSet<>();
         if (addPostDto.getTags() != null) {
@@ -316,10 +325,10 @@ public class PostService {
 
         resultResponseWithErrors.resultSuccess();
       } else {
-        if (addPostDto.getTitle().length() < 10) {
-          errors.setTitle("Заголовок не установлен или короче 10 символов");
+        if (addPostDto.getTitle().length() < titleMin) {
+          errors.setTitle("Заголовок не установлен или слишком короткий");
         }
-        if (addPostDto.getText().length() < 500) {
+        if (addPostDto.getText().length() < textMin) {
           errors.setText("Текст публикации слишком кроткий");
         }
         resultResponseWithErrors.setErrors(errors);
@@ -385,8 +394,6 @@ public class PostService {
             .build();
         tagDtoList.add(tagDto);
       }
-      listTagsResponse.setTags(tagDtoList);
-      return listTagsResponse;
     } else {
       String[] arrayTags = query.split(",");
       for (String arrayTag : arrayTags) {
@@ -398,13 +405,11 @@ public class PostService {
               .weight(weight)
               .build();
           tagDtoList.add(tagDto);
-        } else {
-          throw new EntityNotFoundException("tag '" + arrayTag + "' - does not exist");
         }
       }
-      listTagsResponse.setTags(tagDtoList);
-      return listTagsResponse;
     }
+    listTagsResponse.setTags(tagDtoList);
+    return listTagsResponse;
   }
 
   private Double getWeightOfTag(Tag tag) {

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import main.dto.response.PostByIdResponse;
 import main.dto.response.ResponsePostApi;
-import main.dto.response.ResponsePostApiToModeration;
 import main.dto.response.ResponsePostApiWithAnnounce;
 import main.model.Post;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,20 +61,16 @@ public class PostMapper {
     postByIdApi.setText(post.getText());
     postByIdApi.setViewCount(post.getViewCount());
     postByIdApi.setCommentCount(post.getPostComments().size());
-    if (post.getIsActive() == 1){
+    if (post.getIsActive() == 1) {
       postByIdApi.setActive(true);
     }
+    int likes = post.getPostVotes().stream().filter(p -> p.getValue() == 1)
+        .collect(Collectors.toSet()).size();
+    int dislikes = post.getPostVotes().stream().filter(p -> p.getValue() == -1)
+        .collect(Collectors.toSet()).size();
+    postByIdApi.setLikeCount(likes);
+    postByIdApi.setDislikeCount(dislikes);
     return postByIdApi;
-  }
-
-  public ResponsePostApiToModeration postToResponsePostApiToModeration(Post post) {
-    ResponsePostApiToModeration postApiToModeration = new ResponsePostApiToModeration();
-    postApiToModeration.setId(post.getId());
-    postApiToModeration.setTime(post.getTime());
-    postApiToModeration.setUser(userMapper.userToUserApi(post.getUser()));
-    postApiToModeration.setTitle(post.getTitle());
-    postApiToModeration.setAnnounce(post.getText());
-    return postApiToModeration;
   }
 
   public ResponsePostApiWithAnnounce responsePostApiToResponseWithAnnounce

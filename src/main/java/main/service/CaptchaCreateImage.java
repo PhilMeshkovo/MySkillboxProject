@@ -18,7 +18,7 @@ public class CaptchaCreateImage {
     int width = 100;
     int height = 35;
     bufferedImage = new BufferedImage(width, height,
-        BufferedImage.TYPE_INT_RGB); // Рисовать будем сюда
+        BufferedImage.TYPE_INT_RGB);
     Graphics2D g2d = bufferedImage.createGraphics();
     Font font = new Font("Arial", Font.BOLD, 18);
     g2d.setFont(font);

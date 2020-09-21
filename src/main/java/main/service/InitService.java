@@ -36,20 +36,21 @@ public class InitService {
     InputStream inputStream = new ByteArrayInputStream(byteArr);
     BufferedImage bufferedImage = ImageIO.read(inputStream);
     String listDirs = randomLetter() + "-" + randomLetter() + "-" + randomLetter();
-    File dir = new File("src/main/resources/static/upload");
+    File dir = new File("upload");
     if (!dir.exists()) {
       dir.mkdir();
     }
-    File theDir = new File(dir + "/" + listDirs);
+    String pathToDir = dir + "/" + listDirs;
+    File theDir = new File(pathToDir);
     if (!theDir.exists()) {
       theDir.mkdir();
     }
     dir = theDir;
     Random random = new Random();
-    File filePath = new File(dir + "/" + random.nextInt(100000) + ".jpg");
+    String filename = random.nextInt(100000) + ".jpg";
+    File filePath = new File(dir + "/" + filename);
     ImageIO.write(bufferedImage, "jpg", filePath);
-    String[] path = filePath.toString().split("static");
-    return path[1];
+    return "/" + pathToDir + "/" + filename;
   }
 
   private String randomLetter() {
