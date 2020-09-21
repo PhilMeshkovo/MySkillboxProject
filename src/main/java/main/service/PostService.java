@@ -67,7 +67,6 @@ public class PostService {
   private int titleMin;
 
 
-
   @Autowired
   PostRepository postRepository;
 
@@ -262,9 +261,10 @@ public class PostService {
       Set<Tag> setTags;
       if (addPostDto.getTags() != null) {
         String[] arrayTags = addPostDto.getTags();
-        List<String> tagNames = tagRepository.findAll().stream().map(t -> t.getName()).collect(Collectors.toList());
+        List<String> tagNames = tagRepository.findAll().stream().map(t -> t.getName())
+            .collect(Collectors.toList());
         for (String arrayTag : arrayTags) {
-           if (!tagNames.contains(arrayTag)){
+          if (!tagNames.contains(arrayTag)) {
             Tag tag = new Tag();
             tag.setName(arrayTag);
             tagRepository.save(tag);
@@ -379,7 +379,7 @@ public class PostService {
       }
       response.setErrors(errors);
     }
-      return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
+    return new ResponseEntity(response, HttpStatus.BAD_REQUEST);
   }
 
   public ListTagsResponse getTag(String query) {
@@ -433,7 +433,7 @@ public class PostService {
       }
     }
     double coefficient = countActivePosts / maxPostsTag;
-    return  (countPostsWithThisTag / countActivePosts) * coefficient;
+    return (countPostsWithThisTag / countActivePosts) * coefficient;
   }
 
   @Transactional

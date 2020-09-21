@@ -319,7 +319,8 @@ public class UserService implements UserDetailsService {
       resultResponseWithErrors.resultSuccess();
     } else if (profileRequest.getPassword() != null && profileRequest.getPhoto() == null &&
         profileRequest.getRemovePhoto() == null && profileRequest.getName() != null &&
-        profileRequest.getName().length() >= minName && profileRequest.getName().length() < maxName &&
+        profileRequest.getName().length() >= minName && profileRequest.getName().length() < maxName
+        &&
         profileRequest.getPassword().length() >= minPassword) {
       User userToUpdate = userRepository.getOne(user.getId());
       userToUpdate.setPassword(
