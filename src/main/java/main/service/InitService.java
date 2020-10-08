@@ -62,7 +62,7 @@ public class InitService {
   public byte[] getImage(String link) throws Exception {
     List<String> files = getAllFiles("src/main/resources/static/avatars/");
     for (String file1 : files) {
-      if (file1.endsWith(link)) {
+      if (file1.endsWith("\\" + link)) {
         File newFile = new File(file1);
         return FileUtils.readFileToByteArray(newFile);
       }
