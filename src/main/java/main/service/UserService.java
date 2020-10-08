@@ -125,6 +125,7 @@ public class UserService implements UserDetailsService {
         User user = new User();
         user.setEmail(registerFormUser.getEmail());
         user.setName(registerFormUser.getName());
+        user.setPhoto("/api/image/default-1.png");
         user.setRole(new Role(1, "ROLE_USER"));
         user.setRegTime(LocalDateTime.now().plusHours(3));
         user.setPassword(

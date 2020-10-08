@@ -9,9 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
+import javassist.NotFoundException;
 import javax.imageio.ImageIO;
 import main.dto.response.ResponseApiInit;
 import org.apache.commons.io.FileUtils;
@@ -62,12 +62,17 @@ public class InitService {
 
   public byte[] getImage(String link) throws Exception {
     List<String> files = getAllFiles("src/main/resources/static/avatars/");
-    Optional<String> optionalFile = files.stream().filter(l -> l.endsWith(link)).findFirst();
-    if (optionalFile.isPresent()){
-      File newFile = new File(optionalFile.get());
+    File newFile = null;
+    for (String file : files) {
+      String[] partsFile = file.split("[/\\\\]");
+      if (partsFile[partsFile.length - 1].equals(link)) {
+        newFile = new File(file);
+      }
+    }
+    if (newFile != null) {
       return FileUtils.readFileToByteArray(newFile);
     } else {
-      throw new Exception("No such photo");
+      throw new NotFoundException("no such photo");
     }
   }
 
