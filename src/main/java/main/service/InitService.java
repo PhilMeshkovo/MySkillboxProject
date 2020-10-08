@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
@@ -61,14 +62,13 @@ public class InitService {
 
   public byte[] getImage(String link) throws Exception {
     List<String> files = getAllFiles("src/main/resources/static/avatars/");
-    for (String file1 : files) {
-      String[] partsFile = file1.split("\\\\");
-      if (partsFile[partsFile.length-1].equals(link)) {
-        File newFile = new File(file1);
-        return FileUtils.readFileToByteArray(newFile);
-      }
+    Optional<String> optionalFile = files.stream().filter(l -> l.endsWith(link)).findFirst();
+    if (optionalFile.isPresent()){
+      File newFile = new File(optionalFile.get());
+      return FileUtils.readFileToByteArray(newFile);
+    } else {
+      throw new Exception("No such photo");
     }
-    throw new Exception("No such photo");
   }
 
   private List<String> getAllFiles(String link) throws IOException {
