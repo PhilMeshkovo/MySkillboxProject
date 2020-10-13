@@ -1,5 +1,6 @@
 package main.repository;
 
+import java.util.Optional;
 import main.model.GlobalSettings;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -17,4 +18,6 @@ public interface GlobalSettingsRepository extends JpaRepository<GlobalSettings, 
       value = "UPDATE global_settings SET value = :value WHERE code = :code ")
   void updateValue(@Param("code") String code,
       @Param("value") String value);
+
+  Optional<GlobalSettings> findByCode(String code);
 }

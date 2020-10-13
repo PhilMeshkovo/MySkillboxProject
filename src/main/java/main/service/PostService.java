@@ -50,7 +50,6 @@ import main.repository.PostRepository;
 import main.repository.PostVotesRepository;
 import main.repository.TagRepository;
 import main.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -67,35 +66,52 @@ public class PostService {
   private int titleMin;
 
 
-  @Autowired
+  final
   PostRepository postRepository;
 
-  @Autowired
+  final
   UserRepository userRepository;
 
-  @Autowired
+  final
   HttpServletRequest request;
 
-  @Autowired
+  final
   PostCommentRepository postCommentRepository;
 
-  @Autowired
+  final
   PostVotesRepository postVotesRepository;
 
-  @Autowired
+  final
   TagRepository tagRepository;
 
-  @Autowired
+  final
   PostMapper postMapper;
 
-  @Autowired
+  final
   CommentMapper commentMapper;
 
-  @Autowired
+  final
   GlobalSettingsRepository globalSettingsRepository;
 
-  @Autowired
+  final
   AuthenticationService authenticationService;
+
+  public PostService(PostRepository postRepository, UserRepository userRepository,
+      HttpServletRequest request, PostCommentRepository postCommentRepository,
+      PostVotesRepository postVotesRepository, TagRepository tagRepository, PostMapper postMapper,
+      CommentMapper commentMapper, GlobalSettingsRepository globalSettingsRepository,
+      AuthenticationService authenticationService) {
+    this.postRepository = postRepository;
+    this.userRepository = userRepository;
+    this.request = request;
+    this.postCommentRepository = postCommentRepository;
+    this.postVotesRepository = postVotesRepository;
+    this.tagRepository = tagRepository;
+    this.postMapper = postMapper;
+    this.commentMapper = commentMapper;
+    this.globalSettingsRepository = globalSettingsRepository;
+    this.authenticationService = authenticationService;
+  }
 
   public PostListResponse getAllPosts(Integer offset, Integer limit, String mode) {
     List<Post> posts = new ArrayList<>();
@@ -226,8 +242,10 @@ public class PostService {
     return new PostListResponse(responseWithAnnounceList, listResponse.size());
   }
 
+  @Transactional
   public ResultResponseWithErrors addPost(AddPostRequest addPostDto) {
-    Optional<GlobalSettings> globalSettings = globalSettingsRepository.findById(2);
+    GlobalSettings globalSettings = globalSettingsRepository.findByCode("POST_PREMODERATION")
+        .orElseThrow();
     ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
     Errors errors = new Errors();
     if (addPostDto.getTitle().length() >= titleMin && addPostDto.getText().length() >= textMin) {
@@ -237,8 +255,9 @@ public class PostService {
       LocalDateTime localDateTime = LocalDateTime
           .ofInstant(Instant.ofEpochSecond(addPostDto.getTimestamp()),
               ZoneId.systemDefault());
-      if (localDateTime.isAfter(LocalDateTime.now().plusHours(3L))) {
-        localDateTime = LocalDateTime.now().plusHours(3L);
+      localDateTime = correctTime(localDateTime);
+      if (localDateTime.isAfter(correctTime(LocalDateTime.now()))) {
+        localDateTime = correctTime(LocalDateTime.now());
       }
       Post post = new Post();
       post.setUser(currentUser);
@@ -246,20 +265,20 @@ public class PostService {
       post.setIsActive(addPostDto.getActive());
       post.setModerator(currentUser);
       post.setText(addPostDto.getText());
-      post.setTime(localDateTime.plusHours(3L));
+      post.setTime(localDateTime);
       post.setViewCount(0);
-      if ((globalSettings.orElseThrow().getValue().equals("NO") && addPostDto.getActive() == 1) ||
-          (globalSettings.orElseThrow().getValue().equals("YES")
+      if ((globalSettings.getValue().equals("NO") && addPostDto.getActive() == 1) ||
+          (globalSettings.getValue().equals("YES")
               && currentUser.getIsModerator() == 1
               && addPostDto.getActive() == 1)) {
         post.setModerationStatus((ModerationStatus.ACCEPTED));
       }
 
-      if (globalSettings.get().getValue().equals("YES") && currentUser.getIsModerator() != 1) {
+      if (globalSettings.getValue().equals("YES") && currentUser.getIsModerator() != 1) {
         post.setModerationStatus((ModerationStatus.NEW));
       }
-      Set<Tag> setTags;
       if (addPostDto.getTags() != null) {
+        Set<Tag> setTags = new HashSet<>();
         String[] arrayTags = addPostDto.getTags();
         List<String> tagNames = tagRepository.findAll().stream().map(t -> t.getName())
             .collect(Collectors.toList());
@@ -269,10 +288,9 @@ public class PostService {
             tag.setName(arrayTag);
             tagRepository.save(tag);
           }
+          Tag tag = tagRepository.findTagByQuery(arrayTag).get();
+          setTags.add(tag);
         }
-        setTags = Arrays.stream(arrayTags)
-            .map(t -> tagRepository.findTagByQuery(t)).flatMap(Optional::stream)
-            .collect(Collectors.toSet());
         post.setTags(setTags);
       }
       postRepository.save(post);
@@ -313,11 +331,12 @@ public class PostService {
         LocalDateTime localDateTime = LocalDateTime
             .ofInstant(Instant.ofEpochSecond(addPostDto.getTimestamp()),
                 ZoneId.systemDefault());
-        if (localDateTime.isAfter(LocalDateTime.now().plusHours(3L))) {
-          localDateTime = LocalDateTime.now().plusHours(3L);
+        localDateTime = correctTime(localDateTime);
+        if (localDateTime.isAfter(correctTime(LocalDateTime.now()))) {
+          localDateTime = correctTime(LocalDateTime.now());
         }
         Post postToUpdate = postRepository.getOne(id);
-        postToUpdate.setTime(localDateTime.plusHours(3));
+        postToUpdate.setTime(localDateTime);
         postToUpdate.setIsActive(addPostDto.getActive());
         postToUpdate.setTitle(addPostDto.getTitle());
         postToUpdate.setText(addPostDto.getText());
@@ -352,7 +371,7 @@ public class PostService {
       PostComment postComment = new PostComment();
       postComment.setPost(postById.get());
       postComment.setUser(currentUser.get());
-      postComment.setTime(LocalDateTime.now());
+      postComment.setTime(correctTime(LocalDateTime.now()));
       postComment.setText(text);
       if (postCommentDto.getParentId() != null) {
         Optional<PostComment> optionalParent = postCommentRepository
@@ -507,7 +526,7 @@ public class PostService {
         .findByPostIdAndUserId(postLikeDto.getPostId(), currentUser.getId());
     if (post.isPresent() && postVotesOptional.isEmpty()) {
       PostVotes postVotes = PostVotes.builder()
-          .time(LocalDateTime.now().plusHours(3))
+          .time(correctTime(LocalDateTime.now()))
           .value(1)
           .post(post.get())
           .user(currentUser)
@@ -542,7 +561,7 @@ public class PostService {
         .findByPostIdAndUserId(postLikeDto.getPostId(), currentUser.getId());
     if (post.isPresent() && postVotesOptional.isEmpty()) {
       PostVotes postVotes = PostVotes.builder()
-          .time(LocalDateTime.now().plusHours(3))
+          .time(correctTime(LocalDateTime.now()))
           .value(-1)
           .post(post.get())
           .user(currentUser)
@@ -557,5 +576,9 @@ public class PostService {
       resultResponse.resultSuccess();
     }
     return resultResponse;
+  }
+
+  private LocalDateTime correctTime(LocalDateTime time) {
+    return time.plusHours(3L);
   }
 }

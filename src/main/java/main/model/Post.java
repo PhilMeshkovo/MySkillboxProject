@@ -21,7 +21,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -54,24 +53,24 @@ public class Post {
   private ModerationStatus moderationStatus;
 
   @JsonIgnore
-  @OneToMany(mappedBy = "post", fetch = FetchType.EAGER)
+  @OneToMany(mappedBy = "post", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
   @Getter
   @Setter
   private Set<PostComment> postComments = new HashSet<>();
 
   @JsonIgnore
-  @OneToMany(mappedBy = "post", fetch = FetchType.EAGER)
+  @OneToMany(mappedBy = "post", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
   @Getter
   @Setter
   private Set<PostVotes> postVotes = new HashSet<>();
 
   @JsonIgnore
-  @ManyToOne(cascade = CascadeType.ALL)
+  @ManyToOne
   @Getter
   @Setter
   private User moderator;
 
-  @ManyToOne(cascade = CascadeType.ALL)
+  @ManyToOne
   @Getter
   @Setter
   private User user;

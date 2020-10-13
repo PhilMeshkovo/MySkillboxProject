@@ -48,7 +48,6 @@ import main.repository.GlobalSettingsRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
 import org.imgscalr.Scalr;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -74,32 +73,48 @@ public class UserService implements UserDetailsService {
 
   private static final String WRONG_CAPTCHA = "Код с картинки введён неверно";
 
-  @Autowired
+  final
   UserRepository userRepository;
 
-  @Autowired
+  final
   SecurityConfiguration securityConfiguration;
 
-  @Autowired
+  final
   GlobalSettingsRepository globalSettingsRepository;
 
-  @Autowired
+  final
   PostMapper postMapper;
 
-  @Autowired
+  final
   CaptchaCodeRepository captchaCodeRepository;
 
-  @Autowired
+  final
   HttpServletRequest request;
 
-  @Autowired
+  final
   MailSender mailSender;
 
-  @Autowired
+  final
   PostRepository postRepository;
 
-  @Autowired
+  final
   AuthenticationService authenticationService;
+
+  public UserService(UserRepository userRepository, SecurityConfiguration securityConfiguration,
+      GlobalSettingsRepository globalSettingsRepository, PostMapper postMapper,
+      CaptchaCodeRepository captchaCodeRepository, HttpServletRequest request,
+      MailSender mailSender, PostRepository postRepository,
+      AuthenticationService authenticationService) {
+    this.userRepository = userRepository;
+    this.securityConfiguration = securityConfiguration;
+    this.globalSettingsRepository = globalSettingsRepository;
+    this.postMapper = postMapper;
+    this.captchaCodeRepository = captchaCodeRepository;
+    this.request = request;
+    this.mailSender = mailSender;
+    this.postRepository = postRepository;
+    this.authenticationService = authenticationService;
+  }
 
 
   @Override
@@ -403,7 +418,8 @@ public class UserService implements UserDetailsService {
   }
 
   public JsonNode getAllStatistics() throws Exception {
-    GlobalSettings globalSettings = globalSettingsRepository.findById(3).orElseThrow();
+    GlobalSettings globalSettings = globalSettingsRepository.findByCode("STATISTICS_IS_PUBLIC")
+        .orElseThrow();
     if (globalSettings.getValue().equals("YES")) {
       return getStatAll();
     }
@@ -477,7 +493,7 @@ public class UserService implements UserDetailsService {
     String code = createCaptchaValue(3);
     String secretCode = createCaptchaValue(22);
     CaptchaCode captchaCode = CaptchaCode.builder()
-        .time(LocalDateTime.now().plusHours(3))
+        .time(correctTime(LocalDateTime.now()))
         .code(code)
         .secretCode(secretCode)
         .build();
@@ -551,6 +567,10 @@ public class UserService implements UserDetailsService {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode object = mapper.createObjectNode();
     return object;
+  }
+
+  private LocalDateTime correctTime(LocalDateTime time) {
+    return time.plusHours(3L);
   }
 
 }
