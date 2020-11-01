@@ -48,8 +48,8 @@ import main.repository.GlobalSettingsRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
 import org.imgscalr.Scalr;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -77,7 +77,7 @@ public class UserService implements UserDetailsService {
   final
   UserRepository userRepository;
 
-  @Autowired
+  final
   SecurityConfiguration securityConfiguration;
 
   final
@@ -101,7 +101,7 @@ public class UserService implements UserDetailsService {
   final
   AuthenticationService authenticationService;
 
-  public UserService(UserRepository userRepository, SecurityConfiguration securityConfiguration,
+  public UserService(UserRepository userRepository,@Lazy SecurityConfiguration securityConfiguration,
       GlobalSettingsRepository globalSettingsRepository, PostMapper postMapper,
       CaptchaCodeRepository captchaCodeRepository, HttpServletRequest request,
       MailSender mailSender, PostRepository postRepository,
