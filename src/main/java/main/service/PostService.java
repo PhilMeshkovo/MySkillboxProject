@@ -50,6 +50,7 @@ import main.repository.PostRepository;
 import main.repository.PostVotesRepository;
 import main.repository.TagRepository;
 import main.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -70,7 +71,7 @@ public class PostService {
   final
   PostRepository postRepository;
 
-  final
+  @Autowired
   UserRepository userRepository;
 
   final
@@ -97,13 +98,12 @@ public class PostService {
   final
   AuthenticationService authenticationService;
 
-  public PostService(PostRepository postRepository, UserRepository userRepository,
+  public PostService(PostRepository postRepository,
       HttpServletRequest request, PostCommentRepository postCommentRepository,
       PostVotesRepository postVotesRepository, TagRepository tagRepository, PostMapper postMapper,
       CommentMapper commentMapper, GlobalSettingsRepository globalSettingsRepository,
       AuthenticationService authenticationService) {
     this.postRepository = postRepository;
-    this.userRepository = userRepository;
     this.request = request;
     this.postCommentRepository = postCommentRepository;
     this.postVotesRepository = postVotesRepository;
