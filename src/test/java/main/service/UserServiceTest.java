@@ -78,7 +78,7 @@ class UserServiceTest {
     GlobalSettings globalSettings = new GlobalSettings();
     globalSettings.setValue("YES");
     Mockito.doReturn(Optional.of(globalSettings))
-        .when(globalSettingsRepository).findById(1);
+        .when(globalSettingsRepository).findByCode("MULTIUSER_MODE");
     RegisterFormRequest registerForm = new RegisterFormRequest();
     registerForm.setEmail("some@mail.ru");
     registerForm.setCaptcha("123456");
@@ -150,7 +150,8 @@ class UserServiceTest {
     Post post = newPost();
     GlobalSettings globalSettings = new GlobalSettings();
     globalSettings.setValue("YES");
-    Mockito.doReturn(Optional.of(globalSettings)).when(globalSettingsRepository).findById(3);
+    Mockito.doReturn(Optional.of(globalSettings)).when(globalSettingsRepository)
+        .findByCode("STATISTICS_IS_PUBLIC");
     Mockito.doReturn(List.of(post)).when(postRepository).findAll();
     Mockito.doReturn(getResponsePostApi()).when(postMapper).postToResponsePostApi(post);
     JsonNode jsonNode = userService.getAllStatistics();

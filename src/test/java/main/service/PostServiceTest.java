@@ -172,7 +172,7 @@ class PostServiceTest {
     addPostDto.setActive(1);
     GlobalSettings globalSettings = new GlobalSettings();
     globalSettings.setValue("YES");
-    Mockito.doReturn(Optional.of(globalSettings)).when(globalSettingsRepository).findById(2);
+    Mockito.doReturn(Optional.of(globalSettings)).when(globalSettingsRepository).findByCode("POST_PREMODERATION");
     Mockito.doReturn("1").when(httpSession).getId();
     Mockito.doReturn(httpSession).when(request).getSession();
     initAuthorizedUsers();
