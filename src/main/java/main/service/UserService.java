@@ -48,6 +48,7 @@ import main.repository.GlobalSettingsRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
 import org.imgscalr.Scalr;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -76,7 +77,7 @@ public class UserService implements UserDetailsService {
   final
   UserRepository userRepository;
 
-  final
+  @Autowired
   SecurityConfiguration securityConfiguration;
 
   final
