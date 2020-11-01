@@ -2,6 +2,7 @@ package main.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.text.ParseException;
+import javassist.NotFoundException;
 import javax.persistence.EntityNotFoundException;
 import main.dto.request.AddPostRequest;
 import main.dto.request.PostCommentRequest;
@@ -14,6 +15,7 @@ import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,6 +34,7 @@ public class ApiPostController {
   PostService postService;
 
   @GetMapping("/post")
+  @ResponseStatus(HttpStatus.OK)
   public PostListResponse getAllPosts(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
       @RequestParam(value = "limit", defaultValue = "20", required = false) Integer limit,
@@ -40,28 +43,19 @@ public class ApiPostController {
   }
 
   @GetMapping("/post/search")
+  @ResponseStatus(HttpStatus.OK)
   public ResponseEntity<?> getAllPostsByTagAndTitle(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
       @RequestParam(value = "query", defaultValue = "tagName", required = false) String query) {
-    try {
       PostListResponse postListApi = postService.getAllPostsByTextAndTitle(offset, limit, query);
       return ResponseEntity.ok(postListApi);
-    } catch (EntityNotFoundException e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-    }
-
   }
 
   @GetMapping("/post/{id}")
   @ResponseStatus(HttpStatus.OK)
   public ResponseEntity<?> getPostById(@PathVariable int id) {
-    try {
       return ResponseEntity.ok(postService.findPostById(id));
-    } catch (EntityNotFoundException e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-    }
-
   }
 
   @GetMapping("/post/byDate")
@@ -79,19 +73,17 @@ public class ApiPostController {
   }
 
   @GetMapping("/post/byTag")
+  @ResponseStatus(HttpStatus.OK)
   public ResponseEntity<?> getAllPostsByTag(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
       @RequestParam(value = "tag", defaultValue = "tagName", required = false) String tag) {
-    try {
       PostListResponse postListApi = postService.getAllPostsByTag(offset, limit, tag);
       return ResponseEntity.ok(postListApi);
-    } catch (EntityNotFoundException e) {
-      return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-    }
   }
 
   @GetMapping("/post/my")
+  @ResponseStatus(HttpStatus.OK)
   public PostListResponse getAllMyPosts(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
@@ -100,6 +92,7 @@ public class ApiPostController {
   }
 
   @GetMapping("/post/moderation")
+  @ResponseStatus(HttpStatus.OK)
   public PostListResponse getAllPostsToModeration(
       @RequestParam(value = "offset", defaultValue = "0", required = false) Integer offset,
       @RequestParam(value = "limit", defaultValue = "10", required = false) Integer limit,
@@ -108,6 +101,7 @@ public class ApiPostController {
   }
 
   @PostMapping("/post")
+  @ResponseStatus(HttpStatus.OK)
   public ResultResponseWithErrors addPost(
       @RequestBody AddPostRequest addPostDto) {
     return postService.addPost(addPostDto);
@@ -178,5 +172,10 @@ public class ApiPostController {
     } catch (EntityNotFoundException e) {
       return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
+  }
+
+  @ExceptionHandler(NotFoundException.class)
+  public String handleNotFoundException(NotFoundException e) {
+    return e.getMessage();
   }
 }

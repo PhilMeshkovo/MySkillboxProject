@@ -128,10 +128,10 @@ public class UserService implements UserDetailsService {
   }
 
   public ResultResponseWithErrors saveUser(RegisterFormRequest registerFormUser) {
-    Optional<GlobalSettings> globalSettings = globalSettingsRepository.findById(1);
-    GlobalSettings multiUserMode = globalSettings.orElseThrow();
+    GlobalSettings multiUserMode = globalSettingsRepository.findByCode("MULTIUSER_MODE")
+        .orElseThrow(EntityNotFoundException::new);
+    ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
     if (multiUserMode.getValue().equals("YES")) {
-      ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
       Errors errors = new Errors();
       Optional<User> byEmail = userRepository.findByEmail(registerFormUser.getEmail());
       if (byEmail.isEmpty() && registerFormUser.getPassword().length() >= minPassword
@@ -161,20 +161,17 @@ public class UserService implements UserDetailsService {
         }
         resultResponseWithErrors.setErrors(errors);
       }
-      return resultResponseWithErrors;
-    } else {
-      throw new EntityNotFoundException("MULTIUSER MODE OFF");
     }
+    return resultResponseWithErrors;
   }
 
   public ResultResponseWithUserDto login(LoginRequest loginDto) {
     ResultResponseWithUserDto resultResponseWithUserDto = new ResultResponseWithUserDto();
-
-    Optional<User> userByEmail = userRepository.findByEmail(loginDto.getEmail());
-    if (userByEmail.isPresent() && securityConfiguration.bcryptPasswordEncoder()
-        .matches(loginDto.getPassword(), userByEmail.get().getPassword())) {
+    User currentUser = userRepository.findByEmail(loginDto.getEmail())
+        .orElseThrow(EntityNotFoundException::new);
+    if (securityConfiguration.bcryptPasswordEncoder()
+        .matches(loginDto.getPassword(), currentUser.getPassword())) {
       String sessionId = request.getSession().getId();
-      User currentUser = userByEmail.get();
       Map<String, Integer> authorizedUsers = authenticationService.getAuthorizedUsers();
       authorizedUsers.put(sessionId, currentUser.getId());
       authenticationService.setAuthorizedUsers(authorizedUsers);
@@ -201,7 +198,7 @@ public class UserService implements UserDetailsService {
     String sessionId = request.getSession().getId();
     if (authenticationService.getAuthorizedUsers().containsKey(sessionId)) {
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-      User user = userRepository.findById(id).orElseThrow();
+      User user = userRepository.findById(id).orElseThrow(EntityNotFoundException::new);
       UserDto userDto;
       if (user.getIsModerator() == 1) {
         int allPosts = (int) postRepository.count();
@@ -235,12 +232,10 @@ public class UserService implements UserDetailsService {
 
   public ResultResponse restore(String email) {
     ResultResponse resultResponse = new ResultResponse();
-    Optional<User> userByEmail = userRepository.findByEmail(email);
-    if (userByEmail.isPresent()) {
-      mailSender.send(email, "Code", "https://philipp-skillbox.herokuapp.com/login/change-password/"
-          + userByEmail.get().getCode());
-      resultResponse.resultSuccess();
-    }
+    User userByEmail = userRepository.findByEmail(email).orElseThrow(EntityNotFoundException::new);
+    mailSender.send(email, "Code", "https://philipp-skillbox.herokuapp.com/login/change-password/"
+        + userByEmail.getCode());
+    resultResponse.resultSuccess();
     return resultResponse;
   }
 
@@ -287,7 +282,7 @@ public class UserService implements UserDetailsService {
 
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-    User user = userRepository.findById(id).orElseThrow();
+    User user = userRepository.findById(id).orElseThrow(EntityNotFoundException::new);
     Optional<User> userByEmail = userRepository.findByEmail(postProfileRequest.getEmail());
     if (userByEmail.isPresent() && postProfileRequest.getName().length() > 0 &&
         postProfileRequest.getName().length() < maxName &&
@@ -324,9 +319,8 @@ public class UserService implements UserDetailsService {
 
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-    User user = userRepository.findById(id).orElseThrow();
+    User user = userRepository.findById(id).orElseThrow(EntityNotFoundException::new);
     Optional<User> userByEmail = userRepository.findByEmail(profileRequest.getEmail());
-
     if (profileRequest.getPassword() == null && profileRequest.getPhoto() == null &&
         profileRequest.getRemovePhoto() == null && profileRequest.getName() != null &&
         profileRequest.getName().length() > 0 && profileRequest.getName().length() < maxName) {
@@ -378,62 +372,58 @@ public class UserService implements UserDetailsService {
     return filePath.toString();
   }
 
-  public JsonNode getMyStatistics() throws Exception {
+  public JsonNode getMyStatistics() throws EntityNotFoundException {
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-    Optional<User> currentUser = userRepository.findById(id);
-    if (currentUser.isPresent()) {
-      ObjectNode object = createObjectNode();
-      List<Post> myPosts = postRepository.findAllMyPosts(0, (int) postRepository.count(),
-          "ACCEPTED", currentUser.get().getId());
-      List<ResponsePostApi> postList = myPosts.stream()
-          .map(p -> postMapper.postToResponsePostApi(p))
-          .collect(Collectors.toList());
-      object.put("postsCount", myPosts.size());
+    User currentUser = userRepository.findById(id).orElseThrow(EntityNotFoundException::new);
+    ObjectNode object = createObjectNode();
+    List<Post> myPosts = postRepository.findAllMyPosts(0, (int) postRepository.count(),
+        "ACCEPTED", currentUser.getId());
+    List<ResponsePostApi> postList = myPosts.stream()
+        .map(p -> postMapper.postToResponsePostApi(p))
+        .collect(Collectors.toList());
+    object.put("postsCount", myPosts.size());
 
-      int likesCount = postList.stream().mapToInt(ResponsePostApi::getLikeCount).sum();
-      object.put("likesCount", likesCount);
+    int likesCount = postList.stream().mapToInt(ResponsePostApi::getLikeCount).sum();
+    object.put("likesCount", likesCount);
 
-      int dislikesCount = postList.stream().mapToInt(ResponsePostApi::getDislikeCount).sum();
-      object.put("dislikesCount", dislikesCount);
+    int dislikesCount = postList.stream().mapToInt(ResponsePostApi::getDislikeCount).sum();
+    object.put("dislikesCount", dislikesCount);
 
-      int viewsCount = postList.stream().mapToInt(ResponsePostApi::getViewCount).sum();
-      object.put("viewsCount", viewsCount);
+    int viewsCount = postList.stream().mapToInt(ResponsePostApi::getViewCount).sum();
+    object.put("viewsCount", viewsCount);
 
-      LocalDateTime firstPublication = postRepository
-          .findFirstMyPublication(currentUser.get().getId());
+    LocalDateTime firstPublication = postRepository
+        .findFirstMyPublication(currentUser.getId());
 
-      if (firstPublication != null) {
-        ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault()).minusHours(3);
-        ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
+    if (firstPublication != null) {
+      ZonedDateTime timeZoned = firstPublication.atZone(ZoneId.systemDefault()).minusHours(3);
+      ZonedDateTime utcZoned = timeZoned.withZoneSameInstant(ZoneId.of("UTC"));
 
-        object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
-      } else {
-        object.put("firstPublication", 0);
-      }
-      return object;
+      object.put("firstPublication", utcZoned.toInstant().getEpochSecond());
     } else {
-      throw new Exception("User is not authorized");
+      object.put("firstPublication", 0);
     }
+    return object;
   }
 
-  public JsonNode getAllStatistics() throws Exception {
+  public JsonNode getAllStatistics() throws EntityNotFoundException {
     GlobalSettings globalSettings = globalSettingsRepository.findByCode("STATISTICS_IS_PUBLIC")
-        .orElseThrow();
+        .orElseThrow(EntityNotFoundException::new);
     if (globalSettings.getValue().equals("YES")) {
       return getStatAll();
     }
     if (globalSettings.getValue().equals("NO")) {
       String sessionId = request.getSession().getId();
       Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-      Optional<User> currentUser = userRepository.findById(id);
-      if (currentUser.isPresent() && currentUser.get().getIsModerator() == 1) {
+      User currentUser = userRepository.findById(id).orElseThrow(EntityNotFoundException::new);
+      if (currentUser.getIsModerator() == 1) {
         return getStatAll();
       } else {
-        throw new Exception("User is not authorized or user is not moderator");
+        throw new EntityNotFoundException("User is not authorized or user is not moderator");
       }
     } else {
-      throw new Exception("Statistics is not public or user is not authorized");
+      throw new EntityNotFoundException("Statistics is not public or user is not authorized");
     }
   }
 
@@ -463,7 +453,7 @@ public class UserService implements UserDetailsService {
       throws Exception {
     String sessionId = request.getSession().getId();
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-    User currentUser = userRepository.findById(id).orElseThrow();
+    User currentUser = userRepository.findById(id).orElseThrow(EntityNotFoundException::new);
     if (currentUser.getIsModerator() == 1) {
       GlobalSettings globalSettingsMultiUser = globalSettingsRepository.getOne(1);
       if (globalSettingsDto.isMULTIUSER_MODE()) {

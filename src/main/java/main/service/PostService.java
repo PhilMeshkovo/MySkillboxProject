@@ -55,6 +55,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 @Service
 public class PostService {
@@ -172,9 +173,9 @@ public class PostService {
     Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
 
     User currentUser = null;
+
     if (id != null) {
-      Optional<User> optionalUser = userRepository.findById(id);
-      currentUser = optionalUser.orElseThrow(EntityNotFoundException::new);
+      currentUser = userRepository.findById(id).orElseThrow(EntityNotFoundException::new);
     }
 
     PostByIdResponse postByIdApi = new PostByIdResponse();
@@ -182,10 +183,10 @@ public class PostService {
     if ((post.getIsActive() == 1 &&
         post.getModerationStatus() == ModerationStatus.ACCEPTED &&
         post.getTime().minusHours(3).isBefore(LocalDateTime.now()))
-        || (post.getIsActive() == 1 && post.getModerationStatus() == ModerationStatus.NEW &&
+        || (currentUser != null && post.getIsActive() == 1 && post.getModerationStatus() == ModerationStatus.NEW &&
         authenticationService.getAuthorizedUsers().containsKey(sessionId)
         && currentUser.getIsModerator() == 1)
-        || (post.getIsActive() == 1 && post.getModerationStatus() == ModerationStatus.NEW
+        || (currentUser != null && post.getIsActive() == 1 && post.getModerationStatus() == ModerationStatus.NEW
         && authenticationService.getAuthorizedUsers().containsKey(sessionId) && currentUser
         .equals(post.getUser()))) {
       postByIdApi = postMapper.postToPostById(post);
@@ -196,10 +197,10 @@ public class PostService {
       List<String> strings = tags.stream().map(Tag::getName)
           .collect(Collectors.toList());
       if (!authenticationService.getAuthorizedUsers().containsKey(sessionId) ||
-          authenticationService.getAuthorizedUsers().containsKey(sessionId)
-              && !currentUser.equals(post.getUser())
-          || authenticationService.getAuthorizedUsers().containsKey(sessionId) &&
-          currentUser.getIsModerator() != 1) {
+          (authenticationService.getAuthorizedUsers().containsKey(sessionId) && currentUser != null
+              && !currentUser.equals(post.getUser()))
+          || (authenticationService.getAuthorizedUsers().containsKey(sessionId) && currentUser != null &&
+          currentUser.getIsModerator() != 1)) {
         Post post1 = postRepository.getOne(postId);
         int viewCount = post.getViewCount() + 1;
         post1.setViewCount(viewCount);
@@ -245,7 +246,7 @@ public class PostService {
   @Transactional
   public ResultResponseWithErrors addPost(AddPostRequest addPostDto) {
     GlobalSettings globalSettings = globalSettingsRepository.findByCode("POST_PREMODERATION")
-        .orElseThrow();
+        .orElseThrow(EntityNotFoundException::new);
     ResultResponseWithErrors resultResponseWithErrors = new ResultResponseWithErrors();
     Errors errors = new Errors();
     if (addPostDto.getTitle().length() >= titleMin && addPostDto.getText().length() >= textMin) {
@@ -315,10 +316,10 @@ public class PostService {
     String sessionId = request.getSession().getId();
     Integer idUser = authenticationService.getAuthorizedUsers().get(sessionId);
 
-    Optional<Post> postById = postRepository.findById(id);
-    User currentUser = userRepository.findById(idUser).orElseThrow();
+    Post postById = postRepository.findById(id).orElseThrow(EntityNotFoundException::new);
+    User currentUser = userRepository.findById(idUser).orElseThrow(EntityNotFoundException::new);
 
-    if (postById.isPresent() && postById.get().getUser()
+    if (postById.getUser()
         .equals(currentUser)) {
       if (addPostDto.getTitle().length() >= titleMin && addPostDto.getText().length() >= textMin) {
 
@@ -458,10 +459,9 @@ public class PostService {
   @Transactional
   public ResultResponse moderationPost(PostModerationRequest postModerationDto) {
     ResultResponse resultResponse = new ResultResponse();
-    Optional<Post> postById = postRepository.findById(postModerationDto.getPostId());
-    if (postById.isPresent() && postModerationDto.getDecision().equalsIgnoreCase("accept")
-        || postById.isPresent() && postModerationDto.getDecision().equalsIgnoreCase("decline")) {
-      Post postToModeration = postRepository.getOne(postModerationDto.getPostId());
+    Post postById = postRepository.findById(postModerationDto.getPostId())
+        .orElseThrow(EntityNotFoundException::new);
+      Post postToModeration = postRepository.getOne(postById.getId());
       if (postModerationDto.getDecision().equalsIgnoreCase("accept")) {
         postToModeration.setModerationStatus(ModerationStatus.ACCEPTED);
       }
@@ -473,7 +473,6 @@ public class PostService {
       User currentUser = userRepository.findById(id).orElseThrow();
       postToModeration.setModerator(currentUser);
       resultResponse.resultSuccess();
-    }
     return resultResponse;
   }
 
