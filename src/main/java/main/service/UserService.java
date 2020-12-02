@@ -101,7 +101,8 @@ public class UserService implements UserDetailsService {
   final
   AuthenticationService authenticationService;
 
-  public UserService(UserRepository userRepository,@Lazy SecurityConfiguration securityConfiguration,
+  public UserService(UserRepository userRepository,
+      @Lazy SecurityConfiguration securityConfiguration,
       GlobalSettingsRepository globalSettingsRepository, PostMapper postMapper,
       CaptchaCodeRepository captchaCodeRepository, HttpServletRequest request,
       MailSender mailSender, PostRepository postRepository,

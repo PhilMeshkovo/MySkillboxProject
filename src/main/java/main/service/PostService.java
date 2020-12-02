@@ -183,10 +183,12 @@ public class PostService {
     if ((post.getIsActive() == 1 &&
         post.getModerationStatus() == ModerationStatus.ACCEPTED &&
         post.getTime().minusHours(3).isBefore(LocalDateTime.now()))
-        || (currentUser != null && post.getIsActive() == 1 && post.getModerationStatus() == ModerationStatus.NEW &&
+        || (currentUser != null && post.getIsActive() == 1
+        && post.getModerationStatus() == ModerationStatus.NEW &&
         authenticationService.getAuthorizedUsers().containsKey(sessionId)
         && currentUser.getIsModerator() == 1)
-        || (currentUser != null && post.getIsActive() == 1 && post.getModerationStatus() == ModerationStatus.NEW
+        || (currentUser != null && post.getIsActive() == 1
+        && post.getModerationStatus() == ModerationStatus.NEW
         && authenticationService.getAuthorizedUsers().containsKey(sessionId) && currentUser
         .equals(post.getUser()))) {
       postByIdApi = postMapper.postToPostById(post);
@@ -199,7 +201,8 @@ public class PostService {
       if (!authenticationService.getAuthorizedUsers().containsKey(sessionId) ||
           (authenticationService.getAuthorizedUsers().containsKey(sessionId) && currentUser != null
               && !currentUser.equals(post.getUser()))
-          || (authenticationService.getAuthorizedUsers().containsKey(sessionId) && currentUser != null &&
+          || (authenticationService.getAuthorizedUsers().containsKey(sessionId)
+          && currentUser != null &&
           currentUser.getIsModerator() != 1)) {
         Post post1 = postRepository.getOne(postId);
         int viewCount = post.getViewCount() + 1;
@@ -461,18 +464,18 @@ public class PostService {
     ResultResponse resultResponse = new ResultResponse();
     Post postById = postRepository.findById(postModerationDto.getPostId())
         .orElseThrow(EntityNotFoundException::new);
-      Post postToModeration = postRepository.getOne(postById.getId());
-      if (postModerationDto.getDecision().equalsIgnoreCase("accept")) {
-        postToModeration.setModerationStatus(ModerationStatus.ACCEPTED);
-      }
-      if (postModerationDto.getDecision().equalsIgnoreCase("decline")) {
-        postToModeration.setModerationStatus(ModerationStatus.DECLINED);
-      }
-      String sessionId = request.getSession().getId();
-      Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
-      User currentUser = userRepository.findById(id).orElseThrow();
-      postToModeration.setModerator(currentUser);
-      resultResponse.resultSuccess();
+    Post postToModeration = postRepository.getOne(postById.getId());
+    if (postModerationDto.getDecision().equalsIgnoreCase("accept")) {
+      postToModeration.setModerationStatus(ModerationStatus.ACCEPTED);
+    }
+    if (postModerationDto.getDecision().equalsIgnoreCase("decline")) {
+      postToModeration.setModerationStatus(ModerationStatus.DECLINED);
+    }
+    String sessionId = request.getSession().getId();
+    Integer id = authenticationService.getAuthorizedUsers().get(sessionId);
+    User currentUser = userRepository.findById(id).orElseThrow();
+    postToModeration.setModerator(currentUser);
+    resultResponse.resultSuccess();
     return resultResponse;
   }
 
