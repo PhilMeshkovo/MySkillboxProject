@@ -3,7 +3,7 @@ package main.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import javassist.NotFoundException;
-import javax.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import main.dto.request.ChangePasswordRequest;
 import main.dto.request.LoginRequest;
 import main.dto.request.PostProfileRequest;

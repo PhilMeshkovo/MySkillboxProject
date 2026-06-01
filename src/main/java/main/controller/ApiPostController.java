@@ -3,7 +3,7 @@ package main.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.text.ParseException;
 import javassist.NotFoundException;
-import javax.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import main.dto.request.AddPostRequest;
 import main.dto.request.PostCommentRequest;
 import main.dto.request.PostLikeRequest;

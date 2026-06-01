@@ -7,7 +7,7 @@ import static org.mockito.Mockito.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
-import javax.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import main.dto.request.*;
 import main.dto.response.PostListResponse;
 import main.dto.response.ResponseApiInit;
