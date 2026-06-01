@@ -34,7 +34,7 @@ class ConfigUnitTest {
     assertEquals("smtp", sender.getJavaMailProperties().getProperty("mail.transport.protocol"));
     assertEquals("true", sender.getJavaMailProperties().getProperty("mail.debug"));
 
-    PasswordEncoder encoder = new SecurityConfiguration(null).bcryptPasswordEncoder();
+    PasswordEncoder encoder = new SecurityConfiguration().bcryptPasswordEncoder();
     assertTrue(encoder.matches("password", encoder.encode("password")));
   }
 

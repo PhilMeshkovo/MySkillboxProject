@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpServletRequest;
 
 import lombok.extern.log4j.Log4j2;
 import main.dto.request.AddPostRequest;

@@ -2,22 +2,22 @@ package main.config;
 
 import lombok.extern.slf4j.Slf4j;
 import main.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
 
 @Slf4j
-@Configuration
 @EnableWebSecurity
-public class SecurityConfiguration {
+public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-  private final UserService userService;
+  @Autowired
+  UserService userService;
 
   private static final String[] AUTH_WHITELIST = {
       "/**",
@@ -36,22 +36,18 @@ public class SecurityConfiguration {
       "/api/statistics/all"
   };
 
-  public SecurityConfiguration(UserService userService) {
-    this.userService = userService;
-  }
-
-  @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http
-        .csrf(csrf -> csrf.disable())
-        .authorizeHttpRequests(auth -> auth
-            .requestMatchers(AUTH_WHITELIST).permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/post").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/settings/").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/post/{id}").permitAll()
-            .anyRequest().authenticated())
-        .formLogin(formLogin -> formLogin.disable());
-    return http.build();
+  @Override
+  protected void configure(HttpSecurity http) throws Exception {
+    http.csrf().disable()
+        .authorizeRequests().antMatchers(AUTH_WHITELIST).permitAll()
+        .and()
+        .authorizeRequests().antMatchers(HttpMethod.GET, "/api/post").permitAll()
+        .and()
+        .authorizeRequests().antMatchers(HttpMethod.GET, "/api/settings/").permitAll()
+        .and()
+        .authorizeRequests().antMatchers(HttpMethod.GET, "/api/post/{id}").permitAll()
+        .anyRequest().authenticated()
+        .and().formLogin().disable();
   }
 
   @Bean
@@ -59,10 +55,9 @@ public class SecurityConfiguration {
     return new BCryptPasswordEncoder();
   }
 
-  @Bean
-  public DaoAuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
-    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userService);
-    authProvider.setPasswordEncoder(passwordEncoder);
-    return authProvider;
+  @Override
+  protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    auth.userDetailsService(userService)
+        .passwordEncoder(bcryptPasswordEncoder());
   }
 }
